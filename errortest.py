@@ -3,7 +3,7 @@ from colorplot import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-nf_cat = load_noflag_cat('catalogDual_pz.pkl')
+nf_cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
 
 nb_ind = 12
 bb_ind = -3
