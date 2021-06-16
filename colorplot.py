@@ -261,7 +261,7 @@ def color_cut(ew0, nb_ind):
 
 
 if __name__ == '__main__':
-    nf_cat = load_noflag_cat('catalogDual_pz.pkl')
+    nf_cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
 
     for nb_ind in [9, 10, 11, 12, 13]:
         selection = make_colorplot(nf_cat, -3, nb_ind, 'BB', True)
