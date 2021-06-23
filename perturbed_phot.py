@@ -1,29 +1,30 @@
 import numpy as np
+import colorplot
 import matplotlib.pyplot as plt
 from my_functions import *
-from colorplot import *
 
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
                  ewmin, nb_ind, n_iter,
+                 bbcut, nbcut,
                  use_curve = False,
                  use_pbp = False,
                  use_noe = False):
-    if use_curve and use_pbp:
+
+    if use_curve and use_pbp and use_noe:
         raise ValueError('Incompatible options')
 
     sel_hist = np.zeros(len(mag_nb))
     m_bias = np.nanmedian(mag_bb - mag_nb)
-    colorcut = color_cut(ewmin, nb_ind) + m_bias
+    colorcut = colorplot.color_cut(ewmin, nb_ind) + m_bias
     if use_curve:
         x_e = np.linspace(14,26,75)
-        err_curve_bb = m_err_bin(mag_bb, err_bb, x_e, mag_nb)
-        err_curve_nb = m_err_bin(mag_nb, err_nb, x_e, mag_nb)
+        err_curve_bb = colorplot.m_err_bin(mag_bb, err_bb, x_e, mag_nb)
+        err_curve_nb = colorplot.m_err_bin(mag_nb, err_nb, x_e, mag_nb)
         err_curve_bbnb = np.sqrt(err_curve_bb**2 + err_curve_nb**2)
         err_curve_bbnb = np.interp(mag_nb, x_e, err_curve_bbnb)
     if use_pbp:
         Sigma = 3
         err_arr = Sigma * np.sqrt(err_bb**2 + err_nb**2) + m_bias
-    print('')
     for i in range(n_iter):
         print(str(i + 1) + '/' + str(n_iter), end = '\r')
         new_mag_nb = err_nb * np.random.randn(len(err_nb)) + mag_nb
@@ -41,6 +42,7 @@ def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
             sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut))
         sel_hist[sel] += 1
+    print('')
     return sel_hist
 
 if __name__ == '__main__':
@@ -61,17 +63,17 @@ if __name__ == '__main__':
     m_bin_n = 75
     x_e = np.linspace(m_min, m_max, m_bin_n)
 
-    bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
-    nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
+    bbcut = x_e[np.nanargmin(np.abs(colorplot.m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    nbcut = x_e[np.nanargmin(np.abs(colorplot.m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
 
     ewmin = 30 # Angstrom
     
     n_iter = 1000
     cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, True, False, False)
+                            nb_ind, n_iter, bbcut, nbcut, True, False, False)
     cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, False, True, False)
-    cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter)
+                            nb_ind, n_iter, bbcut, nbcut, False, True, False)
+    cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter, bbcut, nbcut)
 
     fig, ax = plt.subplots()
     ax.plot(cand_wec, '.', label = 'Using the error curve')
