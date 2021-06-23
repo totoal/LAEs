@@ -5,7 +5,11 @@ from colorplot import *
 
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
                  ewmin, nb_ind, n_iter,
-                 use_curve = False):
+                 use_curve = False,
+                 use_pbp = False):
+    if use_curve and use_pbp:
+        raise ValueError('Incompatible options')
+
     sel_hist = np.zeros(len(mag_nb))
     m_bias = np.nanmedian(mag_bb - mag_nb)
     colorcut = color_cut(ewmin, nb_ind) + m_bias
@@ -15,16 +19,23 @@ def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
         err_curve_nb = m_err_bin(mag_nb, err_nb, x_e, mag_nb)
         err_curve_bbnb = np.sqrt(err_curve_bb**2 + err_curve_nb**2)
         err_curve_bbnb = np.interp(mag_nb, x_e, err_curve_bbnb)
+    if use_pbp:
+        Sigma = 3
+        err_arr = Sigma * np.sqrt(err_bb**2 + err_nb**2) + m_bias
+    print('')
     for i in range(n_iter):
-        print('\b' + str(i) + '/' + str(n_iter))
+        print(str(i + 1) + '/' + str(n_iter), end = '\r')
         new_mag_nb = err_nb * np.random.randn(len(err_nb)) + mag_nb
         new_mag_bb = err_bb * np.random.randn(len(err_bb)) + mag_bb
-        bbnb = new_mag_bb - new_mag_nb
+        new_bbnb = new_mag_bb - new_mag_nb
         if use_curve:
-            sel, = np.where((bbnb > colorcut) & (new_mag_bb < bbcut)\
-                 & (new_mag_nb < nbcut) & (bbnb > err_curve_bbnb))
+            sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
+                 & (new_mag_nb < nbcut) & (new_bbnb > err_curve_bbnb))
+        if use_pbp:
+            sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
+                 & (new_mag_nb < nbcut) & (new_bbnb > err_arr))
         if not use_curve:
-            sel, = np.where((bbnb > colorcut) & (new_mag_bb < bbcut)\
+            sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut))
         sel_hist[sel] += 1
     return sel_hist
@@ -53,32 +64,43 @@ if __name__ == '__main__':
     ewmin = 30 # Angstrom
     
     n_iter = 1000
-    cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter, True)
+    cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
+                            nb_ind, n_iter, True, False)
+    cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
+                            nb_ind, n_iter, False, True)
     cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter)
 
     fig, ax = plt.subplots()
     ax.plot(cand_wec, '.', label = 'Using the error curve')
     ax.plot(cand_woec, '.', label = 'Not using the error curve')
+    ax.plot(cand_pbp, '.', label = 'Checking error point by point')
+    ax.legend()
     plt.show(block = False)
     
     detec_wec = []
     detec_woec = []
+    detec_pbp = []
 
     for i in np.linspace(0,100,11):
         pd_wec = cand_wec*1./n_iter * 100
         pd_woec = cand_woec*1./n_iter * 100
+        pd_pbp = cand_pbp*1./n_iter * 100
         detec_wec.append(len(np.where(pd_wec > i)[0]))
         detec_woec.append(len(np.where(pd_woec > i)[0]))
+        detec_pbp.append(len(np.where(pd_pbp > i)[0]))
 
     detec_wec = np.array(detec_wec)
     detec_woec = np.array(detec_woec)
+    detec_pbp = np.array(detec_pbp)
 
     fig, ax = plt.subplots()
     ax.plot(np.linspace(0,100,11), detec_wec*1./len(nb_m)*100,
-            '.', label = 'Using the error curve')
+            '.', markersize = 10, label = 'Using the error curve')
     ax.plot(np.linspace(0,100,11), detec_woec*1./len(nb_m)*100,
-            '.', label = 'Not using the error curve')
-    ax.set_ylabel('N')
+            '.', markersize = 10, label = 'Not using the error curve')
+    ax.plot(np.linspace(0,100,11), detec_pbp*1./len(nb_m)*100,
+            '.', markersize = 10, label = 'Point by point')
+    ax.set_ylabel('% N')
     ax.set_xlabel('% detections')
     ax.legend()
     plt.show()
