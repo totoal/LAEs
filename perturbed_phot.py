@@ -6,7 +6,8 @@ from colorplot import *
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
                  ewmin, nb_ind, n_iter,
                  use_curve = False,
-                 use_pbp = False):
+                 use_pbp = False,
+                 use_noe = False):
     if use_curve and use_pbp:
         raise ValueError('Incompatible options')
 
@@ -31,10 +32,12 @@ def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
         if use_curve:
             sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut) & (new_bbnb > err_curve_bbnb))
-        if use_pbp:
+        elif use_pbp:
             sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut) & (new_bbnb > err_arr))
-        if not use_curve:
+        elif use_noe:
+            sel, = np.where(new_bbnb > colorcut)
+        else:
             sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut))
         sel_hist[sel] += 1
@@ -65,9 +68,9 @@ if __name__ == '__main__':
     
     n_iter = 1000
     cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, True, False)
+                            nb_ind, n_iter, True, False, False)
     cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, False, True)
+                            nb_ind, n_iter, False, True, False)
     cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter)
 
     fig, ax = plt.subplots()
@@ -81,7 +84,8 @@ if __name__ == '__main__':
     detec_woec = []
     detec_pbp = []
 
-    for i in np.linspace(0,100,11):
+    x_bins = np.linspace(0,100,21)
+    for i in x_bins:
         pd_wec = cand_wec*1./n_iter * 100
         pd_woec = cand_woec*1./n_iter * 100
         pd_pbp = cand_pbp*1./n_iter * 100
@@ -94,13 +98,13 @@ if __name__ == '__main__':
     detec_pbp = np.array(detec_pbp)
 
     fig, ax = plt.subplots()
-    ax.plot(np.linspace(0,100,11), detec_wec*1./len(nb_m)*100,
+    ax.plot(x_bins, detec_wec*1./len(nb_m)*100,
             '.', markersize = 10, label = 'Using the error curve')
-    ax.plot(np.linspace(0,100,11), detec_woec*1./len(nb_m)*100,
+    ax.plot(x_bins, detec_woec*1./len(nb_m)*100,
             '.', markersize = 10, label = 'Not using the error curve')
-    ax.plot(np.linspace(0,100,11), detec_pbp*1./len(nb_m)*100,
+    ax.plot(x_bins, detec_pbp*1./len(nb_m)*100,
             '.', markersize = 10, label = 'Point by point')
     ax.set_ylabel('% N')
     ax.set_xlabel('% detections')
     ax.legend()
-    plt.show()
+    plt.show(block = False)
