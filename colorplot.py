@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from my_functions import *
+from perturbed_phot import perturb_phot
 import os
 from astropy.stats import median_absolute_deviation as absdev
 
@@ -36,11 +37,10 @@ def m_dev_bin(mag, x_e, ref_m):
     
     return np.array(err_arr)
 
-def make_colorplot(nf_cat, bb_ind, nb_ind, x_axis = 'NB', plot = True):
+def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True):
     
     # nb_ind = 12  # i = 12 for J0490
     # bb_ind = -3  # i = -3 for gSDSS
-
     nb_m = nf_cat['MAG'][:, nb_ind]
     bb_m = nf_cat['MAG'][:, bb_ind]
     nb_e = nf_cat['ERR'][:, nb_ind]
@@ -90,15 +90,15 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, x_axis = 'NB', plot = True):
     nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, bb_e, x_e, nb_m) - 0.24))]
     ##
 
-    selection, = np.where((bbnb > colorcut) & (bb_m < bbcut)\
-         & (bbnb > true_err_curve) & (nb_m < nbcut))
+    # selection, = np.where((bbnb > colorcut) & (bb_m < bbcut)\
+         # & (bbnb > true_err_curve) & (nb_m < nbcut))
 
-    if plot == False: return selection
+    # if plot == False: return selection
 
     ## PLOT ##
     plt.figure(figsize=(10,3))
 
-    plt.plot(np.linspace(14,26,100), err_curve, color='orange', label='Eror curve')
+    plt.plot(np.linspace(14,26,100), err_curve, color='orange', label='Error curve')
     plt.plot(x_colorcut, y_colorcut, color = 'red', label='EW$_0$ = '+str(ew0)+' $\AA$')
     
     if x_axis == 'NB':
@@ -138,13 +138,15 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, x_axis = 'NB', plot = True):
     except:
         print('Directory ' + filter_name + ' already exists.')
 
-    plt.savefig('./miniJPAS_photometry/'+ filter_name +'/color_diagram.png',
-                bbox_inches = 'tight', pad_inches = 0)
+    if save:
+        plt.savefig('./miniJPAS_photometry/'+ filter_name +'/color_diagram.png',
+                    bbox_inches = 'tight', pad_inches = 0)
+    if not save: plt.show(block = False)
     plt.close()
 
     return selection
 
-def plot_selection(selection, nb_ind, x_axis = 'NB'):
+def plot_selection(selection, nb_ind, x_axis = 'NB', save = true):
 
     filters_tags = load_filter_tags()
     tcurves = load_tcurves(filters_tags)
@@ -237,8 +239,10 @@ def plot_selection(selection, nb_ind, x_axis = 'NB'):
         if x_axis == 'BB':
             filter_name = 'BB' + str(filters_tags[nb_ind]) + 'S' + str(Sigma)
 
-        plt.savefig('./miniJPAS_photometry/' + filter_name + '/pm' + str(i),
-                    bbox_inches = 'tight', pad_inches = 0)
+        if save:
+            plt.savefig('./miniJPAS_photometry/' + filter_name + '/pm' + str(i),
+                        bbox_inches = 'tight', pad_inches = 0)
+        if not save: plt.show(block = False)
         plt.close()    
 
 #Color cut
@@ -263,9 +267,17 @@ def color_cut(ew0, nb_ind):
 if __name__ == '__main__':
     nf_cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
 
-    for nb_ind in [9, 10, 11, 12, 13]:
-        selection = make_colorplot(nf_cat, -3, nb_ind, 'BB', True)
-        plot_selection(selection, nb_ind, 'BB')
-        selection = make_colorplot(nf_cat, -3, nb_ind, 'NB', True)
-        plot_selection(selection, nb_ind, 'NB')
-        print('-')
+    # make_colorplot(nf_cat, -3, nb_ind, selection, 'BB', True, False)
+    # plot_selection(selection, nb_ind, 'BB')
+    nb_ind = 11 # J0480
+    bb_ind = -3 # g
+    mask_fzero = (cat['MAG'][:, nb_ind] < 90) & (cat['MAG'][:, bb_ind] < 90)
+
+    nb_m = cat['MAG'][mask_fzero, nb_ind]
+    bb_m = cat['MAG'][mask_fzero, bb_ind]
+    nb_e = cat['ERR'][mask_fzero, nb_ind]
+    bb_e = cat['ERR'][mask_fzero, bb_ind]
+
+    selection = perturb_phot(nb_m, nb_e, bb_m, bb_e, 30, 11, 1000, False, True)
+    make_colorplot(nf_cat, -3, nb_ind, selection, 'NB', True, False)
+    # plot_selection(selection, nb_ind, 'NB')
