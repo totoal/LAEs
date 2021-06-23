@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from my_functions import *
-from perturbed_phot import perturb_phot
+import perturbed_phot
 import os
 from astropy.stats import median_absolute_deviation as absdev
 
@@ -41,11 +41,13 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     
     # nb_ind = 12  # i = 12 for J0490
     # bb_ind = -3  # i = -3 for gSDSS
-    nb_m = nf_cat['MAG'][:, nb_ind]
-    bb_m = nf_cat['MAG'][:, bb_ind]
-    nb_e = nf_cat['ERR'][:, nb_ind]
-    bb_e = nf_cat['ERR'][:, bb_ind]
 
+    mask_fzero = (cat['MAG'][:, nb_ind] < 90) & (cat['MAG'][:, bb_ind] < 90)
+    nb_m = nf_cat['MAG'][mask_fzero, nb_ind]
+    bb_m = nf_cat['MAG'][mask_fzero, bb_ind]
+    nb_e = nf_cat['ERR'][mask_fzero, nb_ind]
+    bb_e = nf_cat['ERR'][mask_fzero, bb_ind]
+    
     bbnb = bb_m - nb_m
 
     m_min = 14  # Define binning
@@ -110,6 +112,11 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
         plt.scatter(bb_m, bb_m-nb_m, marker='.')
         plt.axvline(x = bbcut, color = 'black', label='BB cut')
 
+    plt.errorbar(ref_m[selection], bbnb[selection],
+                 yerr = np.sqrt(bb_e[selection]**2 + nb_e[selection]**2),
+                 xerr = nb_e[selection],
+                 fmt = 'none',
+                 ecolor = 'saddlebrown')
     plt.scatter(ref_m[selection], bbnb[selection], marker='.', c='saddlebrown')
 
     plt.ylim((-1, 3))
@@ -133,20 +140,21 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
 
     plt.legend()
 
-    try:
-        os.mkdir('./miniJPAS_photometry/' + filter_name)
-    except:
-        print('Directory ' + filter_name + ' already exists.')
 
     if save:
+        try:
+            os.mkdir('./miniJPAS_photometry/' + filter_name)
+        except:
+            print('Directory ' + filter_name + ' already exists.')
         plt.savefig('./miniJPAS_photometry/'+ filter_name +'/color_diagram.png',
                     bbox_inches = 'tight', pad_inches = 0)
-    if not save: plt.show(block = False)
-    plt.close()
+        plt.close()
+    if not save:
+        plt.show()
 
     return selection
 
-def plot_selection(selection, nb_ind, x_axis = 'NB', save = true):
+def plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, x_axis = 'NB', save = True):
 
     filters_tags = load_filter_tags()
     tcurves = load_tcurves(filters_tags)
@@ -170,10 +178,10 @@ def plot_selection(selection, nb_ind, x_axis = 'NB', save = true):
 
         j += 1
 
-        pm = nf_cat['MAG'][i, :]
-        pm_e = nf_cat['ERR'][i, :]
+        pm = masked_mags[i, :]
+        pm_e = masked_errs[i, :]
 
-        plt.figure(figsize=(5,5))
+        plt.figure(figsize=(10,7))
 
         plt.errorbar(
             w_central[:-3], pm[:-3], yerr = pm_e[:-3],
@@ -222,8 +230,8 @@ def plot_selection(selection, nb_ind, x_axis = 'NB', save = true):
         plt.scatter(w_central[nb_ind], pm[nb_ind], c='black')
 
         photoz_txt = (
-            'PHOTOZ = ' + str(nf_cat['PHOTOZ'][i])
-            + '\nODDS = ' + str(nf_cat['PZODDS'][i])
+            'PHOTOZ = ' + str(cat['PHOTOZ'][i])
+            + '\nODDS = ' + str(cat['PZODDS'][i])
             )
         plt.text(3500, 19, photoz_txt)
 
@@ -240,7 +248,7 @@ def plot_selection(selection, nb_ind, x_axis = 'NB', save = true):
             filter_name = 'BB' + str(filters_tags[nb_ind]) + 'S' + str(Sigma)
 
         if save:
-            plt.savefig('./miniJPAS_photometry/' + filter_name + '/pm' + str(i),
+            plt.savefig(filename + str(i),
                         bbox_inches = 'tight', pad_inches = 0)
         if not save: plt.show(block = False)
         plt.close()    
@@ -265,7 +273,7 @@ def color_cut(ew0, nb_ind):
 
 
 if __name__ == '__main__':
-    nf_cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
+    cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
 
     # make_colorplot(nf_cat, -3, nb_ind, selection, 'BB', True, False)
     # plot_selection(selection, nb_ind, 'BB')
@@ -278,6 +286,26 @@ if __name__ == '__main__':
     nb_e = cat['ERR'][mask_fzero, nb_ind]
     bb_e = cat['ERR'][mask_fzero, bb_ind]
 
-    selection = perturb_phot(nb_m, nb_e, bb_m, bb_e, 30, 11, 1000, False, True)
-    make_colorplot(nf_cat, -3, nb_ind, selection, 'NB', True, False)
-    # plot_selection(selection, nb_ind, 'NB')
+    masked_mags = cat['MAG'][mask_fzero, :]
+    masked_errs = cat['ERR'][mask_fzero, :]
+
+    #Define binning
+    m_min = 14
+    m_max = 26
+    m_bin_n = 75
+    x_e = np.linspace(m_min, m_max, m_bin_n)
+
+    bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
+
+    n_iter = 1000
+    tolerance = 0.6
+    sel_hist = perturbed_phot.perturb_phot(
+                nb_m, nb_e, bb_m, bb_e, 30,
+                nb_ind, n_iter, bbcut, nbcut,
+                False, False, False
+            )
+    selection, = np.where(sel_hist*1./n_iter > tolerance)
+    make_colorplot(cat, -3, nb_ind, selection, 'NB', False)
+    filename = 'selected_sources/candidate'
+    plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, 'NB')
