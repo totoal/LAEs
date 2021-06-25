@@ -111,4 +111,5 @@ if __name__ == '__main__':
     ax.set_ylabel('% N')
     ax.set_xlabel('% detections')
     ax.legend()
-    plt.show(block = False)
+    plt.show()
+    
