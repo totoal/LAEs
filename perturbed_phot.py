@@ -1,6 +1,8 @@
 import numpy as np
-import colorplot
+import matplotlib
+# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
+import colorplot
 from my_functions import *
 
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
