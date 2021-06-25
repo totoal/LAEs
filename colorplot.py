@@ -42,7 +42,7 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     # nb_ind = 12  # i = 12 for J0490
     # bb_ind = -3  # i = -3 for gSDSS
 
-    mask_fzero = (cat['MAG'][:, nb_ind] < 90) & (cat['MAG'][:, bb_ind] < 90)
+    mask_fzero = (nf_cat['MAG'][:, nb_ind] < 90) & (nf_cat['MAG'][:, bb_ind] < 90)
     nb_m = nf_cat['MAG'][mask_fzero, nb_ind]
     bb_m = nf_cat['MAG'][mask_fzero, bb_ind]
     nb_e = nf_cat['ERR'][mask_fzero, nb_ind]
