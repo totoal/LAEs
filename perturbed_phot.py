@@ -59,6 +59,8 @@ if __name__ == '__main__':
     nb_e = cat['ERR'][mask_fzero, nb_ind]
     bb_e = cat['ERR'][mask_fzero, bb_ind]
 
+    print('N sources: ' + str(len(nb_m)))
+
     #Define binning
     m_min = 14
     m_max = 26
@@ -73,8 +75,8 @@ if __name__ == '__main__':
     n_iter = 1000
     cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
                             nb_ind, n_iter, bbcut, nbcut, True, False, False)
-    cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, bbcut, nbcut, False, True, False)
+    # cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
+                            # nb_ind, n_iter, bbcut, nbcut, False, True, False)
     cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
                             nb_ind, n_iter, bbcut, nbcut)
 
@@ -87,20 +89,20 @@ if __name__ == '__main__':
     
     detec_wec = []
     detec_woec = []
-    detec_pbp = []
+    # detec_pbp = []
 
     x_bins = np.linspace(0,100,21)
     for i in x_bins:
         pd_wec = cand_wec*1./n_iter * 100
         pd_woec = cand_woec*1./n_iter * 100
-        pd_pbp = cand_pbp*1./n_iter * 100
+        # pd_pbp = cand_pbp*1./n_iter * 100
         detec_wec.append(len(np.where(pd_wec > i)[0]))
         detec_woec.append(len(np.where(pd_woec > i)[0]))
-        detec_pbp.append(len(np.where(pd_pbp > i)[0]))
+        # detec_pbp.append(len(np.where(pd_pbp > i)[0]))
 
     detec_wec = np.array(detec_wec)
     detec_woec = np.array(detec_woec)
-    detec_pbp = np.array(detec_pbp)
+    # detec_pbp = np.array(detec_pbp)
 
     fig, ax = plt.subplots()
     ax.plot(x_bins, detec_wec*1./len(nb_m)*100,

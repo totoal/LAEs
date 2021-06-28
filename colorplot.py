@@ -299,7 +299,7 @@ if __name__ == '__main__':
     nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
 
     n_iter = 1000
-    tolerance = 0.6
+    tolerance = 0.8
     sel_hist = perturbed_phot.perturb_phot(
                 nb_m, nb_e, bb_m, bb_e, 30,
                 nb_ind, n_iter, bbcut, nbcut,
