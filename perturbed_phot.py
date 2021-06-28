@@ -75,12 +75,13 @@ if __name__ == '__main__':
                             nb_ind, n_iter, bbcut, nbcut, True, False, False)
     cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
                             nb_ind, n_iter, bbcut, nbcut, False, True, False)
-    cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin, nb_ind, n_iter, bbcut, nbcut)
+    cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
+                            nb_ind, n_iter, bbcut, nbcut)
 
     fig, ax = plt.subplots()
     ax.plot(cand_wec, '.', label = 'Using the error curve')
     ax.plot(cand_woec, '.', label = 'Not using the error curve')
-    ax.plot(cand_pbp, '.', label = 'Checking error point by point')
+#    ax.plot(cand_pbp, '.', label = 'Checking error point by point')
     ax.legend()
     plt.show(block = False)
     
@@ -106,8 +107,8 @@ if __name__ == '__main__':
             '.', markersize = 10, label = 'Using the error curve')
     ax.plot(x_bins, detec_woec*1./len(nb_m)*100,
             '.', markersize = 10, label = 'Not using the error curve')
-    ax.plot(x_bins, detec_pbp*1./len(nb_m)*100,
-            '.', markersize = 10, label = 'Point by point')
+#    ax.plot(x_bins, detec_pbp*1./len(nb_m)*100,
+#            '.', markersize = 10, label = 'Point by point')
     ax.set_ylabel('% N')
     ax.set_xlabel('% detections')
     ax.legend()
