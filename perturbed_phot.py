@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib
-# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 import colorplot
-from my_functions import *
+from my_functions import load_noflag_cat
 
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
                  ewmin, nb_ind, n_iter,
@@ -71,48 +70,45 @@ if __name__ == '__main__':
     nbcut = x_e[np.nanargmin(np.abs(colorplot.m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
 
     ewmin = 30 # Angstrom
+
+    cand_woec = []
     
-    n_iter = 1000
-    cand_wec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, bbcut, nbcut, True, False, False)
-    # cand_pbp = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            # nb_ind, n_iter, bbcut, nbcut, False, True, False)
-    cand_woec = perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
-                            nb_ind, n_iter, bbcut, nbcut)
+    n_iter = 10
+    for i in range(20):
+        cand_woec.append(perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
+                                 nb_ind, n_iter, bbcut, nbcut))
+
+    cand_woec = np.cumsum(cand_woec, axis=0)
 
     fig, ax = plt.subplots()
-    ax.plot(cand_wec, '.', label = 'Using the error curve')
-    ax.plot(cand_woec, '.', label = 'Not using the error curve')
-#    ax.plot(cand_pbp, '.', label = 'Checking error point by point')
+    ax.plot(cand_woec[-1], '.', label = 'Not using the error curve')
     ax.legend()
+    ax.set_xlabel('source #')
+    ax.set_ylabel('N of detections')
+    fig.savefig('/home/alberto/cosmos/presentacion29junio/detec2',
+            bbox_inches = 'tight', pad_inches = 0, transparent=True)
     plt.show(block = False)
     
-    detec_wec = []
     detec_woec = []
-    # detec_pbp = []
 
     x_bins = np.linspace(0,100,21)
-    for i in x_bins:
-        pd_wec = cand_wec*1./n_iter * 100
-        pd_woec = cand_woec*1./n_iter * 100
-        # pd_pbp = cand_pbp*1./n_iter * 100
-        detec_wec.append(len(np.where(pd_wec > i)[0]))
-        detec_woec.append(len(np.where(pd_woec > i)[0]))
-        # detec_pbp.append(len(np.where(pd_pbp > i)[0]))
+    j = 0
+    for row in cand_woec:
+        j += 1
+        aux = []
+        for x in x_bins:
+            aux.append(len(row[np.where(row*1./(n_iter*j) *100 >= x)]))
+        detec_woec.append(aux)
 
-    detec_wec = np.array(detec_wec)
     detec_woec = np.array(detec_woec)
-    # detec_pbp = np.array(detec_pbp)
 
     fig, ax = plt.subplots()
-    ax.plot(x_bins, detec_wec*1./len(nb_m)*100,
-            '.', markersize = 10, label = 'Using the error curve')
-    ax.plot(x_bins, detec_woec*1./len(nb_m)*100,
-            '.', markersize = 10, label = 'Not using the error curve')
-#    ax.plot(x_bins, detec_pbp*1./len(nb_m)*100,
-#            '.', markersize = 10, label = 'Point by point')
+    for i in range(len(detec_woec)):
+        ax.plot(x_bins, detec_woec[i]*1./len(nb_m)*100,
+                '.', markersize = 10, label = 'N_iter = %s' %str(i*100))
     ax.set_ylabel('% N')
     ax.set_xlabel('% detections')
     ax.legend()
+    fig.savefig('/home/alberto/cosmos/presentacion29junio/detec1',
+            bbox_inches = 'tight', pad_inches = 0, transparent=True)
     plt.show()
-    
