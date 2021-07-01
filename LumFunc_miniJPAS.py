@@ -13,7 +13,9 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins):
 
     dc_max = cosmo.comoving_distance((w_pivot + 0.5*w_fwhm)/w_lya - 1).value
     dc_min = cosmo.comoving_distance((w_pivot - 0.5*w_fwhm)/w_lya - 1).value
-    side_d = 60*1000*cosmo.kpc_comoving_per_arcmin(z).value
+    
+    eff_side_deg = np.sqrt(0.895) # deg
+    side_d = eff_side_deg*cosmo.kpc_comoving_per_arcmin(z).to(u.Mpc/u.deg).value
 
     volume = (dc_max - dc_min) * side_d**2
 
@@ -24,8 +26,9 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins):
     bin_width = (L_max - L_min)*1./n_bins
 
     hist = []
-    for i in len(binning)-1:
-        hist.append(len(np.where((L_line >= binning[i]) & (L_line < (binning[i] + bin_width)))[0]))
+    for i in range(len(binning)-1):
+        hist.append(len(np.where((L_line >= binning[i])
+            & (L_line < (binning[i] + bin_width)))[0]))
 
     print(hist)
     Phi = np.array(hist)/volume/bin_width
