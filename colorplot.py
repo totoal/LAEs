@@ -229,11 +229,11 @@ def plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, x_axis
 
         plt.scatter(w_central[nb_ind], pm[nb_ind], c='black')
 
-        photoz_txt = (
-            'PHOTOZ = ' + str(cat['PHOTOZ'][i])
-            + '\nODDS = ' + str(cat['PZODDS'][i])
-            )
-        plt.text(3500, 19, photoz_txt)
+        # photoz_txt = (
+            # 'PHOTOZ = ' + str(cat['PHOTOZ'][i])
+            # + '\nODDS = ' + str(cat['PZODDS'][i])
+            # )
+        # plt.text(3500, 19, photoz_txt)
 
         plt.ylim((17,27))
 
