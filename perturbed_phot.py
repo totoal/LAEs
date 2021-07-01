@@ -72,8 +72,9 @@ if __name__ == '__main__':
 
     cand_woec = []
     
-    n_iter = 10
-    for i in range(20):
+    n_iter = 20
+    n_bins = 500
+    for i in range(n_bins):
         cand_woec.append(perturb_phot(nb_m, nb_e, bb_m, bb_e, ewmin,
                                  nb_ind, n_iter, bbcut, nbcut))
 
@@ -110,4 +111,12 @@ if __name__ == '__main__':
     ax.legend()
     fig.savefig('/home/alberto/cosmos/presentacion29junio/detec1',
             bbox_inches = 'tight', pad_inches = 0, transparent=True)
+    plt.show(block = False)
+
+    fig, ax = plt.subplots()
+    ax.plot((np.arange(n_bins) + 1)*n_iter, detec_woec[:,12]*1./len(nb_m)*100,
+            '.', markersize=10)
+    ax.set_ylabel('% of detections')
+    ax.set_xlabel('N of iterations')
+    ax.set_title('Evolution of detections over iterations for 60% of tolerance')
     plt.show()
