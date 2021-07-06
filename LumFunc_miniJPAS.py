@@ -32,6 +32,6 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min, L_max):
 
     print(hist)
     Phi = np.array(hist)/volume/bin_width
-    errors = np.array(np.sqrt(hist))/volume/bin_width
+    errors = np.sqrt(hist)/volume/bin_width
 
-    return binning[:-1]+0.5*bin_width, Phi, errors
+    return binning[:-1]+0.5*bin_width, Phi, hist
