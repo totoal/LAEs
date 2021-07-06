@@ -37,7 +37,8 @@ def m_dev_bin(mag, x_e, ref_m):
     
     return np.array(err_arr)
 
-def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True):
+def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True,
+                   weights = []):
     
     # nb_ind = 12  # i = 12 for J0490
     # bb_ind = -3  # i = -3 for gSDSS
@@ -98,14 +99,15 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     # if plot == False: return selection
 
     ## PLOT ##
-    plt.figure(figsize=(10,3))
+    plt.figure(figsize=(13,5))
 
     plt.plot(np.linspace(14,26,100), err_curve, color='orange', label='Error curve')
     plt.plot(x_colorcut, y_colorcut, color = 'red', label='EW$_0$ = '+str(ew0)+' $\AA$')
     
     if x_axis == 'NB':
         plt.plot(nb_m, bbcut - nb_m, c='black', label='BB cut')
-        plt.scatter(nb_m, bb_m-nb_m, marker='.')
+        plt.scatter(nb_m, bb_m-nb_m, c=weights, cmap='gnuplot', marker='.')
+        plt.colorbar()
         plt.axvline(x = nbcut, color = 'green', label='NB cut')
     if x_axis == 'BB':
         plt.plot(bb_m, bb_m - nbcut, c='green', label='NB cut')

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 
-def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins):
+def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min, L_max):
     w_lya = 1215.7 # A
     z = w_pivot/w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \
@@ -19,8 +19,8 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins):
 
     volume = (dc_max - dc_min) * side_d**2
 
-    L_max = np.amax(L_line)
-    L_min = np.amin(L_line)
+    # L_max = np.amax(L_line)
+    # L_min = np.amin(L_line)
 
     binning = np.linspace(L_min, L_max, n_bins + 1)
     bin_width = (L_max - L_min)*1./n_bins
@@ -32,4 +32,6 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins):
 
     print(hist)
     Phi = np.array(hist)/volume/bin_width
-    return binning[:-1]+0.5*bin_width, Phi
+    errors = np.array(np.sqrt(hist))/volume/bin_width
+
+    return binning[:-1]+0.5*bin_width, Phi, errors
