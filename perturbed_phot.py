@@ -26,7 +26,7 @@ def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
         Sigma = 3
         err_arr = Sigma * np.sqrt(err_bb**2 + err_nb**2) + m_bias
     for i in range(n_iter):
-        print(str(i + 1) + '/' + str(n_iter), end = '\r')
+        # print(str(i + 1) + '/' + str(n_iter), end = '\r')
         new_mag_nb = err_nb * np.random.randn(len(err_nb)) + mag_nb
         new_mag_bb = err_bb * np.random.randn(len(err_bb)) + mag_bb
         new_bbnb = new_mag_bb - new_mag_nb
@@ -42,8 +42,8 @@ def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
             sel, = np.where((new_bbnb > colorcut) & (new_mag_bb < bbcut)\
                  & (new_mag_nb < nbcut))
         sel_hist[sel] += 1
-    print('')
-    return sel_hist
+    # print('')
+    return sel_hist, new_mag_bb, new_mag_nb
 
 if __name__ == '__main__':
     cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
