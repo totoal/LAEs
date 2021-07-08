@@ -38,7 +38,7 @@ def m_dev_bin(mag, x_e, ref_m):
     return np.array(err_arr)
 
 def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True,
-                   weights = []):
+                   weights = [], cmap = False):
     
     # nb_ind = 12  # i = 12 for J0490
     # bb_ind = -3  # i = -3 for gSDSS
@@ -106,8 +106,11 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     
     if x_axis == 'NB':
         plt.plot(nb_m, bbcut - nb_m, c='black', label='BB cut')
-        plt.scatter(nb_m, bb_m-nb_m, c=weights, cmap='gnuplot', marker='.')
-        plt.colorbar()
+        if cmap:
+            plt.scatter(nb_m, bb_m-nb_m, c=weights, cmap='gnuplot', marker='.')
+            plt.colorbar()
+        if not cmap:
+            plt.scatter(nb_m, bb_m-nb_m, marker='.')
         plt.axvline(x = nbcut, color = 'green', label='NB cut')
     if x_axis == 'BB':
         plt.plot(bb_m, bb_m - nbcut, c='green', label='NB cut')
@@ -119,7 +122,8 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
                  xerr = nb_e[selection],
                  fmt = 'none',
                  ecolor = 'saddlebrown')
-    plt.scatter(ref_m[selection], bbnb[selection], marker='.', c='saddlebrown')
+    plt.plot(ref_m[selection], bbnb[selection], '.',
+                markersize=15, c='black')
 
     plt.ylim((-1, 3))
     plt.xlim((14,24))
@@ -272,6 +276,30 @@ def color_cut(ew0, nb_ind):
     color_cut = 2.5*np.log10(EW*beta + 1)
 
     return color_cut
+
+def load_mags(nb_ind):
+#     nb_ind = 11 # J0480
+    bb_ind = -3 # g
+    cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
+
+    mask_fzero = (cat['MAG'][:, nb_ind] < 90) & (cat['MAG'][:, bb_ind] < 90)
+
+    nb_m = cat['MAG'][mask_fzero, nb_ind]
+    bb_m = cat['MAG'][mask_fzero, bb_ind]
+    nb_e = cat['ERR'][mask_fzero, nb_ind]
+    bb_e = cat['ERR'][mask_fzero, bb_ind]
+
+    # Define binning
+    m_min = 14
+    m_max = 26
+    m_bin_n = 75
+    x_e = np.linspace(m_min, m_max, m_bin_n)
+
+    # SNR=5 cut
+    bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
+    
+    return nb_m, bb_m, nb_e, bb_e, bbcut, nbcut
 
 
 if __name__ == '__main__':
