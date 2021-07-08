@@ -3,7 +3,6 @@ import csv
 import pickle
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
-from my_functions import *
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -209,8 +208,6 @@ def plot_bbnb(mock, pm, bb_ind, nb_ind, ew0, plot_error = False):
     plt.xlim( ( 19 ,  27) )
 
     plt.show()
-
-
 
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
