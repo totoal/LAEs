@@ -89,8 +89,12 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     ##
 
     ## Magnitude cut
-    bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
-    nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, bb_e, x_e, nb_m) - 0.24))]
+    w_central = central_wavelength(load_tcurves(load_filter_tags()))
+    errors = np.load('npy/errors5Sigma.npy')
+    bbcut = flux_to_mag(errors[bb_ind,1]*5,w_central[bb_ind]) 
+    nbcut = flux_to_mag(errors[nb_ind,1]*5,w_central[nb_ind]) 
+    # bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    # nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, bb_e, x_e, nb_m) - 0.24))]
     ##
 
     # selection, = np.where((bbnb > colorcut) & (bb_m < bbcut)\
@@ -277,7 +281,7 @@ def color_cut(ew0, nb_ind):
 
     return color_cut
 
-def load_mags(nb_ind):
+def load_mags(nb_ind, bb_ind):
 #     nb_ind = 11 # J0480
     bb_ind = -3 # g
     cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
@@ -296,8 +300,12 @@ def load_mags(nb_ind):
     x_e = np.linspace(m_min, m_max, m_bin_n)
 
     # SNR=5 cut
-    bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
-    nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
+    w_central = central_wavelength(load_tcurves(load_filter_tags()))
+    errors = np.load('npy/errors5Sigma.npy')
+    bbcut = flux_to_mag(errors[bb_ind,1]*5,w_central[bb_ind]) 
+    nbcut = flux_to_mag(errors[nb_ind,1]*5,w_central[nb_ind]) 
+    # bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    # nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
     
     return nb_m, bb_m, nb_e, bb_e, bbcut, nbcut
 
