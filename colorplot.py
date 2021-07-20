@@ -129,8 +129,8 @@ def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True
     plt.plot(ref_m[selection], bbnb[selection], '.',
                 markersize=15, c='black')
 
-    plt.ylim((-1, 3))
-    plt.xlim((14,24))
+    plt.ylim((-1, 3.5))
+    plt.xlim((14,25))
     
     plt.ylabel('BB - NB', size=10)
 

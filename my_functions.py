@@ -126,6 +126,42 @@ def load_noflag_cat(filename):
 
     return noflag_cat
 
+def load_flambda_cat(filename):
+
+    cat = {
+            'FLAMBDA': np.array([]),
+            'RELERR': np.array([]),
+    }
+
+    with open(filename, mode='r') as csvfile:
+        rdlns = csv.reader(csvfile, delimiter=',')
+        next(rdlns, None)
+        next(rdlns, None)
+
+        flx = []
+        err = []
+        flg = []
+        mfl = []
+
+        for line in rdlns:
+            flx.append(line[0].split())
+            err.append(line[1].split())
+            flg.append(line[2].split())
+            mfl.append(line[3].split())
+
+        flg = np.array(flg).astype(float)
+        mfl = np.array(mfl).astype(float)
+        flx = np.array(flx).astype(float)
+        err = np.array(err).astype(float)
+        # Mask sources with flags and negative flux values
+        mask_flagged = (np.sum(flg, axis=1) + np.sum(mfl, axis=1)) == 0
+
+        cat['FLAMBDA'] = flx[mask_flagged]
+        cat['RELERR'] = err[mask_flagged]
+
+        return cat
+
+
 ## Color plot BB-NB
 def plot_bbnb(mock, pm, bb_ind, nb_ind, ew0, plot_error = False):
 
