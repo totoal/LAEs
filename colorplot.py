@@ -40,9 +40,6 @@ def m_dev_bin(mag, x_e, ref_m):
 def make_colorplot(nf_cat, bb_ind, nb_ind, selection, x_axis = 'NB', save = True,
                    weights = [], cmap = False):
     
-    # nb_ind = 12  # i = 12 for J0490
-    # bb_ind = -3  # i = -3 for gSDSS
-
     mask_fzero = (nf_cat['MAG'][:, nb_ind] < 90) & (nf_cat['MAG'][:, bb_ind] < 90)
     nb_m = nf_cat['MAG'][mask_fzero, nb_ind]
     bb_m = nf_cat['MAG'][mask_fzero, bb_ind]
