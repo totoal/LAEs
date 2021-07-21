@@ -37,7 +37,8 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
 
     return binning[:-1]+0.5*bin_width, Phi, error
 
-def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
+def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
+                 weights = []):
     w_lya = 1215.7 # A
     z = w_pivot/w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \
@@ -62,8 +63,12 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
 
     hist = []
     for i in range(len(binning)-1):
-        hist.append(len(np.where((L_line >= binning[i])
-            & (L_line < (binning[i] + bin_width)))[0]))
+        if len(weights) == 0:
+            hist.append(len(np.where((L_line >= binning[i])
+                & (L_line < (binning[i] + bin_width)))[0]))
+        else:
+            hist.append(np.sum(weights[np.where((L_line >= binning[i])
+                & (L_line < (binning[i] + bin_width)))[0]]))
 
     print(hist)
     # Phi = np.array(hist)/volume/bin_width
