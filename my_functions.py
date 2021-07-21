@@ -3,6 +3,7 @@ import csv
 import pickle
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
+from scipy.special import erf
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -244,6 +245,78 @@ def plot_bbnb(mock, pm, bb_ind, nb_ind, ew0, plot_error = False):
     plt.xlim( ( 19 ,  27) )
 
     plt.show()
+
+def load_mags(nb_ind, bb_ind):
+#     nb_ind = 11 # J0480
+    bb_ind = -3 # g
+    cat = load_noflag_cat('pkl/catalogDual_pz.pkl')
+
+    mask_fzero = (cat['MAG'][:, nb_ind] < 90) & (cat['MAG'][:, bb_ind] < 90)
+
+    nb_m = cat['MAG'][mask_fzero, nb_ind]
+    bb_m = cat['MAG'][mask_fzero, bb_ind]
+    nb_e = cat['ERR'][mask_fzero, nb_ind]
+    bb_e = cat['ERR'][mask_fzero, bb_ind]
+
+    # Define binning
+    m_min = 14
+    m_max = 26
+    m_bin_n = 75
+    x_e = np.linspace(m_min, m_max, m_bin_n)
+
+    # SNR=5 cut
+    w_central = central_wavelength(load_tcurves(load_filter_tags()))
+    errors = np.load('npy/errors5Sigma.npy')
+    bbcut = flux_to_mag(errors[bb_ind,1]*5,w_central[bb_ind]) 
+    nbcut = flux_to_mag(errors[nb_ind,1]*5,w_central[nb_ind]) 
+    # bbcut = x_e[np.nanargmin(np.abs(m_err_bin(bb_m, bb_e, x_e, bb_m) - 0.24))]
+    # nbcut = x_e[np.nanargmin(np.abs(m_err_bin(nb_m, nb_e, x_e, nb_m) - 0.24))]
+    
+    return nb_m, bb_m, nb_e, bb_e, bbcut, nbcut
+
+#Color cut
+def color_cut(ew0, nb_ind):
+    tcurves = load_tcurves(load_filter_tags())
+    w_central = central_wavelength(tcurves)
+    w = w_central[nb_ind]
+    Lya_w = 1215.67
+    z = w/Lya_w - 1
+    EW = ew0 * (1+z)  # A
+    t    = np.array(tcurves['t'][nb_ind])
+    w_nb = np.array(tcurves['w'][nb_ind])
+    T_lambda = t[np.argmax(t)]
+    w_t_max = w_nb[np.argmax(t)]
+    beta = (T_lambda * w_t_max) / simps(t*w_nb, w_nb)
+
+    color_cut = 2.5*np.log10(EW*beta + 1)
+
+    return color_cut
+    
+def select_sources(nb_ind, bb_ind, min_score, mode = 1):
+    bb_ind = -3
+    nb_m, bb_m, nb_e, bb_e, bbcut, nbcut = load_mags(nb_ind, bb_ind)
+
+    mu = bb_m - nb_m
+    sigma = np.sqrt(bb_e**2 + nb_e**2)
+    m_ew = color_cut(30, nb_ind) + np.nanmedian(mu)
+    p_bbnb = 0.5 - 0.5*erf((m_ew - mu) / (np.sqrt(2)*sigma)) 
+    p_bb = 0.5*erf((bbcut - bb_m) / (np.sqrt(2)*bb_e))\
+            - 0.5*erf((0 - bb_m) / (np.sqrt(2)*bb_e))
+    p_nb = 0.5*erf((nbcut - nb_m) / (np.sqrt(2)*nb_e))\
+            - 0.5*erf((0 - nb_m) / (np.sqrt(2)*nb_e))
+        
+    p_line = p_bbnb * p_bb * p_nb
+    
+    if mode == 1:
+        selection, = np.where(
+              (p_bbnb > erf(min_score/np.sqrt(2)))
+            & (nb_m/nb_e > 5)
+            & (bb_m/bb_e > 5)
+        )
+    if mode == 2:
+        selection, = np.where(p_line > erf(min_score/np.sqrt(2))**3)
+        
+    return selection
 
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
