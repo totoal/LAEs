@@ -4,7 +4,7 @@ from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 
 def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
-    w_lya = 1215.7 # A
+    w_lya = 1215.67 # A
     z = w_pivot/w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \
             * (cosmo.luminosity_distance(z).to(u.cm)**2).value
@@ -39,7 +39,7 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
 
 def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
                  weights = []):
-    w_lya = 1215.7 # A
+    w_lya = 1215.67 # A
     z = w_pivot/w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \
             * (cosmo.luminosity_distance(z).to(u.cm)**2).value
