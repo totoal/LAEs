@@ -70,12 +70,6 @@ def make_colorplot(nb_m, bb_m, nb_e, bb_e, selection, ccut, weights = []):
     y_colorcut = np.ones(100) * colorcut
     ##
 
-    ## Magnitude cut
-    # w_central = central_wavelength(load_tcurves(load_filter_tags()))
-    # errors = np.load('npy/errors5Sigma.npy')
-    # bbcut = flux_to_mag(errors[bb_ind,1]*5,w_central[bb_ind]) 
-    # nbcut = flux_to_mag(errors[nb_ind,1]*5,w_central[nb_ind]) 
-
     ## PLOT ##
     plt.figure(figsize=(13,5))
 
