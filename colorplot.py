@@ -104,7 +104,8 @@ def make_colorplot(nb_m, bb_m, nb_e, bb_e, selection, ccut, weights = []):
 
     return selection
 
-def plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, x_axis = 'NB', save = True):
+def plot_selection(selection, nb_ind, filename, masked_mags,
+        masked_errs, zsp, e_zsp, x_axis = 'NB', save = True):
 
     filters_tags = load_filter_tags()
     tcurves = load_tcurves(filters_tags)
@@ -179,11 +180,11 @@ def plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, x_axis
 
         plt.scatter(w_central[nb_ind], pm[nb_ind], c='black')
 
-        # photoz_txt = (
-            # 'PHOTOZ = ' + str(cat['PHOTOZ'][i])
-            # + '\nODDS = ' + str(cat['PZODDS'][i])
+        # zsp_txt = (
+            # 'zsp = ' + str(zsp[i])
+            # + '\nzsp_err = ' + str(e_zsp[i])
             # )
-        # plt.text(3500, 19, photoz_txt)
+        # plt.text(3500, 19, zsp_txt)
 
         plt.ylim((17,27))
 
@@ -198,7 +199,7 @@ def plot_selection(selection, nb_ind, filename, masked_mags, masked_errs, x_axis
             filter_name = 'BB' + str(filters_tags[nb_ind]) + 'S' + str(Sigma)
 
         if save:
-            plt.savefig(filename + str(i),
+            plt.savefig(filename + str(i) + 'nb' + str(nb_ind),
                         bbox_inches = 'tight', pad_inches = 0)
         if not save: plt.show(block = False)
         plt.close()    
