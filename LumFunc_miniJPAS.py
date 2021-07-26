@@ -71,7 +71,6 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
                 & (L_line < (binning[i] + bin_width)))[0]]))
 
     print(hist)
-    # Phi = np.array(hist)/volume/bin_width
     error = np.sqrt(hist)/volume/bin_width
     x = binning[:-1]+0.5*bin_width
     return x, hist, volume, bin_width
