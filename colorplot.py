@@ -105,7 +105,7 @@ def make_colorplot(nb_m, bb_m, nb_e, bb_e, selection, ccut, weights = []):
     return selection
 
 def plot_selection(selection, nb_ind, filename, masked_mags,
-        masked_errs, zsp, e_zsp, x_axis = 'NB', save = True):
+        masked_errs, x_axis = 'NB', save = True):
 
     filters_tags = load_filter_tags()
     tcurves = load_tcurves(filters_tags)
