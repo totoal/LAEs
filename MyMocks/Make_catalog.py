@@ -15,7 +15,7 @@ w_OII = 0.5 * ( 3727.092 + 3729.875 )
 #### Some parameters
 z_in =  [   2,   3.3    ] # Redshift interval for Lya
 z_oii = [ w_Lya*(z + 1)/w_OII - 1 for z in z_in] # Redshift interval for OII
-area = 10 ## deg**2
+area = 1 ## deg**2
 
 #### Function to compute a volume from z interval
 
