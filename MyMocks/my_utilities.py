@@ -1,10 +1,8 @@
 import numpy as np
-
 from astropy.cosmology import Planck15 as cosmo
-
 from scipy.stats import norm
-
 import scipy
+import astropy.units as u
 
 #import JBOSS as jp
 
@@ -685,3 +683,22 @@ def generate_mock_catalog( N_sources , redshift_Arr , line_fluxes_Arr , line_flu
 
     return my_perfect_new_cat
 #======================================================#
+
+
+#### Function to compute a volume from z interval
+
+def z_volume(z_min, z_max, area):
+    dc_max = cosmo.comoving_distance(z_max).to(u.Mpc).value
+    dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
+    d_side = cosmo.kpc_comoving_per_arcmin((z_max - z_min)*0.5)\
+            .to(u.Mpc/u.deg).value * area**0.5
+    print('Volume: {} Mpc2'.format(str((dc_max - dc_min) * d_side**2)))
+    return (dc_max - dc_min) * d_side**2
+
+#### Function to calculate EW from line flux
+
+def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
+    dL_Arr = cosmo.luminosity_distance(rand_z_Arr).to(u.cm).value
+    g_Arr = 10**L_Arr / ((1 + rand_z_Arr) * rand_EW_Arr * 4*np.pi * dL_Arr**2) 
+    return g_Arr
+
