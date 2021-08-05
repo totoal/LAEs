@@ -72,14 +72,14 @@ DD = 0.00001
 MIN_MET = np.amin(Grid_Dictionary['met_Arr']) # Minimum metallicity
 MAX_MET = np.amax(Grid_Dictionary['met_Arr']) # Maximum metallicity
 
-MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
-MAX_AGE = 3.25                                  # Maximum Age
+MAX_AGE = cosmo.age(z_Arr).value              # Maximum Age
+MIN_AGE = MAX_AGE - 0.5                       # Minimum Age
 
 MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minium extintion
-MAX_EXT = 0.05                                  # Maximum extintion
+MAX_EXT = 0.05                                # Maximum extintion
 
 # ALBERTO: defined this to naively avoid extremely deep absortions
-new_MIN_AGE = (MAX_AGE + MIN_AGE) * 0.5
+# new_MIN_AGE = 2 # (MAX_AGE + MIN_AGE) * 0.5
 
 MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
 AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
