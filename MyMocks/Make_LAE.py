@@ -73,7 +73,7 @@ MIN_MET = np.amin(Grid_Dictionary['met_Arr']) # Minimum metallicity
 MAX_MET = np.amax(Grid_Dictionary['met_Arr']) # Maximum metallicity
 
 MAX_AGE = cosmo.age(z_Arr).value              # Maximum Age
-MIN_AGE = MAX_AGE - 0.5                       # Minimum Age
+MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
 
 MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minium extintion
 MAX_EXT = 0.05                                # Maximum extintion
