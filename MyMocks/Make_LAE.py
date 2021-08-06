@@ -102,6 +102,8 @@ cat['SEDs'] = np.zeros((N_sources_LAE, len(w_Arr)))
 cat['SEDs_no_IGM'] = np.zeros((N_sources_LAE, len(w_Arr)))
 cat['w_Arr'] = w_Arr
 cat['LAE'] = np.ones(N_sources_LAE, dtype=bool)
+cat['EW_Arr'] = e_Arr
+cat['redshift_Lya_Arr'] = z_Arr
 
 for i in range(N_sources_LAE):
 
