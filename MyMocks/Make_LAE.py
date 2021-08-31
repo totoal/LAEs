@@ -13,7 +13,7 @@ obs_area = 1 # deg**2
 # Wavelength array where to evaluate the spectrum
 
 w_min  = 2500   # Minimum wavelength
-w_max  = 12000  # Maximum wavelegnth
+w_max  = 10000  # Maximum wavelegnth
 N_bins = 10000  # Number of bins
 
 w_Arr = np.linspace( w_min , w_max , N_bins )
