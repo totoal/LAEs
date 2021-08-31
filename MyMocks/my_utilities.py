@@ -446,24 +446,14 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
     if LINE == 'OII':
         w_line = 0.5 * ( 3727.092 + 3729.875 )
 
-    #t1 = time.time()
-
     cat_w_Arr , cat_rest_spectrum = Interpolate_Lines_Arrays_3D_grid_MCMC( my_MET , my_AGE , my_EXT , Grid_Dictionary )
-
-    #t2 = time.time()
-
     obs_frame_spectrum = np.interp( w_Arr , cat_w_Arr * ( 1 + my_z ) , cat_rest_spectrum )
-        
     IGM_obs_continum = np.copy( obs_frame_spectrum )
 
     if LINE == 'Lya':
-
         redshift_w_Arr = w_Arr * 1. / w_line - 1.
-    
         IGM_T_w_Arr = IGM_TRANSMISSION( redshift_w_Arr , T_A , T_B )
-        
         mask_IGM = w_Arr < w_line * (1+my_z)
-    
         IGM_obs_continum[ mask_IGM ] = IGM_obs_continum[ mask_IGM ] * IGM_T_w_Arr[ mask_IGM ]
 
     noisy_spectrum = np.random.normal( 0.0 , my_noises , len(w_Arr) )
@@ -487,20 +477,13 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
         noisy_spectrum = np.random.normal( 0.0 , Noise_in_my_w_Arr , len(w_Arr) )
 
-    #t3 = time.time()
-
     g_w_Arr = gSDSS_data[ 'lambda_Arr_f'       ]
     g_T_Arr = gSDSS_data[ 'Transmission_Arr_f' ]
     g_w     = gSDSS_data[ 'lambda_pivot'       ]
     g_FWHM  = gSDSS_data[ 'FWHM'               ]
 
-    #Synthetic_Photometry_measure_flux( lambda_Arr , f_lambda_Arr , lambda_Arr_f , Transmission_Arr_f , lambda_pivot , FWHM )
-    
-    Noises_flux_g = Synthetic_Photometry_measure_flux( w_Arr , noisy_spectrum   , g_w_Arr , g_T_Arr , g_w , g_FWHM)
-    source_flux_g = Synthetic_Photometry_measure_flux( w_Arr , IGM_obs_continum , g_w_Arr , g_T_Arr , g_w , g_FWHM)
-    
-    
-    #Lya_li_flux_g = Synthetic_Photometry_measure_flux( w_Arr , obs_lya_line_Arr , g_w_Arr , g_T_Arr , g_w , g_FWHM)
+    Noises_flux_g = Synthetic_Photometry_measure_flux(w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM)
+    source_flux_g = Synthetic_Photometry_measure_flux(w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM)
     
     Continum_normalization = ( my_flux_g - Noises_flux_g ) * 1. / ( source_flux_g )
     
@@ -509,23 +492,18 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
                            * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)-25) <= 25)]
                        )
                        
-    my_flux_f = np.mean(cont_around_line) * my_ew
-    
     obs_lya_line_Arr = norm.pdf( w_Arr , w_line * ( 1 + my_z ) , my_widths )
-    obs_lya_line_Arr = np.absolute( obs_lya_line_Arr * my_flux_f * 1. / np.trapz( w_Arr , obs_lya_line_Arr ) )
-    #t4 = time.time()
+    my_flux_f = np.mean(cont_around_line) * my_ew * (1 + my_z)
+    obs_lya_line_Arr = np.absolute(obs_lya_line_Arr * my_flux_f)
 
     catalog_obs_spectrum_No_IGM = noisy_spectrum + obs_lya_line_Arr + Continum_normalization * obs_frame_spectrum
     catalog_obs_spectrum        = noisy_spectrum + obs_lya_line_Arr + Continum_normalization * IGM_obs_continum
-
-    #print '        Time Interpolate  = ' , t2-t1 , 's'
-    #print '        Time a lot        = ' , t3-t2 , 's'
-    #print '        Time a photometry = ' , t4-t3 , 's'
 
     return catalog_obs_spectrum , catalog_obs_spectrum_No_IGM
 #======================================================#
 #======================================================#
 #======================================================#
+
 def generate_catalog_properties( N_sources , redshift_Arr , line_fluxes_Arr , line_flux_g_Arr , line_widths_Arr , Noise_level_Arr , MET , AGE , EXT , MET_OII , AGE_OII , EXT_OII , frac_OII ):
 
     random_Arr = np.random.rand( N_sources )
@@ -665,7 +643,7 @@ def generate_mock_catalog( N_sources , redshift_Arr , line_fluxes_Arr , line_flu
 
     my_perfect_new_cat['LAE'] = MASK_LAEs
 
-    my_perfect_new_cat['SEDs'       ] = catalogs_SEDs
+    my_perfect_new_cat['SEDs'] = catalogs_SEDs
     my_perfect_new_cat['SEDs_No_IGM'] = catalogs_SEDs_No
 
     my_perfect_new_cat['w_Arr'] = w_Arr
@@ -674,7 +652,7 @@ def generate_mock_catalog( N_sources , redshift_Arr , line_fluxes_Arr , line_flu
     my_perfect_new_cat['AGE_Arr'] = catalog_AGE_Arr
     my_perfect_new_cat['EXT_Arr'] = catalog_EXT_Arr
 
-    my_perfect_new_cat['redshift_Arr'     ] = z_Arr
+    my_perfect_new_cat['redshift_Arr'] = z_Arr
 
     my_perfect_new_cat['flux_l_Arr'] = f_Arr
     my_perfect_new_cat['flux_g_Arr'] = g_Arr
@@ -690,10 +668,10 @@ def generate_mock_catalog( N_sources , redshift_Arr , line_fluxes_Arr , line_flu
 def z_volume(z_min, z_max, area):
     dc_max = cosmo.comoving_distance(z_max).to(u.Mpc).value
     dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
-    d_side = cosmo.kpc_comoving_per_arcmin((z_max - z_min)*0.5)\
-            .to(u.Mpc/u.deg).value * area**0.5
-    print('Volume: {} Mpc2'.format(str((dc_max - dc_min) * d_side**2)))
-    return (dc_max - dc_min) * d_side**2
+    d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
+    d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
+    vol = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
+    return vol
 
 #### Function to calculate EW from line flux
 
@@ -701,4 +679,3 @@ def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
     dL_Arr = cosmo.luminosity_distance(rand_z_Arr).to(u.cm).value
     g_Arr = 10**L_Arr / ((1 + rand_z_Arr) * rand_EW_Arr * 4*np.pi * dL_Arr**2) 
     return g_Arr
-
