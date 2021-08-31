@@ -7,19 +7,19 @@ import csv
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
-z_lya = [2, 3.5] # LAE z interval
+z_lya = [2.25, 3.2] # LAE z interval
 obs_area = 1 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
 w_min  = 2500   # Minimum wavelength
-w_max  = 12000  # Maximum wavelgnth
+w_max  = 12000  # Maximum wavelegnth
 N_bins = 10000  # Number of bins
 
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
 ####    Specific LAE parameters
-ew_in = [10, 100] # Rest frame EW interval 
+ew_in = [30, 100] # Rest frame EW interval 
 w_in  = [5, 5.1] # Line width interval
 s_in = [ -31.  , -30.  ] # Logarithmic uncertainty in flux density # 
 LINE = 'Lya'
@@ -40,8 +40,8 @@ LAE_LF = np.array(LAE_LF).astype(float)
 ####    Compute the number of sources and L_line distribution 
 
 bin_width = LAE_LF[1,0] - LAE_LF[0,0]
-Volume_OII = z_volume(z_lya[0], z_lya[1], obs_area)
-N_sources_LAE = int(np.sum(LAE_LF[:,1]) * bin_width * Volume_OII)
+Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
+N_sources_LAE = int(np.sum(LAE_LF[:,1]) * bin_width * Volume_LAE)
 LF_p_cum = np.cumsum(LAE_LF[:,1])
 LF_p_cum /= np.max(LF_p_cum)
 L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LAE_LF[:,0])
@@ -50,7 +50,7 @@ L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LAE_LF[:,0])
 z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
 e_Arr = np.random.rand(N_sources_LAE) * (ew_in[1] - ew_in[0]) + ew_in[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
-s_Arr = 10 ** (np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
+s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
 # Define g flux array
 g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
@@ -75,11 +75,12 @@ MAX_MET = np.amax(Grid_Dictionary['met_Arr']) # Maximum metallicity
 MAX_AGE = cosmo.age(z_Arr).value              # Maximum Age
 MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
 
-MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minium extintion
+MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minimum extintion
 MAX_EXT = 0.05                                # Maximum extintion
 
 # ALBERTO: defined this to naively avoid extremely deep absortions
-# new_MIN_AGE = 2 # (MAX_AGE + MIN_AGE) * 0.5
+MIN_AGE = 1.
+MIN_MET = 30
 
 MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
 AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
@@ -104,6 +105,9 @@ cat['w_Arr'] = w_Arr
 cat['LAE'] = np.ones(N_sources_LAE, dtype=bool)
 cat['EW_Arr'] = e_Arr
 cat['redshift_Lya_Arr'] = z_Arr
+cat['AGE'] = np.zeros(N_sources_LAE)
+cat['MET'] = np.zeros(N_sources_LAE)
+cat['EXT'] = np.zeros(N_sources_LAE)
 
 for i in range(N_sources_LAE):
 
@@ -125,6 +129,9 @@ for i in range(N_sources_LAE):
             Noise_w_Arr, Noise_Arr, T_A, T_B,
             gSDSS_data
             )
+    cat['AGE'][i] = my_AGE
+    cat['MET'][i] = my_MET
+    cat['EXT'][i] = my_EXT
 
 filename = 'LAE_1deg'
 np.save('Source_cat_' + filename + '.npy', cat)
