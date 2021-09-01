@@ -318,6 +318,27 @@ def select_sources(nb_ind, bb_ind, min_score, mode = 1):
         
     return selection
 
+# Function to compute the NB excess with a linear cont estimate
+def nbex_cont_estimate(pm_mag, pm_err, nb_ind, w_central, N_nb):
+    if N_nb > nb_ind: raise ValueError('N_nb cannot be larger than nb_ind')
+
+    filter_ind_Arr = [*range(nb_ind-N_nb,nb_ind), *range(nb_ind+1, nb_ind+N_nb)]
+    filter_ind_Arr += [-3] # Add the BB gSDSS
+    filter_ind_Arr = np.array(filter_ind_Arr)
+
+    # Fitting
+    x = w_central[filter_ind_Arr]
+    y = pm_mag[filter_ind_Arr]
+    weights = np.zeros(len(filter_ind_Arr))
+    errors = np.copy(pm_err)
+    for idx in filter_ind_Arr:
+        bbnb = pm_mag[idx] - pm_mag[-3] # Excess NB-gSDSS
+        if bbnb > 2*pm_err[idx]:
+            errors[idx] = 999.
+    weights = errors[filter_ind_Arr]
+
+    return np.polyfit(x, y, 1, w = 1./weights)
+
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
     print(cat.keys())
