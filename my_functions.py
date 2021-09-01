@@ -350,8 +350,8 @@ def load_cat_photoz_gaia(filename):
         next(rdlns, None)
         
         number = []
-        mag = []
-        mag_err = []
+        flx = []
+        flx_err = []
         flags = []
         mflags = []
         photoz = []
@@ -365,8 +365,8 @@ def load_cat_photoz_gaia(filename):
         
         for line in rdlns:
             number.append(line[0])
-            mag.append(line[1].split())
-            mag_err.append(line[2].split())
+            flx.append(line[1].split())
+            flx_err.append(line[2].split())
             flags.append(line[3].split())
             mflags.append(line[4].split())
             photoz.append(line[5])
@@ -379,14 +379,14 @@ def load_cat_photoz_gaia(filename):
             pmdec_err.append(line[12])
             
     columns = [
-        number, mag, mag_err,
+        number, flx, flx_err,
         flags, mflags, photoz,
         odds, parallax, parallax_err,
         pmra, pmra_err, pmdec,
         pmdec_err
     ]
     cat_keys = [
-        'number', 'mag', 'mag_err', 'flags',
+        'number', 'flx', 'flx_err', 'flags',
         'mflags', 'photoz', 'odds', 'parallax',
         'parallax_err', 'pmra', 'pmra_err',
         'pmdec', 'pmdec_err'
