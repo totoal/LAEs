@@ -337,7 +337,8 @@ def nbex_cont_estimate(pm_mag, pm_err, nb_ind, w_central, N_nb):
             errors[idx] = 999.
     weights = errors[filter_ind_Arr]
 
-    return np.polyfit(x, y, 1, w = 1./weights)
+    cont_fit = np.polyfit(x, y, 1, w = 1./weights)
+    return pm_mag[nb_ind] - cont_fit[1] - cont_fit[0]*w_central[nb_ind]
 
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
