@@ -319,29 +319,43 @@ def select_sources(nb_ind, bb_ind, min_score, mode = 1):
     return selection
 
 # Function to compute the NB excess with a linear cont estimate
-def nbex_cont_estimate(pm_mag, pm_err, nb_ind, w_central, N_nb):
+def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     if N_nb > nb_ind: raise ValueError('N_nb cannot be larger than nb_ind')
+    
+    z = 1215.67/w_central[nb_ind] - 1
+    ew = ew0*(1 + z)
 
-    filter_ind_Arr = [*range(nb_ind-N_nb,nb_ind), *range(nb_ind+1, nb_ind+N_nb)]
+    filter_ind_Arr = [*range(nb_ind-N_nb,nb_ind), *range(nb_ind+1, nb_ind+N_nb-1)]
     filter_ind_Arr += [-3] # Add the BB gSDSS
     filter_ind_Arr = np.array(filter_ind_Arr)
 
     # Fitting
-    x = w_central[filter_ind_Arr]
-    y = pm_mag[filter_ind_Arr]
-    weights = np.zeros(len(filter_ind_Arr))
-    errors = np.copy(pm_err)
-    for idx in filter_ind_Arr:
-        bbnb = pm_mag[idx] - pm_mag[-3] # Excess NB-gSDSS
-        if bbnb > 2*pm_err[idx]:
-            errors[idx] = 999.
-    weights = errors[filter_ind_Arr]
+    N_sources = len(pm)
+    nbex = np.zeros(N_sources)
+    f_cont = np.zeros(N_sources)
+    for i in range(N_sources):
+        print('{}/{}'.format(i, N_sources), end='\r')
+        pm_mag = pm[i]
+        pm_err = err[i]
 
-    cont_fit = np.polyfit(x, y, 1, w = 1./weights)
-    return pm_mag[nb_ind] - cont_fit[1] - cont_fit[0]*w_central[nb_ind]
+        x = w_central[filter_ind_Arr]
+        y = pm_mag[filter_ind_Arr]
+        weights = np.zeros(len(filter_ind_Arr))
+        errors = np.copy(pm_err)
+        for idx in filter_ind_Arr:
+            bbnb = pm_mag[idx] - pm_mag[-3] # Excess NB-gSDSS
+            if bbnb > 2*pm_err[idx]:
+                errors[idx] = 999.
+        weights = errors[filter_ind_Arr]
+        cont_fit = np.polyfit(x, y, 1, w = 1./weights)
+        f_cont[i] = cont_fit[1] + cont_fit[0]*w_central[nb_ind]
+        nbex[i] = pm_mag[nb_ind] - f_cont[i]
+    
+    line = nbex - ew*f_cont/nb_fwhm > 3*err[:,nb_ind]
+    return line
 
 
-## Function that loads from a csv file the DualABMag minijpas catalog with associated photoz,
+## Function that loads from a csv file the DualABMag minijpas catalog with associated pz,
 ## odds, and GAIA apparent move data.
 def load_cat_photoz_gaia(filename):
     with open(filename, mode='r') as csvfile:
