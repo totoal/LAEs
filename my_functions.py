@@ -340,6 +340,80 @@ def nbex_cont_estimate(pm_mag, pm_err, nb_ind, w_central, N_nb):
     cont_fit = np.polyfit(x, y, 1, w = 1./weights)
     return pm_mag[nb_ind] - cont_fit[1] - cont_fit[0]*w_central[nb_ind]
 
+
+## Function that loads from a csv file the DualABMag minijpas catalog with associated photoz,
+## odds, and GAIA apparent move data.
+def load_cat_photoz_gaia(filename):
+    with open(filename, mode='r') as csvfile:
+        rdlns = csv.reader(csvfile, delimiter=',')
+        next(rdlns, None)
+        next(rdlns, None)
+        
+        number = []
+        mag = []
+        mag_err = []
+        flags = []
+        mflags = []
+        photoz = []
+        odds = []
+        parallax = []
+        parallax_err = []
+        pmra = []
+        pmra_err = []
+        pmdec = []
+        pmdec_err = []
+        
+        for line in rdlns:
+            number.append(line[0])
+            mag.append(line[1].split())
+            mag_err.append(line[2].split())
+            flags.append(line[3].split())
+            mflags.append(line[4].split())
+            photoz.append(line[5])
+            odds.append(line[6])
+            parallax.append(line[7])
+            parallax_err.append(line[8])
+            pmra.append(line[9])
+            pmra_err.append(line[10])
+            pmdec.append(line[11])
+            pmdec_err.append(line[12])
+            
+    columns = [
+        number, mag, mag_err,
+        flags, mflags, photoz,
+        odds, parallax, parallax_err,
+        pmra, pmra_err, pmdec,
+        pmdec_err
+    ]
+    cat_keys = [
+        'number', 'mag', 'mag_err', 'flags',
+        'mflags', 'photoz', 'odds', 'parallax',
+        'parallax_err', 'pmra', 'pmra_err',
+        'pmdec', 'pmdec_err'
+    ]
+    cat_types = [
+        int, float, float, int,
+        int, float, float, float,
+        float, float, float, float,
+        float
+    ]
+    cat = {}
+    
+    for col,key in zip(columns, cat_keys):
+        cat[key] = np.array(col)
+    # Substitute empty values by NumPy NaN
+    for k,t in zip(cat.keys(), cat_types):
+        cat[k][np.where(cat[k] == '')] = np.nan
+        cat[k] = cat[k].astype(t)
+        
+    # Remove flagged sources
+    flags_arr = np.sum(cat['flags'], axis = 1) + np.sum(cat['mflags'], axis = 1)
+    mask_flags = flags_arr == 0
+    for k in cat.keys():
+        cat[k] = cat[k][mask_flags]
+    
+    return cat
+
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
     print(cat.keys())
