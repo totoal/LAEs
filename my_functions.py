@@ -333,6 +333,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     N_sources = len(pm)
     nbex = np.zeros(N_sources)
     f_cont = np.zeros(N_sources)
+    cf = np.zeros((N_sources,2))
     for i in range(N_sources):
         print('{}/{}'.format(i, N_sources), end='\r')
         pm_mag = pm[i]
@@ -348,11 +349,12 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
                 errors[idx] = 999.
         weights = errors[filter_ind_Arr]
         cont_fit = np.polyfit(x, y, 1, w = 1./weights)
+        cf[i,:] = np.polyfit(x, y, 1, w = 1./weights)
         f_cont[i] = cont_fit[1] + cont_fit[0]*w_central[nb_ind]
         nbex[i] = pm_mag[nb_ind] - f_cont[i]
     
     line = nbex - ew*f_cont/nb_fwhm > 3*err[:,nb_ind]
-    return line
+    return line, cf
 
 
 ## Function that loads from a csv file the DualABMag minijpas catalog with associated pz,
