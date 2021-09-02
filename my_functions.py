@@ -335,7 +335,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     f_cont = np.zeros(N_sources)
     cf = np.zeros((N_sources,2))
     for i in range(N_sources):
-        print('{}/{}'.format(i, N_sources), end='\r')
+        print('{}/{}'.format(i+1, N_sources), end='\r')
         pm_mag = pm[i]
         pm_err = err[i]
     
