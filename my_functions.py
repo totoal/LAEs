@@ -326,7 +326,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     ew = ew0*(1 + z)
 
     filter_ind_Arr = [*range(nb_ind-N_nb,nb_ind), *range(nb_ind+1, nb_ind+N_nb-1)]
-    filter_ind_Arr += [-3] # Add the BB gSDSS
+    filter_ind_Arr += [-3, -2] # Add the BB gSDSS
     filter_ind_Arr = np.array(filter_ind_Arr)
 
     # Fitting
@@ -338,7 +338,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
         print('{}/{}'.format(i, N_sources), end='\r')
         pm_mag = pm[i]
         pm_err = err[i]
-
+    
         x = w_central[filter_ind_Arr]
         y = pm_mag[filter_ind_Arr]
         weights = np.zeros(len(filter_ind_Arr))
