@@ -345,7 +345,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
         errors = np.copy(pm_err)
         for idx in filter_ind_Arr:
             bbnb = pm_mag[idx] - pm_mag[-3] # Excess NB-gSDSS
-            if bbnb > 2*pm_err[idx]:
+            if bbnb > 3*pm_err[idx] + ew*pm_mag[-3]/nb_fwhm:
                 errors[idx] = 999.
         weights = errors[filter_ind_Arr]
         cont_fit = np.polyfit(x, y, 1, w = 1./weights)
