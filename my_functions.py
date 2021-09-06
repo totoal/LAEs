@@ -356,7 +356,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
         cont_err[i] = cov[1,1]**0.5 + cov[0,0]**0.5*w_central[nb_ind]
     
     line = nbex - ew*f_cont/nb_fwhm > 1*(err[:,nb_ind]**2 + cont_err**2)**0.5
-    return line, cf
+    return line, cf, cont_err
 
 
 ## Function that loads from a csv file the DualABMag minijpas catalog with associated pz,
