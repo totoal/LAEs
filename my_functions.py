@@ -355,12 +355,11 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
             if bbnb > 3*pm_err[idx] + ew*pm_mag[-3]/nb_fwhm:
                 errors[idx] = 999.
         weights = errors[filter_ind_Arr]
-        cf[i,:], cov = np.polyfit(x, y, 1, w = 1./weights, cov = True)
+        cf[i,:], cov = np.polyfit(x, y, 1, w = 1./weights, cov = 'unscaled')
         cont_fit = cf[i,:]
         f_cont[i] = cont_fit[1] + cont_fit[0]*w_central[nb_ind]
         nbex[i] = pm_mag[nb_ind] - f_cont[i]
         cont_err[i] = (cov[1,1] + cov[0,0]*w_central[nb_ind]**2)**0.5
-        print(cov)
     
     line = nbex - ew*f_cont/nb_fwhm > 1*(err[:,nb_ind]**2 + cont_err**2)**0.5
     return line, cf, cont_err
