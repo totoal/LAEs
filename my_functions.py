@@ -4,6 +4,8 @@ import pickle
 import matplotlib.pyplot as plt
 from scipy.integrate import simps
 from scipy.special import erf
+from scipy.optimize import curve_fit
+from astropy.stats import bootstrap
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -319,7 +321,7 @@ def select_sources(nb_ind, bb_ind, min_score, mode = 1):
     return selection
 
 # Function to compute the NB excess with a linear cont estimate
-def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
+def nbex_cont_estimate(model_f, pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     if N_nb > nb_ind: raise ValueError('N_nb cannot be larger than nb_ind')
     
     z = 1215.67/w_central[nb_ind] - 1
@@ -338,7 +340,7 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     f_cont = np.zeros(N_sources)
     cf = np.zeros((N_sources,2))
     cont_err = np.zeros(N_sources)
-    for i in range(N_sources):
+    for i in range(1000):
         print('{}/{}'.format(i+1, N_sources), end='\r')
         pm_mag = pm[i]
         pm_err = err[i]
@@ -352,16 +354,29 @@ def nbex_cont_estimate(pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
         if nb_ind > 35:               ref_bb = -1
         for idx in filter_ind_Arr:
             bbnb = pm_mag[idx] - pm_mag[ref_bb] # Excess NB-gSDSS
-            if bbnb > 3*pm_err[idx] + ew*pm_mag[-3]/nb_fwhm:
+            if np.abs(bbnb) > 3*pm_err[idx] + ew*pm_mag[-3]/nb_fwhm:
                 errors[idx] = 999.
         weights = errors[filter_ind_Arr]
-        cf[i,:], cov = np.polyfit(x, y, 1, w = 1./weights, cov = 'unscaled')
+        p0 = [0., 1e-17]
+        cf[i,:], cov = curve_fit(model_f, x, y, p0, weights, True, False,
+                method = 'trf', loss='linear')
         cont_fit = cf[i,:]
         f_cont[i] = cont_fit[1] + cont_fit[0]*w_central[nb_ind]
         nbex[i] = pm_mag[nb_ind] - f_cont[i]
-        cont_err[i] = (cov[1,1] + cov[0,0]*w_central[nb_ind]**2)**0.5
+
+        N_boot = N_nb * 2
+        boots = np.array(bootstrap(filter_ind_Arr, N_boot)).astype(int)
+        sigma_m = 0. ; sigma_b = 0.
+        for boot in boots:
+            boot_fit, _ = curve_fit(model_f, w_central[boot], pm_mag[boot],
+                    p0, errors[boot], True, False, method = 'trf', loss = 'linear')
+            sigma_m += 1./N_boot * (boot_fit[0] - cont_fit[0])**2
+            sigma_b += 1./N_boot * (boot_fit[1] - cont_fit[1])**2
+
+        # cont_err[i] = (cov[1,1] + cov[0,0]*w_central[nb_ind]**2)**0.5
+        cont_err[i] = (sigma_b + sigma_m*w_central[nb_ind]**2)**0.5
     
-    line = nbex - ew*f_cont/nb_fwhm > 1*(err[:,nb_ind]**2 + cont_err**2)**0.5
+    line = nbex - ew*f_cont/nb_fwhm > 2*(err[:,nb_ind]**2 + cont_err**2)**0.5
     return line, cf, cont_err
 
 
