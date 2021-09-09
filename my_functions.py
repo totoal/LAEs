@@ -379,6 +379,8 @@ def nbex_cont_estimate(model_f, pm, err, nb_ind, w_central, N_nb, ew0, nb_fwhm):
     line = nbex - ew*f_cont/nb_fwhm > 2*(err[:,nb_ind]**2 + cont_err**2)**0.5
     return line, cf, cont_err
 
+#
+
 
 ## Function that loads from a csv file the DualABMag minijpas catalog with associated pz,
 ## odds, and GAIA apparent move data.
