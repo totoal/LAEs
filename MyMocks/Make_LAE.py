@@ -101,6 +101,7 @@ gSDSS_data[ 'FWHM'               ] = np.copy( gSDSS_FWHM               )
 cat = {}
 cat['SEDs'] = np.zeros((N_sources_LAE, len(w_Arr)))
 cat['SEDs_no_IGM'] = np.zeros((N_sources_LAE, len(w_Arr)))
+cat['SEDs_no_line'] = np.zeros((N_sources_LAE, len(w_Arr)))
 cat['w_Arr'] = w_Arr
 cat['LAE'] = np.ones(N_sources_LAE, dtype=bool)
 cat['EW_Arr'] = e_Arr
