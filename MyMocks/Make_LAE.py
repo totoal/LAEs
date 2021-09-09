@@ -14,7 +14,7 @@ obs_area = 1 # deg**2
 
 w_min  = 2500   # Minimum wavelength
 w_max  = 10000  # Maximum wavelegnth
-N_bins = 10000  # Number of bins
+N_bins = 50000  # Number of bins
 
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
@@ -122,7 +122,8 @@ for i in range(N_sources_LAE):
     my_AGE = AGE_Arr[i]
     my_EXT = EXT_Arr[i]
 
-    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:] = generate_spectrum(
+    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:], cat['SEDs_no_line'][i,:]\
+            = generate_spectrum(
             LINE, my_z, my_e, my_g,
             my_width, my_s, my_MET,
             my_AGE, my_EXT, w_Arr, Grid_Dictionary,

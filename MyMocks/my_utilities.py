@@ -498,8 +498,9 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
     catalog_obs_spectrum_No_IGM = noisy_spectrum + obs_lya_line_Arr + Continum_normalization * obs_frame_spectrum
     catalog_obs_spectrum        = noisy_spectrum + obs_lya_line_Arr + Continum_normalization * IGM_obs_continum
+    catalog_obs_spectrum_No_Line= noisy_spectrum + Continum_normalization * IGM_obs_continum
 
-    return catalog_obs_spectrum , catalog_obs_spectrum_No_IGM
+    return catalog_obs_spectrum , catalog_obs_spectrum_No_IGM, catalog_obs_spectrum_No_Line
 #======================================================#
 #======================================================#
 #======================================================#
