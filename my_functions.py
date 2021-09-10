@@ -453,6 +453,40 @@ def load_cat_photoz_gaia(filename):
     
     return cat
 
+# Stack estimation
+def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min):
+    '''
+    Returns the weighted average and std of N_nb Narrow Bands
+    arround the central one.
+    '''
+    nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
+    
+    flx = pm_flx[nb_idx_Arr]
+    err = pm_err[nb_idx_Arr]
+    
+    # Remove NB compatible with emission lines
+    ref_bb = -3
+    ew0min = 50
+    
+    z = 1215.67/w_central[nb_c] - 1
+    ew = (1 + z) * ew0min
+
+    bbnb = flx - pm_flx[ref_bb]
+    bbnb_err = (err**2 + pm_err[ref_bb]**2)**0.5
+    outliers = bbnb.T > 3*bbnb_err.T + ew*pm_flx[ref_bb].reshape(-1, 1)\
+                                        /np.array(nb_fwhm_Arr)[nb_idx_Arr]
+    out = np.where(outliers)
+    out_symmetric = (out[0], N_nb - (out[1]-N_nb))
+    err[out[1], out[0]] = 999.
+    err[out_symmetric[1], out_symmetric[0]] = 999.
+    err[N_nb] = 9999.
+
+    
+    avg = np.average(flx, axis=0, weights=1./err)
+    std = np.average((flx - avg)**2, axis=0, weights=1./err)**0.5
+    
+    return avg, std
+
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
     print(cat.keys())
