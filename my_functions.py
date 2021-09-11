@@ -484,7 +484,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     avg = np.average(flx, axis=0, weights=1./err)
     # std = np.average((flx - avg)**2, axis=0, weights=1./err)**0.5
     N_boots = len(flx)
-    boots = bootstrap(np.arange(len(flx)), N_boots)
+    boots = bootstrap(np.arange(len(flx)), N_boots).astype(int)
     sigma = 0
     for b in boots:
         avg_boot = np.average(flx[b], axis=0, weights=1./err[b])
