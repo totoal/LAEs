@@ -482,7 +482,8 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     err[N_nb] = 9999.
     
     avg = np.average(flx, axis=0, weights=1./err**2)
-    sigma = (1./ np.sum(1./err**2))**0.5
+    print(err.shape, avg.shape)
+    sigma = (1./ np.sum(1./err**2, axis=0))**0.5
     
     return avg, sigma
 
