@@ -481,16 +481,10 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     err[out_symmetric[1], out_symmetric[0]] = 999.
     err[N_nb] = 9999.
     
-    avg = np.average(flx, axis=0, weights=1./err)
-    # std = np.average((flx - avg)**2, axis=0, weights=1./err)**0.5
-    N_boots = len(flx)
-    boots = bootstrap(np.arange(len(flx)), N_boots).astype(int)
-    sigma = 0
-    for b in boots:
-        avg_boot = np.average(flx[b], axis=0, weights=1./err[b])
-        sigma += 1./N_boots * (avg - avg_boot)**2
+    avg = np.average(flx, axis=0, weights=1./err**2)
+    sigma = (1./ np.sum(1./err**2))**0.5
     
-    return avg, sigma**0.5
+    return avg, sigma
 
 if __name__ == '__main__':
     cat = load_noflag_cat('catalogDual.pkl')
