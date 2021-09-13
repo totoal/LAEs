@@ -88,6 +88,7 @@ gSDSS_data[ 'FWHM'               ] = np.copy( gSDSS_FWHM               )
 cat = {}
 cat['SEDs'] = np.zeros((N_sources_OII, len(w_Arr)))
 cat['SEDs_no_IGM'] = np.zeros((N_sources_OII, len(w_Arr)))
+cat['SEDs_no_line'] = np.zeros((N_sources_OII, len(w_Arr)))
 cat['w_Arr'] = w_Arr
 cat['LAE'] = ~np.ones(N_sources_OII, dtype=bool)
 cat['EW_Arr'] = e_Arr
@@ -103,7 +104,8 @@ for i in range(N_sources_OII):
     my_width = widths_Arr[i]
     my_s = s_Arr[i]
 
-    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:] = generate_spectrum(
+    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:], cat['SEDs_no_IGM'][i,:]\
+            = generate_spectrum(
             LINE, my_z, my_e, my_g,
             my_width, my_s, OII_MET,
             OII_AGE, OII_EXT, w_Arr, Grid_Dictionary,
