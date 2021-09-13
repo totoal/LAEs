@@ -104,7 +104,7 @@ for i in range(N_sources_OII):
     my_width = widths_Arr[i]
     my_s = s_Arr[i]
 
-    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:], cat['SEDs_no_IGM'][i,:]\
+    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:], cat['SEDs_no_line'][i,:]\
             = generate_spectrum(
             LINE, my_z, my_e, my_g,
             my_width, my_s, OII_MET,
