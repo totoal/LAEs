@@ -10,7 +10,7 @@ w_oii = 0.5 * ( 3727.092 + 3729.875 )
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_LAE.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
 z_oii = [ w_lya*(z + 1)/w_oii - 1 for z in z_lya] # OII z interval computed from z_lya
-obs_area = 1 # deg**2
+obs_area = 5 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
