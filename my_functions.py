@@ -465,15 +465,18 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     err = pm_err[nb_idx_Arr]
     
     # Remove NB compatible with emission lines
-    ref_bb = -3
     ew0min = 50
     
     z = 1215.67/w_central[nb_c] - 1
     ew = (1 + z) * ew0min
 
-    bbnb = flx - pm_flx[ref_bb]
-    bbnb_err = (err**2 + pm_err[ref_bb]**2)**0.5
-    outliers = bbnb.T > 3*bbnb_err.T + ew*pm_flx[ref_bb].reshape(-1, 1)\
+    # First compute the continuum to find outliers to this first estimate
+    avg = np.average(flx, axis=0, weights=1./err**2)
+    sigma = (1./ np.sum(1./err**2, axis=0))**0.5
+
+    bbnb = flx - avg
+    bbnb_err = (err**2 + sigma**2)**0.5
+    outliers = bbnb.T > 3*bbnb_err.T + ew*avg.reshape(-1, 1)\
                                         /np.array(nb_fwhm_Arr)[nb_idx_Arr]
     out = np.where(outliers)
     out_symmetric = (out[0], N_nb - (out[1]-N_nb))
@@ -481,6 +484,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     err[out_symmetric[1], out_symmetric[0]] = 999.
     err[N_nb] = 9999.
     
+    # Now recompute this but with no outliers
     avg = np.average(flx, axis=0, weights=1./err**2)
     sigma = (1./ np.sum(1./err**2, axis=0))**0.5
     
