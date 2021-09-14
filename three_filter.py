@@ -12,6 +12,7 @@ def beta(w_Arr, t, w_EL):
 
 # Main function #
 def three_filter_method(NB, BB_LC, BB_LU,
+                        NB_err, BB_LC_err, BB_LU_err,
                         t_NB, w_NB,
                         t_BB_LC, t_BB_LU, w_BB_LC, w_BB_LU,
                         w_EL):
@@ -23,9 +24,15 @@ def three_filter_method(NB, BB_LC, BB_LU,
     b_NB = beta(w_NB, t_NB, w_EL)
     c_a = (a_LU-a_LC)/(a_NB-a_LU)
 
+    A_denominator = (a_NB - a_LU - b_NB/b_LC * (a_LC - a_LU))
+
     F_EL = ((BB_LC - BB_LU) + c_a * (NB - BB_LU)) / (b_LC + c_a * b_NB)
-    A = (NB - BB_LU - b_NB/b_LC * (BB_LC - BB_LU))\
-            / (a_NB - a_LU - b_NB/b_LC * (a_LC - a_LU))
+    A = (NB - BB_LU - b_NB/b_LC * (BB_LC - BB_LU)) / A_denominator
     B = BB_LU - a_LU * A
 
-    return F_EL, A, B
+    A_err =\
+    (NB_err**2 + BB_LU_err**2 + (b_NB/b_LC)**2*(BB_LC_err**2 + BB_LU_err**2))**0.5\
+                        / A_denominator
+    B_err = (BB_LU_err**2 + a_LU**2 * A_err**2)**0.5
+
+    return F_EL, A, B, A_err, B_err
