@@ -96,7 +96,7 @@ MU_EXT = (MAX_EXT + MIN_EXT) * 0.5
 #####
 
 MET_Arr = np.random.randn(N_sources_LAE) * SIGMA_MET + MU_MET
-AGE_Arr = np.random.randn(N_sources_LAE) * SIGMA_MET + MU_AGE
+AGE_Arr = np.random.randn(N_sources_LAE) * SIGMA_AGE + MU_AGE
 EXT_Arr = np.random.randn(N_sources_LAE) * SIGMA_EXT + MU_EXT
 
 #### Let's load the data of the gSDSS filter
