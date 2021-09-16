@@ -16,7 +16,7 @@ obs_area = 0.5 # deg**2
 
 w_min  = 2500   # Minimum wavelength
 w_max  = 10000  # Maximum wavelgnth
-N_bins = 5000  # Number of bins
+N_bins = 50000  # Number of bins
 
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
