@@ -81,17 +81,23 @@ MAX_EXT = 0.05                                # Maximum extintion
 # Defining parameters according to HETDEX spectra fits (Provided by Sid 16/09/21)
 MIN_MET = 26.850313
 MAX_MET = 35.3161076
+SIGMA_MET = (MAX_MET - MIN_MET) * 0.5
+MU_MET = (MAX_MET + MIN_MET) * 0.5
 
 MIN_AGE = 10 ** -2.31549077
 MAX_AGE = 10 ** -1.94981165
+SIGMA_AGE = (MAX_AGE - MIN_AGE) * 0.5
+MU_AGE = (MAX_AGE + MIN_AGE) * 0.5
 
 MIN_EXT = 5.43513275e-2
 MAX_EXT = 0.8218874
+SIGMA_EXT = (MAX_EXT - MIN_EXT) * 0.5
+MU_EXT = (MAX_EXT + MIN_EXT) * 0.5
 #####
 
-MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
-AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
-EXT_Arr = np.random.rand(N_sources_LAE) * (MAX_EXT - MIN_EXT) + MIN_EXT
+MET_Arr = np.random.randn(N_sources_LAE) * SIGMA_MET + MU_MET
+AGE_Arr = np.random.randn(N_sources_LAE) * SIGMA_MET + MU_AGE
+EXT_Arr = np.random.randn(N_sources_LAE) * SIGMA_EXT + MU_EXT
 
 #### Let's load the data of the gSDSS filter
 gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
