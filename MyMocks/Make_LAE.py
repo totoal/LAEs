@@ -21,7 +21,7 @@ w_Arr = np.linspace( w_min , w_max , N_bins )
 ####    Specific LAE parameters
 ew_in = [30, 100] # Rest frame EW interval 
 w_in  = [5, 5.1] # Line width interval
-s_in = [ -31.  , -30.  ] # Logarithmic uncertainty in flux density # 
+s_in = [ -31.  , -30.] # Logarithmic uncertainty in flux density # 
 LINE = 'Lya'
 
 ####################################################################
