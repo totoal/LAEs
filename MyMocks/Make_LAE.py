@@ -68,7 +68,7 @@ Grid_Dictionary = Load_BC03_grid_data()
 
 #### AGE, MET and EXT parameters
 DD = 0.00001
-
+'''
 MIN_MET = np.amin(Grid_Dictionary['met_Arr']) # Minimum metallicity
 MAX_MET = np.amax(Grid_Dictionary['met_Arr']) # Maximum metallicity
 
@@ -77,10 +77,17 @@ MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
 
 MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minimum extintion
 MAX_EXT = 0.05                                # Maximum extintion
+'''
+# Defining parameters according to HETDEX spectra fits (Provided by Sid 16/09/21)
+MIN_MET = 26.850313
+MAX_MET = 35.3161076
 
-# ALBERTO: defined this to naively avoid extremely deep absortions
-MIN_AGE = 1.
-MIN_MET = 30
+MIN_AGE = 10 ** -2.31549077
+MAX_AGE = 10 ** -1.94981165
+
+MIN_EXT = 5.43513275e-2
+MAX_EXT = 0.8218874
+#####
 
 MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
 AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
