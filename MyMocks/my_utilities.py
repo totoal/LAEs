@@ -446,17 +446,19 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
     if LINE == 'OII':
         w_line = 0.5 * ( 3727.092 + 3729.875 )
 
-    cat_w_Arr , cat_rest_spectrum = Interpolate_Lines_Arrays_3D_grid_MCMC( my_MET , my_AGE , my_EXT , Grid_Dictionary )
-    obs_frame_spectrum = np.interp( w_Arr , cat_w_Arr * ( 1 + my_z ) , cat_rest_spectrum )
+    cat_w_Arr , cat_rest_spectrum = Interpolate_Lines_Arrays_3D_grid_MCMC(
+            my_MET, my_AGE, my_EXT, Grid_Dictionary
+            )
+    obs_frame_spectrum = np.interp(w_Arr, cat_w_Arr * (1 + my_z), cat_rest_spectrum)
     IGM_obs_continum = np.copy( obs_frame_spectrum )
 
     if LINE == 'Lya':
         redshift_w_Arr = w_Arr * 1. / w_line - 1.
         IGM_T_w_Arr = IGM_TRANSMISSION( redshift_w_Arr , T_A , T_B )
         mask_IGM = w_Arr < w_line * (1+my_z)
-        IGM_obs_continum[ mask_IGM ] = IGM_obs_continum[ mask_IGM ] * IGM_T_w_Arr[ mask_IGM ]
+        IGM_obs_continum[mask_IGM] = IGM_obs_continum[mask_IGM] * IGM_T_w_Arr[mask_IGM]
 
-    noisy_spectrum = np.random.normal( 0.0 , my_noises , len(w_Arr) )
+    noisy_spectrum = np.random.normal(0.0, my_noises, len(w_Arr))
 
     NOISE_w = True
     if NOISE_w :
@@ -477,20 +479,39 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
         noisy_spectrum = np.random.normal( 0.0 , Noise_in_my_w_Arr , len(w_Arr) )
 
+    '''
     g_w_Arr = gSDSS_data[ 'lambda_Arr_f'       ]
     g_T_Arr = gSDSS_data[ 'Transmission_Arr_f' ]
     g_w     = gSDSS_data[ 'lambda_pivot'       ]
     g_FWHM  = gSDSS_data[ 'FWHM'               ]
 
-    Noises_flux_g = Synthetic_Photometry_measure_flux(w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM)
-    source_flux_g = Synthetic_Photometry_measure_flux(w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM)
+    Noises_flux_g = Synthetic_Photometry_measure_flux(
+        w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+        )
+    source_flux_g = Synthetic_Photometry_measure_flux(
+        w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+        )
+    '''
+
+    ## Synthetic NB arround emission line##
+    snb_w_Arr = np.linspace(w_line - 72, w_line + 72, 50)
+    snb_T_Arr = np.ones(50)
+    snb_w     = w_line
+    snb_FWHM  = 145
+
+    Noises_flux_snb = Synthetic_Photometry_measure_flux(
+            w_Arr, noisy_spectrum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM
+            )
+    source_flux_snb = Synthetic_Photometry_measure_flux(
+            w_Arr, IGM_obs_continum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM
+            )
     
-    Continum_normalization = ( my_flux_g - Noises_flux_g ) * 1. / ( source_flux_g )
+    Continum_normalization = (my_flux_g - Noises_flux_snb) * 1. / (source_flux_snb)
     
     cont_around_line = (
-                           Continum_normalization
-                           * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)-25) <= 25)]
-                       )
+            Continum_normalization
+            * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)-25) <= 25)]
+            )
                        
     obs_lya_line_Arr = norm.pdf( w_Arr , w_line * ( 1 + my_z ) , my_widths )
     my_flux_f = np.mean(cont_around_line) * my_ew * (1 + my_z)
