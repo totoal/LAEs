@@ -472,7 +472,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
 
     # First compute the continuum to find outliers to this first estimate
     avg = np.average(flx, axis=0, weights=1./err**2)
-    sigma =  np.sum(err**-1, axis=0) / np.sum(err**-2, axis=0)
+    sigma =  (1. / np.sum(err**-2, axis=0))**0.5
 
     bbnb = flx - avg
     bbnb_err = (err**2 + sigma**2)**0.5
@@ -486,56 +486,8 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
 
     # Now recompute this but with no outliers
     avg = np.average(flx, axis=0, weights=1./err**2)
-    # sigma = (1./ np.sum(1./err**2, axis=0))**0.5
-    sigma =  np.sum(err**-1, axis=0) / np.sum(err**-2, axis=0)
+    sigma =  (1. / np.sum(err**-2, axis=0))**0.5
     
-    return avg, sigma
-
-def stack_estimation_v2(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min):
-    '''
-    Returns the weighted average and std of N_nb Narrow Bands
-    arround the central one.
-    '''
-    nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
-    
-    flx = pm_flx[nb_idx_Arr]
-    err = pm_err[nb_idx_Arr]
-    
-    # Remove NB compatible with emission lines
-    ew0min = 50
-    
-    z = 1215.67/w_central[nb_c] - 1
-    ew = (1 + z) * ew0min
-
-    # First compute the continuum to find outliers to this first estimate
-    avg = np.average(flx, axis=0, weights=1./err**2)
-    sigma = (1./ np.sum(1./err**2, axis=0))**0.5
-
-    bbnb = flx - avg
-    bbnb_err = (err**2 + sigma**2)**0.5
-    outliers = bbnb.T > 3*bbnb_err.T + ew*avg.reshape(-1, 1)\
-                                        /np.array(nb_fwhm_Arr)[nb_idx_Arr]
-    out = np.where(outliers)
-    out_symmetric = (out[0], N_nb - (out[1]-N_nb))
-    err[out[1], out[0]] = 999.
-    err[out_symmetric[1], out_symmetric[0]] = 999.
-    err[N_nb] = 9999.
-
-    # Now recompute this but with no outliers
-    avg1 = np.average(flx[:N_nb], axis=0, weights=1./err[:N_nb]**2)
-    avg2 = np.average(flx[N_nb+1:], axis=0, weights=1./err[N_nb+1:]**2)
-    weight1 = np.average(
-            (flx[:N_nb] - err[:N_nb])**2, weights = 1./err[:N_nb]**2
-            )**0.5
-    weight2 = np.average(
-            (flx[N_nb+1:] - err[N_nb+1:])**2, weights = 1./err[N_nb+1:]**2
-            )**0.5
-    err1 = np.sum(1./err[:N_nb:], axis=0) / np.sum(1./err[:N_nb]**2, axis=0)
-    err2 = np.sum(1./err[N_nb+1:], axis=0) / np.sum(1./err[N_nb+1:]**2, axis=0)
-
-    avg = (avg1/weight1**2 + avg2/weight2**2) / (weight1**-2 + weight2**-2)
-    sigma = (err1**-1 + err2**-1) / (err1**-2 + err2**-2)
-
     return avg, sigma
 
 if __name__ == '__main__':
