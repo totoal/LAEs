@@ -8,13 +8,13 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 60 # deg**2
+obs_area = 30 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
 w_min  = 2500   # Minimum wavelength
 w_max  = 10000  # Maximum wavelegnth
-N_bins = 50000  # Number of bins
+N_bins = 10000  # Number of bins
 
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
