@@ -8,7 +8,7 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 1 # deg**2
+obs_area = 60 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
