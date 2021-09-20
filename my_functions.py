@@ -471,7 +471,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     ew = (1 + z) * ew0min
 
     # First compute the continuum to find outliers to this first estimate
-    avg = np.average(flx, axis=0, weights=1./err**2)
+    avg = np.average(flx, axis=0, weights=err**-2)
     sigma =  (1. / np.sum(err**-2, axis=0))**0.5
 
     bbnb = flx - avg
@@ -485,7 +485,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     err[N_nb] = 9999.
 
     # Now recompute this but with no outliers
-    avg = np.average(flx, axis=0, weights=1./err**2)
+    avg = np.average(flx, axis=0, weights=err**-2)
     sigma =  (1. / np.sum(err**-2, axis=0))**0.5
     
     return avg, sigma
