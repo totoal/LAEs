@@ -481,7 +481,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     out_symmetric = (out[0], N_nb - (out[1]-N_nb))
     err[out[1], out[0]] = 999.
     err[out_symmetric[1], out_symmetric[0]] = 999.
-    err[N_nb] = 9999.
+    err[N_nb] = 9999. #Very inefficient way of not using the central NB and the ouliers
 
     # Now recompute this but with no outliers
     avg = np.average(flx, axis=0, weights=err**-2)
