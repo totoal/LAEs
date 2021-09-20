@@ -50,3 +50,4 @@ miniJPAS_photometry
 .vscode
 .ipynb_checkpoints
 .gitignore
+selected_sources
