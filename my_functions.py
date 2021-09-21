@@ -456,7 +456,7 @@ def load_cat_photoz_gaia(filename):
 # Stack estimation
 def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     '''
-    Returns the weighted average and std of N_nb Narrow Bands
+    Returns the weighted average and error of N_nb Narrow Bands
     arround the central one.
     '''
     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
@@ -467,21 +467,27 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     ## First compute the continuum to find outliers to this first estimate
     avg = np.average(flx, axis=0, weights=err**-2)
     sigma =  (1 / np.sum(err**-2, axis=0))**0.5
-    # sigma =  (err.shape[0] / np.sum(err**-2, axis=0))**0.5
 
     bbnb = flx - avg
     bbnb_err = (err**2 + sigma**2)**0.5
-    outliers = bbnb.T > 3*bbnb_err.T 
+    outliers = bbnb > 3*bbnb_err 
     out = np.where(outliers)
-    out_symmetric = (out[0], N_nb - (out[1]-N_nb))
-    err[out[1], out[0]] = 999.
-    err[out_symmetric[1], out_symmetric[0]] = 999.
-    err[N_nb] = 9999. #Very inefficient way of not using the central NB and the ouliers
+    out_symmetric = (out[0], N_nb - (out[1] - N_nb))
+    err[out] = 999.
+    err[out_symmetric] = 999.
+    err[N_nb] = 999.
+
+    mask = err == 999.
+    N_Arr = np.zeros(err.shape[1])
+    for i in range(err.shape[1]):
+        N_Arr[i] = len(np.where(~mask[:, i])[0])
+
+    flx_ma = np.ma.array(flx, mask=mask)
+    err_ma = np.ma.array(err**-2, mask=mask)
 
     ## Now recompute this but with no outliers
-    avg = np.average(flx, axis=0, weights=err**-2)
-    sigma =  (1 / np.sum(err**-2, axis=0))**0.5
-    # sigma =  (err.shape[0] / np.sum(err**-2, axis=0))**0.5
+    avg = np.ma.average(flx_ma, weights=err**-2, axis=0)
+    sigma =  (1 / err_ma.sum(axis=0))**0.5
     
     return avg, sigma
 
