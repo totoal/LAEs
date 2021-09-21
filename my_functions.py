@@ -454,7 +454,7 @@ def load_cat_photoz_gaia(filename):
     return cat
 
 # Stack estimation
-def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min):
+def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     '''
     Returns the weighted average and std of N_nb Narrow Bands
     arround the central one.
@@ -464,12 +464,6 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central, nb_fwhm_Arr, ew0min)
     flx = pm_flx[nb_idx_Arr]
     err = pm_err[nb_idx_Arr]
     
-    # Remove NB compatible with emission lines
-    ew0min = 50
-    
-    z = 1215.67/w_central[nb_c] - 1
-    ew = (1 + z) * ew0min
-
     # First compute the continuum to find outliers to this first estimate
     avg = np.average(flx, axis=0, weights=err**-2)
     sigma =  (err.shape[0] / np.sum(err**-2, axis=0))**0.5
