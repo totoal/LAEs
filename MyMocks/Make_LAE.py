@@ -79,7 +79,8 @@ MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minimum extintion
 MAX_EXT = 0.05                                # Maximum extintion
 '''
 # Defining parameters according to HETDEX spectra fits (Provided by Sid 16/09/21)
-MIN_MET = 26.850313
+# MIN_MET = 26.850313
+MIN_MET = 32.5
 MAX_MET = 35.3161076
 
 MIN_AGE = 10 ** -2.31549077
