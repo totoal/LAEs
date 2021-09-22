@@ -470,7 +470,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
 
     bbnb = flx - avg
     bbnb_err = (err**2 + sigma**2)**0.5
-    outliers = bbnb > 3*bbnb_err 
+    outliers = np.abs(bbnb) > 3*bbnb_err 
     out = np.where(outliers)
     out_symmetric = (out[0], N_nb - (out[1] - N_nb))
     err[out] = 999.
