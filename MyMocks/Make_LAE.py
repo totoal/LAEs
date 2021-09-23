@@ -19,7 +19,8 @@ N_bins = 10000  # Number of bins
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
 ####    Specific LAE parameters
-ew_in = [30, 100] # Rest frame EW interval 
+# ew_in = [30, 100] # Rest frame EW interval 
+g_in = [-18, -16.5]
 w_in  = [5, 5.1] # Line width interval
 s_in = [ -31.  , -30.] # Logarithmic uncertainty in flux density # 
 LINE = 'Lya'
@@ -50,12 +51,16 @@ L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LAE_LF[:,0])
 
 # Define EW and z Arrays
 z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
-e_Arr = np.random.rand(N_sources_LAE) * (ew_in[1] - ew_in[0]) + ew_in[0]
+# e_Arr = np.random.rand(N_sources_LAE) * (ew_in[1] - ew_in[0]) + ew_in[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
 # Define g flux array
-g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
+# g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
+g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (g_in[1] - g_in[0]) + g_in[0])
+
+# Compute EW array
+e_Arr = L_g_to_ew(L_Arr, g_Arr, z_Arr)
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace( 3000 , 9000 , 10 )
