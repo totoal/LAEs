@@ -468,9 +468,11 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
         w_Lya_observed = ( my_z + 1. ) * w_line
 
-        mask_noise_norms = ( w_Arr > w_Lya_observed - 0.5*Delta_w_noise ) * ( w_Arr < w_Lya_observed + 0.5*Delta_w_noise )
+        mask_noise_norms = (w_Arr > w_Lya_observed - 0.5*Delta_w_noise)\
+                        * (w_Arr < w_Lya_observed + 0.5*Delta_w_noise)
 
-        I_noise_Arr = np.trapz( Noise_in_my_w_Arr[ mask_noise_norms ] , w_Arr[ mask_noise_norms ] ) * 1. / Delta_w_noise
+        I_noise_Arr = np.trapz(Noise_in_my_w_Arr[mask_noise_norms],
+                w_Arr[mask_noise_norms]) * 1. / Delta_w_noise
 
         Noise_in_my_w_Arr = my_noises * Noise_in_my_w_Arr * 1. / I_noise_Arr 
 
@@ -480,7 +482,6 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
         noisy_spectrum = np.random.normal( 0.0 , Noise_in_my_w_Arr , len(w_Arr) )
 
     g_w_Arr = gSDSS_data['lambda_Arr_f']
-    '''
     g_T_Arr = gSDSS_data[ 'Transmission_Arr_f' ]
     g_w     = gSDSS_data[ 'lambda_pivot'       ]
     g_FWHM  = gSDSS_data[ 'FWHM'               ]
@@ -491,8 +492,8 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
     source_flux_g = Synthetic_Photometry_measure_flux(
         w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
         )
-    '''
 
+    '''
     ## Synthetic NB arround emission line##
     snb_w_Arr = g_w_Arr
     snb_T_Arr = np.zeros(snb_w_Arr.shape)
@@ -506,8 +507,8 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
     source_flux_snb = Synthetic_Photometry_measure_flux(
             w_Arr, IGM_obs_continum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM
             )
-
-    Continum_normalization = (my_flux_g - Noises_flux_snb) * 1. / (source_flux_snb)
+    '''
+    Continum_normalization = (my_flux_g - Noises_flux_g) * 1. / (source_flux_g)
     
     cont_around_line = (
             Continum_normalization
@@ -700,5 +701,9 @@ def z_volume(z_min, z_max, area):
 
 def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
     dL_Arr = cosmo.luminosity_distance(rand_z_Arr).to(u.cm).value
-    g_Arr = 10**L_Arr / ((1 + rand_z_Arr) * rand_EW_Arr * 4*np.pi * dL_Arr**2) 
-    return g_Arr
+    return 10**L_Arr / ((1 + rand_z_Arr) * rand_EW_Arr * 4*np.pi * dL_Arr**2) 
+
+### Computes EW array from g and L
+def L_g_to_ew(L_Arr, g_Arr, z_Arr):
+    dL_Arr = cosmo.luminosity_distance(z_Arr).to(u.cm).value
+    return 10**L_Arr / ((1 + z_Arr) * g_Arr * 4*np.pi * dL_Arr**2)
