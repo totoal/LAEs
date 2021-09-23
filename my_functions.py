@@ -491,6 +491,23 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     
     return avg, sigma
 
-if __name__ == '__main__':
-    cat = load_noflag_cat('catalogDual.pkl')
-    print(cat.keys())
+def synthetic_BB_estimation(pm_flx, pm_err, w_central, nb_c, N_nb, trans, w_trans):
+    '''
+    Computes the flux of a synthetic BB made from 2*N_nb narrow bands
+    on each side of the NB of interest.
+    '''
+    nb_idx_Arr = np.array(
+            [*range(nb_c - N_nb, nb_c)]
+            + [*range(nb_c + 1, nb_c + N_nb + 1)]
+            )
+    flx = pm_flx[nb_idx_Arr]
+    err = pm_err[nb_idx_Arr]
+    t = trans[nb_idx_Arr]
+    w_t = w_trans[nb_idx_Arr]
+
+    total_trans = 0
+    for i in nb_idx_Arr:
+        t = np.array(trans[i])
+        w = np.array(trans[i])
+        total_trans += simps(w*t, w)
+

@@ -38,7 +38,6 @@ with open(filepath, mode='r') as csvfile:
     for line in rdlns:
         LAE_LF.append(line)
 LAE_LF = np.array(LAE_LF).astype(float)
-print(LAE_LF)
 
 ####    Compute the number of sources and L_line distribution 
 
