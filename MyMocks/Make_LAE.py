@@ -8,7 +8,7 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 30 # deg**2
+obs_area = 130 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -32,10 +32,12 @@ filepath = '../csv/HETDEX_LumFunc.csv'
 LAE_LF = []
 with open(filepath, mode='r') as csvfile:
     rdlns = csv.reader(csvfile, delimiter=',')
-    
+    for _ in range(7):
+        next(rdlns, None)
     for line in rdlns:
         LAE_LF.append(line)
 LAE_LF = np.array(LAE_LF).astype(float)
+print(LAE_LF)
 
 ####    Compute the number of sources and L_line distribution 
 
