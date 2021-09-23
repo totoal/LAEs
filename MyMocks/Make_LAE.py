@@ -77,7 +77,7 @@ MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
 
 MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minimum extintion
 MAX_EXT = 0.05                                # Maximum extintion
-'''
+
 # Defining parameters according to HETDEX spectra fits (Provided by Sid 16/09/21)
 # MIN_MET = 26.850313
 MIN_MET = 32.5
@@ -93,6 +93,15 @@ MAX_EXT = 0.8218874
 MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
 AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
 EXT_Arr = np.random.rand(N_sources_LAE) * (MAX_EXT - MIN_EXT) + MIN_EXT
+'''
+
+mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
+               '400_Nb_100_z_1.9_3.0_sn_7.0_g_23.5_p_0.9_pp_50.0.npy',
+                allow_pickle=True).item()
+
+AGE_Arr = 10 ** mcmc['chains'][-N_sources_LAE:, 0]
+MET_Arr = mcmc['chains'][-N_sources_LAE:, 1]
+EXT_Arr = mcmc['chains'][-N_sources_LAE:, 2]
 
 #### Let's load the data of the gSDSS filter
 gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
