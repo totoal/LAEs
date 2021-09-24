@@ -454,7 +454,7 @@ def load_cat_photoz_gaia(filename):
     return cat
 
 # Stack estimation
-def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
+def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     '''
     Returns the weighted average and error of N_nb Narrow Bands
     arround the central one.
@@ -468,14 +468,21 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     avg = np.average(flx, axis=0, weights=err**-2)
     sigma =  (1 / np.sum(err**-2, axis=0))**0.5
 
-    bbnb = flx - avg
-    bbnb_err = (err**2 + sigma**2)**0.5
-    outliers = np.abs(bbnb) > 3*bbnb_err 
-    out = np.where(outliers)
-    out_symmetric = (out[0], N_nb - (out[1] - N_nb))
-    err[out] = 999.
-    err[out_symmetric] = 999.
-    err[N_nb] = 999.
+    ew0min = 30
+
+    for j in range(3):
+        err = pm_err[nb_idx_Arr]
+        bbnb = flx - avg
+        bbnb_err = (err**2 + sigma**2)**0.5
+        z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
+                * np.ones(bbnb.shape)
+        outliers = np.abs(bbnb) > 3*bbnb_err #+ ew0min * (1 + z) * avg / 145
+        out = np.where(outliers)
+        out_symmetric = (out[0], N_nb - (out[1] - N_nb))
+        err[out] = 999.
+        err[out_symmetric] = 999.
+        err[N_nb] = 999.
+        avg = np.average(flx, axis=0, weights=err**-2)
 
     mask = err == 999.
     N_Arr = np.zeros(err.shape[1])
@@ -487,11 +494,11 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
 
     ## Now recompute this but with no outliers
     avg = np.ma.average(flx_ma, weights=err**-2, axis=0)
-    sigma =  (1 / err_ma.sum(axis=0))**0.5
-    
+    sigma =  (1. / err_ma.sum(axis=0))**0.5
     return avg, sigma
 
-def synthetic_BB_estimation(pm_flx, pm_err, w_central, nb_c, N_nb, trans, w_trans):
+def synthetic_BB_estimation(pm_flx, pm_err, nb_c, N_nb, trans, w_trans, w_central,
+        mask_out=True, ew0min=30):
     '''
     Computes the flux of a synthetic BB made from 2*N_nb narrow bands
     on each side of the NB of interest.
@@ -502,12 +509,34 @@ def synthetic_BB_estimation(pm_flx, pm_err, w_central, nb_c, N_nb, trans, w_tran
             )
     flx = pm_flx[nb_idx_Arr]
     err = pm_err[nb_idx_Arr]
-    t = trans[nb_idx_Arr]
-    w_t = w_trans[nb_idx_Arr]
+    t = [trans[i] for i in nb_idx_Arr]
+    w_t = [w_trans[i] for i in nb_idx_Arr]
 
-    total_trans = 0
-    for i in nb_idx_Arr:
-        t = np.array(trans[i])
-        w = np.array(trans[i])
-        total_trans += simps(w*t, w)
+    T_Arr = np.zeros(len(nb_idx_Arr))
 
+    for i in range(len(nb_idx_Arr)):
+        T_Arr[i] = simps(np.array(t[i]) * np.array(w_t[i]), w_t[i])
+    T_sBB = np.sum(T_Arr)
+
+    flx_sBB = np.sum(flx.T * T_Arr, axis=1) / T_sBB
+    err_sBB = (T_sBB**-2 * np.sum(T_Arr**2 * err.T**2, axis=1))**0.5
+
+    ## Detect outliers (possible lines)
+    if mask_out:
+        diff = flx - flx_sBB
+        diff_err = (err**2 + err_sBB**2)**0.5
+        z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
+                * np.ones(diff.shape)
+        mask_outliers = (
+                diff > 3 * diff_err
+                + ew0min * (1 + z) * flx_sBB / 145
+                )
+                                                ## I have to better implement the FWHM
+
+        flx_ma = np.ma.array(flx, mask=mask_outliers)
+        err_ma = np.ma.array(err, mask=mask_outliers)
+
+        flx_sBB = np.sum(flx_ma.T * T_Arr, axis=1) / T_sBB
+        err_sBB = (T_sBB**-2 * np.sum(T_Arr**2 * err_ma.T**2, axis=1))**0.5
+
+    return flx_sBB, err_sBB
