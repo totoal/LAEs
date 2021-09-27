@@ -96,7 +96,7 @@ cat['redshift_Lya_Arr'] = z_Arr
 
 for i in range(N_sources_OII):
 
-    print('{}/{}'.format(i+1, N_sources_OII))
+    print('{}/{}'.format(i+1, N_sources_OII), end='\r')
 
     my_z = z_Arr_OII[i]
     my_e = e_Arr[i]
@@ -112,6 +112,7 @@ for i in range(N_sources_OII):
             Noise_w_Arr, Noise_Arr, T_A, T_B,
             gSDSS_data
             )
+print()
 
 filename = 'OII_1deg'
 np.save('Source_cat_' + filename + '.npy', cat)

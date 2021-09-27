@@ -135,7 +135,7 @@ cat['EXT'] = np.zeros(N_sources_LAE)
 
 for i in range(N_sources_LAE):
 
-    print('{}/{}'.format(i+1, N_sources_LAE))
+    print('{}/{}'.format(i+1, N_sources_LAE), end='\r')
 
     my_z = z_Arr[i]
     my_e = e_Arr[i]
@@ -157,6 +157,7 @@ for i in range(N_sources_LAE):
     cat['AGE'][i] = my_AGE
     cat['MET'][i] = my_MET
     cat['EXT'][i] = my_EXT
+print()
 
 filename = 'LAE_1deg'
 np.save('Source_cat_' + filename + '.npy', cat)
