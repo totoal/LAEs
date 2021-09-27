@@ -470,6 +470,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
 
     ew0min = 30
 
+    # Sigma clipping
     for j in range(3):
         err = pm_err[nb_idx_Arr]
         bbnb = flx - avg
