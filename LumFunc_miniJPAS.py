@@ -38,7 +38,7 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
     return binning[:-1]+0.5*bin_width, Phi, error
 
 def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
-                 weights = []):
+                 obs_area=0.895, weights = []):
     w_lya = 1215.67 # A
     z = w_pivot/w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \
@@ -49,7 +49,7 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
     dc_max = cosmo.comoving_distance((w_pivot + 0.5*w_fwhm)/w_lya - 1).value
     dc_min = cosmo.comoving_distance((w_pivot - 0.5*w_fwhm)/w_lya - 1).value
     
-    eff_side_deg = np.sqrt(0.895) # deg
+    eff_side_deg = np.sqrt(obs_area) # deg
     side_d = eff_side_deg*cosmo.kpc_comoving_per_arcmin(z).to(u.Mpc/u.deg).value
 
     volume = (dc_max - dc_min) * side_d**2
