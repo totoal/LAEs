@@ -8,7 +8,7 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 130 # deg**2
+obs_area = 20 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -19,8 +19,6 @@ N_bins = 10000  # Number of bins
 w_Arr = np.linspace( w_min , w_max , N_bins )
 
 ####    Specific LAE parameters
-# ew_in = [30, 100] # Rest frame EW interval 
-g_in = [-18, -16.5]
 w_in  = [5, 5.1] # Line width interval
 s_in = [ -31.  , -30.] # Logarithmic uncertainty in flux density # 
 LINE = 'Lya'
@@ -33,7 +31,7 @@ filepath = '../csv/HETDEX_LumFunc.csv'
 LAE_LF = []
 with open(filepath, mode='r') as csvfile:
     rdlns = csv.reader(csvfile, delimiter=',')
-    for _ in range(7):
+    for _ in range(1):
         next(rdlns, None)
     for line in rdlns:
         LAE_LF.append(line)
@@ -48,18 +46,20 @@ LF_p_cum = np.cumsum(LAE_LF[:,1])
 LF_p_cum /= np.max(LF_p_cum)
 L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LAE_LF[:,0])
 
-# Define EW and z Arrays
+# Define z, widths and s Array
 z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
-# e_Arr = np.random.rand(N_sources_LAE) * (ew_in[1] - ew_in[0]) + ew_in[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
-# Define g flux array
-# g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
-g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (g_in[1] - g_in[0]) + g_in[0])
+# Define EW arr
+ew_x = np.linspace(10, 500, 10000)
+w_0 = 75
+ew_dist_cum = np.cumsum(np.exp(-ew_x / w_0))
+ew_dist_cum /= np.max(ew_dist_cum)
+e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 
-# Compute EW array
-e_Arr = L_g_to_ew(L_Arr, g_Arr, z_Arr)
+# Define g flux array
+g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace( 3000 , 9000 , 10 )
@@ -132,6 +132,7 @@ cat['redshift_Lya_Arr'] = z_Arr
 cat['AGE'] = np.zeros(N_sources_LAE)
 cat['MET'] = np.zeros(N_sources_LAE)
 cat['EXT'] = np.zeros(N_sources_LAE)
+cat['L_line'] = L_Arr
 
 for i in range(N_sources_LAE):
 
@@ -159,5 +160,5 @@ for i in range(N_sources_LAE):
     cat['EXT'][i] = my_EXT
 print()
 
-filename = 'LAE_1deg'
+filename = 'LAE_40deg'
 np.save('Source_cat_' + filename + '.npy', cat)

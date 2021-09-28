@@ -466,24 +466,28 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     
     ## First compute the continuum to find outliers to this first estimate
     avg = np.average(flx, axis=0, weights=err**-2)
-    sigma =  (1 / np.sum(err**-2, axis=0))**0.5
+    sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     ew0min = 30
 
     # Sigma clipping
-    for j in range(3):
+    for _ in range(3):
         err = pm_err[nb_idx_Arr]
         bbnb = flx - avg
         bbnb_err = (err**2 + sigma**2)**0.5
         z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
                 * np.ones(bbnb.shape)
-        outliers = np.abs(bbnb) > 3*bbnb_err #+ ew0min * (1 + z) * avg / 145
+        outliers = (
+                (np.abs(bbnb) > 3*bbnb_err)
+                # & (np.abs(bbnb) > ew0min * (1 + z) * avg / 145)
+        )
         out = np.where(outliers)
         out_symmetric = (out[0], N_nb - (out[1] - N_nb))
         err[out] = 999.
         err[out_symmetric] = 999.
         err[N_nb] = 999.
         avg = np.average(flx, axis=0, weights=err**-2)
+        sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     mask = err == 999.
     N_Arr = np.zeros(err.shape[1])
