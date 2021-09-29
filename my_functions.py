@@ -6,6 +6,8 @@ from scipy.integrate import simps
 from scipy.special import erf
 from scipy.optimize import curve_fit
 from astropy.stats import bootstrap
+from astropy.cosmology import Planck18 as cosmo
+from astropy import units as u
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -545,3 +547,12 @@ def synthetic_BB_estimation(pm_flx, pm_err, nb_c, N_nb, trans, w_trans, w_centra
         err_sBB = (T_sBB**-2 * np.sum(T_Arr**2 * err_ma.T**2, axis=1))**0.5
 
     return flx_sBB, err_sBB
+
+def z_volume(z_min, z_max, area):
+    '''Computes the comoving volume in an observed area in a range of redshifts'''
+    dc_max = cosmo.comoving_distance(z_max).to(u.Mpc).value
+    dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
+    d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
+    d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
+    vol = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
+    return vol

@@ -10,6 +10,7 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
             * (cosmo.luminosity_distance(z).to(u.cm)**2).value
     L_line = np.log10(L_line)
     L_line = L_line[np.invert(np.isnan(L_line))]
+    
 
     dc_max = cosmo.comoving_distance((w_pivot + 0.5*w_fwhm)/w_lya - 1).value
     dc_min = cosmo.comoving_distance((w_pivot - 0.5*w_fwhm)/w_lya - 1).value
@@ -46,13 +47,14 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
     L_line = np.log10(L_line)
     L_line = L_line[np.invert(np.isnan(L_line))]
 
-    dc_max = cosmo.comoving_distance((w_pivot + 0.5*w_fwhm)/w_lya - 1).value
-    dc_min = cosmo.comoving_distance((w_pivot - 0.5*w_fwhm)/w_lya - 1).value
-    
-    eff_side_deg = np.sqrt(obs_area) # deg
-    side_d = eff_side_deg*cosmo.kpc_comoving_per_arcmin(z).to(u.Mpc/u.deg).value
+    z_max = (w_pivot + 0.5*w_fwhm)/w_lya - 1
+    z_min = (w_pivot - 0.5*w_fwhm)/w_lya - 1
 
-    volume = (dc_max - dc_min) * side_d**2
+    dc_max = cosmo.comoving_distance(z_max).to(u.Mpc).value
+    dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
+    d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * obs_area**0.5
+    d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * obs_area**0.5
+    volume = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
 
     if L_min == 0 and L_max == 0:
         L_max = np.amax(L_line)

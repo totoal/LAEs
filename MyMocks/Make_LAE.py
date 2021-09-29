@@ -2,13 +2,14 @@ import numpy as np
 from astropy.cosmology import Planck18 as cosmo
 from my_utilities import *
 import csv
+from scipy.integrate import simpson
 
 ####    Line wavelengths
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 20 # deg**2
+obs_area = 30 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -16,7 +17,7 @@ w_min  = 2500   # Minimum wavelength
 w_max  = 10000  # Maximum wavelegnth
 N_bins = 10000  # Number of bins
 
-w_Arr = np.linspace( w_min , w_max , N_bins )
+w_Arr = np.linspace(w_min , w_max , N_bins)
 
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
@@ -31,20 +32,20 @@ filepath = '../csv/HETDEX_LumFunc.csv'
 LAE_LF = []
 with open(filepath, mode='r') as csvfile:
     rdlns = csv.reader(csvfile, delimiter=',')
-    for _ in range(1):
-        next(rdlns, None)
     for line in rdlns:
         LAE_LF.append(line)
 LAE_LF = np.array(LAE_LF).astype(float)
 
 ####    Compute the number of sources and L_line distribution 
 
-bin_width = LAE_LF[1,0] - LAE_LF[0,0]
 Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
-N_sources_LAE = int(np.sum(LAE_LF[:,1]) * bin_width * Volume_LAE)
-LF_p_cum = np.cumsum(LAE_LF[:,1])
+N_sources_LAE = int(simpson(LAE_LF[:,1], LAE_LF[:,0], dx=0.1) * Volume_LAE)
+LF_p_cum_x = np.linspace(LAE_LF[0,0], LAE_LF[-1,0], 1000)
+LF_p_cum = np.cumsum(np.interp(
+    LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
+    )
 LF_p_cum /= np.max(LF_p_cum)
-L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LAE_LF[:,0])
+L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
 # Define z, widths and s Array
 z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
