@@ -8,8 +8,8 @@ from scipy.integrate import simpson
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
-z_lya = [2.25, 3.2] # LAE z interval
-obs_area = 30 # deg**2
+z_lya = [3.0565814928821773, 3.1791476498162137] # LAE z interval
+obs_area = 100 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -136,7 +136,6 @@ cat['EXT'] = np.zeros(N_sources_LAE)
 cat['L_line'] = L_Arr
 
 for i in range(N_sources_LAE):
-
     print('{}/{}'.format(i+1, N_sources_LAE), end='\r')
 
     my_z = z_Arr[i]
@@ -161,5 +160,5 @@ for i in range(N_sources_LAE):
     cat['EXT'][i] = my_EXT
 print()
 
-filename = 'LAE_40deg'
+filename = 'LAE_15deg_nb13'
 np.save('Source_cat_' + filename + '.npy', cat)
