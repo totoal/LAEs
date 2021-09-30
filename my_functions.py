@@ -481,10 +481,10 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
                 * np.ones(bbnb.shape)
         outliers = (
                 (np.abs(bbnb) > 3*bbnb_err)
-                # & (np.abs(bbnb) > ew0min * (1 + z) * avg / 145)
+                & (np.abs(bbnb) > ew0min * (1 + z) * avg / 145)
         )
         out = np.where(outliers)
-        out_symmetric = (out[0], N_nb - (out[1] - N_nb))
+        out_symmetric = (N_nb - (out[0] - N_nb), out[1])
         err[out] = 999.
         err[out_symmetric] = 999.
         err[N_nb] = 999.
