@@ -2,7 +2,7 @@ import numpy as np
 import csv
 import pickle
 import matplotlib.pyplot as plt
-from scipy.integrate import simps
+from scipy.integrate import simps, simpson
 from scipy.special import erf
 from scipy.optimize import curve_fit
 from astropy.stats import bootstrap
@@ -504,49 +504,16 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     sigma =  (1. / err_ma.sum(axis=0))**0.5
     return avg, sigma
 
-def synthetic_BB_estimation(pm_flx, pm_err, nb_c, N_nb, trans, w_trans, w_central,
-        mask_out=True, ew0min=30):
+def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     '''
-    Computes the flux of a synthetic BB made from 2*N_nb narrow bands
-    on each side of the NB of interest.
+    Returns the synthetic photometry of a set f of (N_sources x binning) in a
+    central wavelength w_c with a fwhm.
     '''
-    nb_idx_Arr = np.array(
-            [*range(nb_c - N_nb, nb_c)]
-            + [*range(nb_c + 1, nb_c + N_nb + 1)]
-            )
-    flx = pm_flx[nb_idx_Arr]
-    err = pm_err[nb_idx_Arr]
-    t = [trans[i] for i in nb_idx_Arr]
-    w_t = [w_trans[i] for i in nb_idx_Arr]
+    synth_tcurve = np.zeros(w_Arr.shape)
+    synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1
+    T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
-    T_Arr = np.zeros(len(nb_idx_Arr))
-
-    for i in range(len(nb_idx_Arr)):
-        T_Arr[i] = simps(np.array(t[i]) * np.array(w_t[i]), w_t[i])
-    T_sBB = np.sum(T_Arr)
-
-    flx_sBB = np.sum(flx.T * T_Arr, axis=1) / T_sBB
-    err_sBB = (T_sBB**-2 * np.sum(T_Arr**2 * err.T**2, axis=1))**0.5
-
-    ## Detect outliers (possible lines)
-    if mask_out:
-        diff = flx - flx_sBB
-        diff_err = (err**2 + err_sBB**2)**0.5
-        z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
-                * np.ones(diff.shape)
-        mask_outliers = (
-                diff > 3 * diff_err
-                + ew0min * (1 + z) * flx_sBB / 145
-                )
-                                                ## I have to better implement the FWHM
-
-        flx_ma = np.ma.array(flx, mask=mask_outliers)
-        err_ma = np.ma.array(err, mask=mask_outliers)
-
-        flx_sBB = np.sum(flx_ma.T * T_Arr, axis=1) / T_sBB
-        err_sBB = (T_sBB**-2 * np.sum(T_Arr**2 * err_ma.T**2, axis=1))**0.5
-
-    return flx_sBB, err_sBB
+    return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
 
 def z_volume(z_min, z_max, area):
     '''Computes the comoving volume in an observed area in a range of redshifts'''
