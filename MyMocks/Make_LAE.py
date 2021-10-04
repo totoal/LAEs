@@ -52,6 +52,8 @@ z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
+'''
+UNCOMMENT THIS
 # Define EW arr
 ew_x = np.linspace(10, 500, 10000)
 w_0 = 75
@@ -61,10 +63,13 @@ e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 
 # Define g flux array
 g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
+'''
+g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-16 - -18) + -18)
+e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) - 10
 
 # Dependece of noise with wavelength
-Noise_w_Arr = np.linspace( 3000 , 9000 , 10 )
-Noise_Arr   = np.ones( len( Noise_w_Arr ) ) # Now it is flat.
+Noise_w_Arr = np.linspace(3000, 9000, 10)
+Noise_Arr   = np.ones(len(Noise_w_Arr)) # Now it is flat.
 
 # Intergalactic medium mean absortion parameters : (From Faucher et al)
 T_A = -0.001845

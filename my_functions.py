@@ -510,7 +510,7 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     central wavelength w_c with a fwhm.
     '''
     synth_tcurve = np.zeros(w_Arr.shape)
-    synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1
+    synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1.
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
     return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
