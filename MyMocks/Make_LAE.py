@@ -8,8 +8,8 @@ from scipy.integrate import simpson
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
-z_lya = [3.0565814928821773, 3.1791476498162137] # LAE z interval
-obs_area = 100 # deg**2
+z_lya = [2.5, 3.2] # LAE z interval
+obs_area = 200 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -79,34 +79,6 @@ T_B =  3.924
 Grid_Dictionary = Load_BC03_grid_data()
 
 #### AGE, MET and EXT parameters
-DD = 0.00001
-'''
-MIN_MET = np.amin(Grid_Dictionary['met_Arr']) # Minimum metallicity
-MAX_MET = np.amax(Grid_Dictionary['met_Arr']) # Maximum metallicity
-
-MAX_AGE = cosmo.age(z_Arr).value              # Maximum Age
-MIN_AGE = np.amin(Grid_Dictionary['age_Arr']) # Minimum Age
-
-MIN_EXT = np.amin(Grid_Dictionary['ext_Arr']) # Minimum extintion
-MAX_EXT = 0.05                                # Maximum extintion
-
-# Defining parameters according to HETDEX spectra fits (Provided by Sid 16/09/21)
-# MIN_MET = 26.850313
-MIN_MET = 32.5
-MAX_MET = 35.3161076
-
-MIN_AGE = 10 ** -2.31549077
-MAX_AGE = 10 ** -1.94981165
-
-MIN_EXT = 5.43513275e-2
-MAX_EXT = 0.8218874
-#####
-
-MET_Arr = np.random.rand(N_sources_LAE) * (MAX_MET - MIN_MET) + MIN_MET
-AGE_Arr = np.random.rand(N_sources_LAE) * (MAX_AGE - MIN_AGE) + MIN_AGE
-EXT_Arr = np.random.rand(N_sources_LAE) * (MAX_EXT - MIN_EXT) + MIN_EXT
-'''
-
 mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
                '400_Nb_100_z_1.9_3.0_sn_7.0_g_23.5_p_0.9_pp_50.0.npy',
                 allow_pickle=True).item()
@@ -165,5 +137,5 @@ for i in range(N_sources_LAE):
     cat['EXT'][i] = my_EXT
 print()
 
-filename = 'LAE_15deg_nb13'
+filename = 'LAE_100deg_uniform'
 np.save('Source_cat_' + filename + '.npy', cat)
