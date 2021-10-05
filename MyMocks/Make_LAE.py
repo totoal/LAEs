@@ -65,7 +65,7 @@ e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 '''
 g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-16 - -18) + -18)
-e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) - 10
+e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) + 10
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace(3000, 9000, 10)
