@@ -19,7 +19,7 @@ def three_filter_method(NB, BB_LC, BB_LU,
     '''
     Classical 3-filter method that fits the spectral continuum to a straight line
     INPUT arguments: flambda of NB, Line Contaminated BB, Line Uncontaminated BB and
-    their associated errors; transmission curves and central wavelenghts of these 3
+    their associated errors; transmission curves and wavelength arrays of these 3
     filters.
     RETURNS: Integrated line flux, A and B fit parameters with their errors.
 
