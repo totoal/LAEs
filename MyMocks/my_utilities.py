@@ -516,7 +516,7 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
             * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)-25) <= 25)]
             )
                        
-    obs_lya_line_Arr = norm.pdf( w_Arr , w_line * ( 1 + my_z ) , my_widths )
+    obs_lya_line_Arr = norm.pdf(w_Arr, w_line * (1 + my_z) , my_widths)
     my_flux_f = np.mean(cont_around_line) * my_ew * (1 + my_z)
     obs_lya_line_Arr = np.absolute(obs_lya_line_Arr * my_flux_f)
 

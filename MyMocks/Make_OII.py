@@ -8,7 +8,7 @@ w_lya = 1215.67
 w_oii = 0.5 * ( 3727.092 + 3729.875 )
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_LAE.py'   ####
-z_lya = [2.25, 3.2] # LAE z interval
+z_lya = [2.5, 3.2] # LAE z interval
 z_oii = [ w_lya*(z + 1)/w_oii - 1 for z in z_lya] # OII z interval computed from z_lya
 obs_area = 1.5 # deg**2
 
@@ -90,9 +90,13 @@ cat['SEDs'] = np.zeros((N_sources_OII, len(w_Arr)))
 cat['SEDs_no_IGM'] = np.zeros((N_sources_OII, len(w_Arr)))
 cat['SEDs_no_line'] = np.zeros((N_sources_OII, len(w_Arr)))
 cat['w_Arr'] = w_Arr
-cat['LAE'] = ~np.ones(N_sources_OII, dtype=bool)
+cat['LAE'] = np.ones(N_sources_OII, dtype=bool)
 cat['EW_Arr'] = e_Arr
 cat['redshift_Lya_Arr'] = z_Arr
+cat['AGE'] = np.zeros(N_sources_OII)
+cat['MET'] = np.zeros(N_sources_OII)
+cat['EXT'] = np.zeros(N_sources_OII)
+cat['L_line'] = L_Arr
 
 for i in range(N_sources_OII):
 

@@ -471,6 +471,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     ew0min = 30
+    fwhm_nb = nb_fwhm(load_tcurves(load_filter_tags()), nb_c, True)
 
     # Sigma clipping
     for _ in range(3):
@@ -481,7 +482,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
                 * np.ones(bbnb.shape)
         outliers = (
                 (np.abs(bbnb) > 3*bbnb_err)
-                & (np.abs(bbnb) > ew0min * (1 + z) * avg / 145)
+                & (np.abs(bbnb) > ew0min * (1 + z) * avg / fwhm_nb)
         )
         out = np.where(outliers)
         out_symmetric = (N_nb - (out[0] - N_nb), out[1])
@@ -492,16 +493,12 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
         sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     mask = err == 999.
-    N_Arr = np.zeros(err.shape[1])
-    for i in range(err.shape[1]):
-        N_Arr[i] = len(np.where(~mask[:, i])[0])
-
     flx_ma = np.ma.array(flx, mask=mask)
     err_ma = np.ma.array(err**-2, mask=mask)
 
     ## Now recompute this but with no outliers
-    avg = np.ma.average(flx_ma, weights=err**-2, axis=0)
-    sigma =  (1. / err_ma.sum(axis=0))**0.5
+    avg = np.array(np.ma.average(flx_ma, weights=err**-2, axis=0))
+    sigma =  np.array((1. / err_ma.sum(axis=0))**0.5)
     return avg, sigma
 
 def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
@@ -513,7 +510,10 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1.
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
-    return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
+    if len(f.shape) == 1:
+        return simpson(synth_tcurve * f * w_Arr, w_Arr) / T_integrated 
+    else:
+        return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
 
 def z_volume(z_min, z_max, area):
     '''Computes the comoving volume in an observed area in a range of redshifts'''
