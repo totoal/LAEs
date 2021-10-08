@@ -454,7 +454,7 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
     if LINE == 'Lya':
         redshift_w_Arr = w_Arr * 1. / w_line - 1.
-        IGM_T_w_Arr = IGM_TRANSMISSION( redshift_w_Arr , T_A , T_B )
+        IGM_T_w_Arr = IGM_TRANSMISSION(redshift_w_Arr, T_A, T_B)
         mask_IGM = w_Arr < w_line * (1+my_z)
         IGM_obs_continum[mask_IGM] = IGM_obs_continum[mask_IGM] * IGM_T_w_Arr[mask_IGM]
 
@@ -513,7 +513,7 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
     
     cont_around_line = (
             Continum_normalization
-            * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)-25) <= 25)]
+            * obs_frame_spectrum[np.where(np.abs(w_Arr-w_line*(1+my_z)) <= 6)]
             )
                        
     obs_lya_line_Arr = norm.pdf(w_Arr, w_line * (1 + my_z) , my_widths)

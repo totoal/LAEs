@@ -8,7 +8,7 @@ from scipy.integrate import simpson
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
-z_lya = [2.5, 3.2] # LAE z interval
+z_lya = [3.05619946, 3.17876562] # LAE z interval
 obs_area = 200 # deg**2
 
 # Wavelength array where to evaluate the spectrum
@@ -53,7 +53,7 @@ widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
 '''
-UNCOMMENT THIS
+# UNCOMMENT THIS
 # Define EW arr
 ew_x = np.linspace(10, 500, 10000)
 w_0 = 75
@@ -64,7 +64,7 @@ e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 # Define g flux array
 g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 '''
-g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-16 - -18) + -18)
+g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-16.7 - -18) + -18)
 e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) + 10
 
 # Dependece of noise with wavelength

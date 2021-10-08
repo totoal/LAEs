@@ -463,19 +463,24 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     '''
     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
     
+    IGM_T = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb:nb_c])).reshape(-1, 1)
+
     flx = pm_flx[nb_idx_Arr]
-    err = pm_err[nb_idx_Arr]
+    flx[:N_nb] /= IGM_T
+    err_i = pm_err[nb_idx_Arr]
+    err_i[:N_nb] /= IGM_T
+    err_i[N_nb] = 999.
     
     ## First compute the continuum to find outliers to this first estimate
-    avg = np.average(flx, axis=0, weights=err**-2)
-    sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
+    avg = np.average(flx, axis=0, weights=err_i**-2)
+    sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err_i**-2, axis=0))**0.5
 
-    ew0min = 30
+    ew0min = 10
     fwhm_nb = nb_fwhm(load_tcurves(load_filter_tags()), nb_c, True)
 
     # Sigma clipping
-    for _ in range(3):
-        err = pm_err[nb_idx_Arr]
+    for _ in range(2):
+        err = err_i
         bbnb = flx - avg
         bbnb_err = (err**2 + sigma**2)**0.5
         z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
@@ -488,9 +493,8 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
         out_symmetric = (N_nb - (out[0] - N_nb), out[1])
         err[out] = 999.
         err[out_symmetric] = 999.
-        err[N_nb] = 999.
         avg = np.average(flx, axis=0, weights=err**-2)
-        sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
+        sigma = ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     mask = err == 999.
     flx_ma = np.ma.array(flx, mask=mask)
@@ -523,3 +527,29 @@ def z_volume(z_min, z_max, area):
     d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
     vol = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
     return vol
+
+def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
+    '''
+    Returns the IGM transmission associated with the Lya Break.
+    '''
+    Transmission_Arr = np.exp(A * (w_Arr / 1215.67)**B)
+    return Transmission_Arr
+
+def conf_matrix(line_Arr, z_Arr, nb_c):
+    '''
+    Confusion matrix of selection.
+    Inputs: Bool array of selection (line_Arr), Array with the real redshifts of all
+    the lines, nb_c.
+    '''
+    tcurves = load_tcurves(load_filter_tags())
+    w_in = list(nb_fwhm(tcurves, nb_c))
+    w_in.sort()
+    w_in += np.array([-5, 5])
+    z_in = np.array([w / 1215.67 - 1 for w in w_in])
+    
+    TP = len(np.where( line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    FP = len(np.where( line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    TN = len(np.where(~line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    FN = len(np.where(~line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+
+    return np.array([[TP, FP], [FN, TN]]) 
