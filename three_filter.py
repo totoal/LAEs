@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.integrate import simpson
+from my_functions import IGM_TRANSMISSION
 
 '''
 alpha & beta: two auxiliary functions for the three-filter continuum estimate method
@@ -48,7 +49,7 @@ def three_filter_method(NB, BB_LC, BB_LU,
 
     return F_EL, A, B, A_err, B_err
 
-def NB_3fm(pm_data, pm_err, nb_c, tcurves, bb_dist=10, N_nb=4):
+def NB_3fm(pm_data, pm_err, nb_c, tcurves, w_central, bb_dist=10, N_nb=4):
     '''
     Builds synthetic photometry for virtual broad bands made out of narrow bands which
     serve as arguments for the three_filter_method function.
@@ -57,24 +58,28 @@ def NB_3fm(pm_data, pm_err, nb_c, tcurves, bb_dist=10, N_nb=4):
     separation in Angstroms of the virtual BBs, N_nb number of NBs to make the virtual
     BB.
     '''
+    # IGM_T_Arr = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb : nb_c])).reshape(-1, 1)
+    # pm_data[nb_c-N_nb : nb_c] *= IGM_T_Arr
+    # pm_err[nb_c-N_nb : nb_c] *= IGM_T_Arr
+
     NB = pm_data[nb_c]
     BB_LC = np.average(
-        pm_data[nb_c-N_nb : nb_c+N_nb+1], axis=1,
+        pm_data[nb_c-N_nb : nb_c+N_nb+1], axis=0,
         weights=pm_err[nb_c-N_nb : nb_c+N_nb+1] ** -2
     )
     BB_LU = np.average(
-        pm_data[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist], axis=1,
+        pm_data[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist], axis=0,
         weights=pm_err[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist] ** -2
     )
     NB_err = pm_err[nb_c]
-    BB_LC_err = np.sum(pm_err[nb_c-N_nb : nb_c+N_nb+1] ** -2, axis=1) ** -0.5
+    BB_LC_err = np.sum(pm_err[nb_c-N_nb : nb_c+N_nb+1] ** -2, axis=0) ** -0.5
     BB_LU_err = np.sum(
-        pm_err[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist] ** -2, axis=1) ** -0.5
+        pm_err[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist] ** -2, axis=0) ** -0.5
 
-    w_Arr = tcurves['w'][nb_c]
-    t_NB = tcurves['t'][nb_c]
-    t_BB_LC = np.zeros(w_Arr.shape)
-    t_BB_LU = np.zeros(w_Arr.shape)
+    w_Arr = np.array(tcurves['w'][nb_c])
+    t_NB = np.array(tcurves['t'][nb_c])
+    t_BB_LC = np.zeros(len(w_Arr))
+    t_BB_LU = np.zeros(len(w_Arr))
 
     for i in range(2 * N_nb + 1):
         t_BB_LC += np.interp(
@@ -86,7 +91,7 @@ def NB_3fm(pm_data, pm_err, nb_c, tcurves, bb_dist=10, N_nb=4):
 
     w_NB = w_BB_LU = w_BB_LC = w_Arr
 
-    w_EL = np.sum(tcurves['w'][nb_c] * tcurves['t'][nb_c])/np.sum(tcurves['t'][nb_c])
+    w_EL = w_central[nb_c]
 
     return three_filter_method(NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB,
                                w_NB, t_BB_LC, t_BB_LU, w_BB_LC, w_BB_LU, w_EL)

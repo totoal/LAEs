@@ -326,9 +326,9 @@ def conf_matrix(line_Arr, z_Arr, nb_c):
     the lines, nb_c.
     '''
     tcurves = load_tcurves(load_filter_tags())
-    w_in = list(nb_fwhm(tcurves, nb_c))
+    w_in = list(nb_fwhm(tcurves, nb_c, False))
     w_in.sort()
-    w_in += np.array([-5, 5])
+    w_in += np.array([-10, 10])
     z_in = np.array([w / 1215.67 - 1 for w in w_in])
     
     TP = len(np.where( line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
