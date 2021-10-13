@@ -2,7 +2,7 @@ import numpy as np
 import csv
 import pickle
 import matplotlib.pyplot as plt
-from scipy.integrate import simps, simpson
+from scipy.integrate import simpson 
 from scipy.special import erf
 from scipy.optimize import curve_fit
 from astropy.stats import bootstrap
