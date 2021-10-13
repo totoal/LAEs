@@ -73,8 +73,20 @@ def NB_3fm(pm_data, pm_err, nb_c, tcurves, bb_dist=10, N_nb=4):
 
     w_Arr = tcurves['w'][nb_c]
     t_NB = tcurves['t'][nb_c]
-    t_BB_LC = np.sum(
-        np.interp(w_Arr, tcurves['t'][nb_c-N_nb : nb_c+N_nb+1],
-        tcurves['w'][nb_c-N_nb : nb_c+N_nb+1]),
-        axis=1
-    )
+    t_BB_LC = np.zeros(w_Arr.shape)
+    t_BB_LU = np.zeros(w_Arr.shape)
+
+    for i in range(2 * N_nb + 1):
+        t_BB_LC += np.interp(
+            w_Arr, tcurves['w'][nb_c-N_nb+i], tcurves['t'][nb_c-N_nb+i]
+        )
+        t_BB_LU += np.interp(
+            w_Arr, tcurves['w'][nb_c-N_nb+bb_dist+i], tcurves['t'][nb_c-N_nb+bb_dist+i]
+        )
+
+    w_NB = w_BB_LU = w_BB_LC = w_Arr
+
+    w_EL = np.sum(tcurves['w'][nb_c] * tcurves['t'][nb_c])/np.sum(tcurves['t'][nb_c])
+
+    return three_filter_method(NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB,
+                               w_NB, t_BB_LC, t_BB_LU, w_BB_LC, w_BB_LU, w_EL)
