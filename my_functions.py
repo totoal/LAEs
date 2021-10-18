@@ -253,32 +253,34 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     flx[:N_nb] /= IGM_T
     err_i = pm_err[nb_idx_Arr]
     err_i[:N_nb] /= IGM_T
-    err_i[N_nb] = 999.
+
+    err_i[N_nb - 1 : N_nb + 2] = 999.
+    err = err_i
     
     ## First compute the continuum to find outliers to this first estimate
     avg = np.average(flx, axis=0, weights=err_i**-2)
     sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err_i**-2, axis=0))**0.5
 
-    ew0min = 0
-    fwhm_nb = nb_fwhm(load_tcurves(load_filter_tags()), nb_c, True)
+    # ew0min = 0
+    # fwhm_nb = nb_fwhm(load_tcurves(load_filter_tags()), nb_c, True)
 
-    # Sigma clipping
-    for _ in range(5):
-        err = err_i
-        bbnb = flx - avg
-        bbnb_err = (err**2 + sigma**2)**0.5
-        z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
-                * np.ones(bbnb.shape)
-        outliers = (
-                (np.abs(bbnb) > 3*bbnb_err)
-                & (np.abs(bbnb) > ew0min * (1 + z) * avg / fwhm_nb)
-        )
-        out = np.where(outliers)
-        out_symmetric = (N_nb - (out[0] - N_nb), out[1])
-        err[out] = 999.
-        err[out_symmetric] = 999.
-        avg = np.average(flx, axis=0, weights=err**-2)
-        sigma = ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
+    # # Sigma clipping
+    # for _ in range(5):
+        # err = err_i
+        # bbnb = flx - avg
+        # bbnb_err = (err**2 + sigma**2)**0.5
+        # z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
+                # * np.ones(bbnb.shape)
+        # outliers = (
+                # (np.abs(bbnb) > 3*bbnb_err)
+                # & (np.abs(bbnb) > ew0min * (1 + z) * avg / fwhm_nb)
+        # )
+        # out = np.where(outliers)
+        # out_symmetric = (N_nb - (out[0] - N_nb), out[1])
+        # err[out] = 999.
+        # err[out_symmetric] = 999.
+        # avg = np.average(flx, axis=0, weights=err**-2)
+        # sigma = ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
 
     mask = err == 999.
     flx_ma = np.ma.array(flx, mask=mask)
