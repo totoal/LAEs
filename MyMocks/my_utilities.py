@@ -708,3 +708,19 @@ def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
 def L_g_to_ew(L_Arr, g_Arr, z_Arr):
     dL_Arr = cosmo.luminosity_distance(z_Arr).to(u.cm).value
     return 10**L_Arr / ((1 + z_Arr) * g_Arr * 4*np.pi * dL_Arr**2)
+
+def JPAS_synth_phot(SEDs, w_Arr, tcurves):
+    phot_len = len(tcurves['tag'])
+    pm = np.zeros(phot_len)
+
+    for fil in range(phot_len):
+        w = np.array(tcurves['w'][fil])
+        t = np.array(tcurves['t'][fil])
+
+        sed_interp = np.interp(w, w_Arr, SEDs)
+
+        sed_int = np.trapz(w * t * sed_interp, w)
+        t_int = np.trapz(w * t, w)
+        
+        pm[fil] = sed_int / t_int
+    return pm

@@ -300,6 +300,8 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1.
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
+    print(synth_tcurve, f, w_Arr, T_integrated)
+
     if len(f.shape) == 1:
         return simpson(synth_tcurve * f * w_Arr, w_Arr) / T_integrated 
     else:

@@ -3,14 +3,18 @@ from astropy.cosmology import Planck18 as cosmo
 from my_utilities import *
 import csv
 from scipy.integrate import simpson
+from time import time
+import os
 
 ####    Line wavelengths
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [2.1, 3.7]
-obs_area = 30 # deg**2
+z_lya = [2.5, 3.2]
+obs_area = 400 # deg**2
+
+filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
 
 # Wavelength array where to evaluate the spectrum
 
@@ -44,7 +48,7 @@ N_sources_LAE = int(simpson(LAE_LF[:,1], LAE_LF[:,0], dx=0.1) * Volume_LAE)
 LF_p_cum_x = np.linspace(LAE_LF[0,0], LAE_LF[-1,0], 1000)
 LF_p_cum = np.cumsum(np.interp(
     LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
-    )
+)
 LF_p_cum /= np.max(LF_p_cum)
 L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
@@ -94,24 +98,34 @@ gSDSS_lambda_pivot, gSDSS_FWHM = FWHM_lambda_pivot_filter('gSDSS')
 
 gSDSS_data = {}
 
-gSDSS_data[ 'lambda_Arr_f'       ] = np.copy( gSDSS_lambda_Arr_f       )
-gSDSS_data[ 'Transmission_Arr_f' ] = np.copy( gSDSS_Transmission_Arr_f )
-gSDSS_data[ 'lambda_pivot'       ] = np.copy( gSDSS_lambda_pivot       )
-gSDSS_data[ 'FWHM'               ] = np.copy( gSDSS_FWHM               )
+gSDSS_data['lambda_Arr_f'      ] = np.copy(gSDSS_lambda_Arr_f      )
+gSDSS_data['Transmission_Arr_f'] = np.copy(gSDSS_Transmission_Arr_f)
+gSDSS_data['lambda_pivot'      ] = np.copy(gSDSS_lambda_pivot      )
+gSDSS_data['FWHM'              ] = np.copy(gSDSS_FWHM              )
 
-# Initialize cat
-cat = {}
-cat['SEDs'] = np.zeros((N_sources_LAE, len(w_Arr)))
-cat['SEDs_no_IGM'] = np.zeros((N_sources_LAE, len(w_Arr)))
-cat['SEDs_no_line'] = np.zeros((N_sources_LAE, len(w_Arr)))
-cat['w_Arr'] = w_Arr
-cat['LAE'] = np.ones(N_sources_LAE, dtype=bool)
-cat['EW_Arr'] = e_Arr
-cat['redshift_Lya_Arr'] = z_Arr
-cat['AGE'] = np.zeros(N_sources_LAE)
-cat['MET'] = np.zeros(N_sources_LAE)
-cat['EXT'] = np.zeros(N_sources_LAE)
-cat['L_line'] = L_Arr
+os.mkdir(filename)
+
+SED_file = open(filename + '/SEDs.csv', 'w')
+SED_no_line_file = open(filename + '/SEDs_no_line.csv', 'w')
+
+SED_writer = csv.writer(SED_file)
+SED_no_line_writer = csv.writer(SED_no_line_file)
+
+tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
+
+pm_SEDs = np.zeros((60, N_sources_LAE))
+pm_SEDs_no_line = np.copy(pm_SEDs)
+
+w_Arr_reduced = np.interp(
+    np.linspace(0, len(w_Arr), 1000), np.arange(len(w_Arr)), w_Arr
+)
+
+err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
+
+z_out_Arr = []
+EW_out_Arr = []
+
+t0 = time()
 
 for i in range(N_sources_LAE):
     print('{}/{}'.format(i+1, N_sources_LAE), end='\r')
@@ -125,7 +139,7 @@ for i in range(N_sources_LAE):
     my_AGE = AGE_Arr[i]
     my_EXT = EXT_Arr[i]
 
-    cat['SEDs'][i,:], cat['SEDs_no_IGM'][i,:], cat['SEDs_no_line'][i,:]\
+    SEDs, _, SEDs_no_line\
             = generate_spectrum(
             LINE, my_z, my_e, my_g,
             my_width, my_s, my_MET,
@@ -133,10 +147,30 @@ for i in range(N_sources_LAE):
             Noise_w_Arr, Noise_Arr, T_A, T_B,
             gSDSS_data
             )
-    cat['AGE'][i] = my_AGE
-    cat['MET'][i] = my_MET
-    cat['EXT'][i] = my_EXT
-print()
+    pm_SEDs[:, i] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
+    pm_SEDs_no_line[:, i] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
 
-filename = 'LAE_30deg_uniform_g2'
-np.save('Source_cat_' + filename + '.npy', cat)
+    SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
+    SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
+
+    EW_out_Arr.append(my_e)
+    z_out_Arr.append(my_z)
+#Add errors
+m = err_fit_params[:, 0].reshape(-1, 1)
+b = err_fit_params[:, 1].reshape(-1, 1)
+pm_SEDs *= 1 + 10 ** (b + m * np.log10(np.abs(pm_SEDs)))\
+    * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
+
+utils = {
+    'z_Arr': np.array(z_out_Arr),
+    'w_Arr': w_Arr_reduced,
+    'EW_Arr': np.array(EW_out_Arr)
+}
+
+np.save(filename + '/pm_SEDs.npy', pm_SEDs)
+np.save(filename + '/pm_SEDs_no_line.npy', pm_SEDs_no_line)
+np.save(filename + '/utils.npy', utils)
+
+print()
+m, s = divmod(int(time() - t0), 60)
+print('Elapsed: {}m {}s'.format(m, s))
