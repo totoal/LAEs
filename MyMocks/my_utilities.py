@@ -444,7 +444,7 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
         w_line = 1215.68
 
     if LINE == 'OII':
-        w_line = 0.5 * ( 3727.092 + 3729.875 )
+        w_line = 0.5 * (3727.092 + 3729.875)
 
     cat_w_Arr , cat_rest_spectrum = Interpolate_Lines_Arrays_3D_grid_MCMC(
             my_MET, my_AGE, my_EXT, Grid_Dictionary
