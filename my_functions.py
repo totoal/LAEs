@@ -65,16 +65,19 @@ def central_wavelength(tcurves):
     w_central = []
 
     for fil in range(0,len(tcurves['tag'])):
-        w_c = sum(np.array(tcurves['w'][fil])*np.array(tcurves['t'][fil]))     \
-               / sum(tcurves['t'][fil])
+        w_min, w_max = nb_fwhm(tcurves, fil, give_fwhm=False)
+        w_c = (w_min + w_max) * 0.5
         w_central.append(w_c)
 
-    return w_central
+    return np.array(w_central)
 
 ### FWHM of a curve
 
 def nb_fwhm(tcurves, nb_ind, give_fwhm = True):
-    
+    '''
+    Returns the FWHM of a filter in tcurves if give_fwhm is True. If it is False, the
+    function returns a tuple with (w_central - fwhm/2, w_central + fwhm/2)
+    '''
     t = tcurves['t'][nb_ind]
     w = tcurves['w'][nb_ind]
     
@@ -300,8 +303,6 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1.
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
-    print(synth_tcurve, f, w_Arr, T_integrated)
-
     if len(f.shape) == 1:
         return simpson(synth_tcurve * f * w_Arr, w_Arr) / T_integrated 
     else:
@@ -341,3 +342,26 @@ def conf_matrix(line_Arr, z_Arr, nb_c):
     FN = len(np.where(~line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
 
     return np.array([[TP, FP], [FN, TN]]) 
+
+def plot_JPAS_source(flx, err):
+    '''
+    Generates a plot with the JPAS data.
+    '''
+    tcurves = load_tcurves(load_filter_tags())
+    w_central = central_wavelength(tcurves)
+    ax = plt.gca()
+    ax.errorbar(w_central[:-4], flx[:-4], yerr=err[:-4], c='gray', fmt='.',
+        label='NB')
+    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4], xerr=nb_fwhm(tcurves, -4)/2,
+        fmt='s', color='purple', elinewidth=4, label='uJPAS')
+    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3], xerr=nb_fwhm(tcurves, -3)/2,
+        fmt='s', color='green', elinewidth=4, label='gSDSS')
+    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2], xerr=nb_fwhm(tcurves, -2)/2,
+        fmt='s', color='red', elinewidth=4, label='rSDSS')
+    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1], xerr=nb_fwhm(tcurves, -1)/2,
+        fmt='s', color='saddlebrown', elinewidth=4, label='iSDSS')
+
+    ax.set_xlabel('$\lambda\ (\AA)$', size=15)
+    ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+
+    return ax
