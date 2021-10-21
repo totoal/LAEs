@@ -476,9 +476,6 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
 
         Noise_in_my_w_Arr = my_noises * Noise_in_my_w_Arr * 1. / I_noise_Arr 
 
-        #print 'my_noises' , my_noises
-        #print 'Noise_in_my_w_Arr' , Noise_in_my_w_Arr
-
         noisy_spectrum = np.random.normal( 0.0 , Noise_in_my_w_Arr , len(w_Arr) )
     
     g_w_Arr = gSDSS_data['lambda_Arr_f']
