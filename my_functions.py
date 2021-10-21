@@ -243,11 +243,12 @@ def load_cat_photoz_gaia(filename):
     return cat
 
 # Stack estimation
-def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
+def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     '''
     Returns the weighted average and error of N_nb Narrow Bands
     arround the central one.
     '''
+    w_central = central_wavelength(load_tcurves(load_filter_tags()))
     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
     
     IGM_T = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb:nb_c])).reshape(-1, 1)
@@ -258,6 +259,14 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, w_central):
     err_i[:N_nb] /= IGM_T
 
     err_i[N_nb - 1 : N_nb + 2] = 999.
+
+    ## Let's discard NB too faint. flux because in the mocks they have small errs and
+    ## that's wrong
+    zero_mask = np.where(flx < 1e-20)
+    zero_mask_symmetric = (N_nb - (zero_mask[0] - N_nb), zero_mask[1])
+    err_i[zero_mask] = 999.
+    err_i[zero_mask_symmetric] = 999.
+
     err = err_i
     
     ## First compute the continuum to find outliers to this first estimate
