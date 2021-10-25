@@ -65,7 +65,7 @@ def central_wavelength(tcurves):
     w_central = []
 
     for fil in range(0,len(tcurves['tag'])):
-        w_min, w_max = nb_fwhm(tcurves, fil, give_fwhm=False)
+        w_min, w_max = nb_fwhm(fil, give_fwhm=False, tcurves=tcurves)
         w_c = (w_min + w_max) * 0.5
         w_central.append(w_c)
 
@@ -73,11 +73,14 @@ def central_wavelength(tcurves):
 
 ### FWHM of a curve
 
-def nb_fwhm(tcurves, nb_ind, give_fwhm = True):
+def nb_fwhm(nb_ind, give_fwhm = True, tcurves=None):
     '''
     Returns the FWHM of a filter in tcurves if give_fwhm is True. If it is False, the
     function returns a tuple with (w_central - fwhm/2, w_central + fwhm/2)
     '''
+    if tcurves == None: # For some calls it is too heavy to load tcurves each time
+        tcurves = load_tcurves(load_filter_tags())
+
     t = tcurves['t'][nb_ind]
     w = tcurves['w'][nb_ind]
     
@@ -243,7 +246,7 @@ def load_cat_photoz_gaia(filename):
     return cat
 
 # Stack estimation
-def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
+def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     '''
     Returns the weighted average and error of N_nb Narrow Bands
     arround the central one.
@@ -251,7 +254,10 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb):
     w_central = central_wavelength(load_tcurves(load_filter_tags()))
     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
     
-    IGM_T = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb:nb_c])).reshape(-1, 1)
+    if IGM_T_correct:
+        IGM_T = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb:nb_c])).reshape(-1, 1)
+    else:
+        IGM_T = 1.
 
     flx = pm_flx[nb_idx_Arr]
     flx[:N_nb] /= IGM_T
@@ -323,7 +329,7 @@ def z_volume(z_min, z_max, area):
     dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
     d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
     d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
-    vol = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
+    vol = 1./3. * (d_side_max**2 * dc_max - d_side_min**2 * dc_min)
     return vol
 
 def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
@@ -361,13 +367,13 @@ def plot_JPAS_source(flx, err):
     ax = plt.gca()
     ax.errorbar(w_central[:-4], flx[:-4], yerr=err[:-4], c='gray', fmt='.',
         label='NB')
-    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4], xerr=nb_fwhm(tcurves, -4)/2,
+    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4], xerr=nb_fwhm(-4, tcurves=tcurves)/2,
         fmt='s', color='purple', elinewidth=4, label='uJPAS')
-    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3], xerr=nb_fwhm(tcurves, -3)/2,
+    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3], xerr=nb_fwhm(-3, tcurves=tcurves)/2,
         fmt='s', color='green', elinewidth=4, label='gSDSS')
-    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2], xerr=nb_fwhm(tcurves, -2)/2,
+    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2], xerr=nb_fwhm(-2, tcurves=tcurves)/2,
         fmt='s', color='red', elinewidth=4, label='rSDSS')
-    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1], xerr=nb_fwhm(tcurves, -1)/2,
+    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1], xerr=nb_fwhm(-1, tcurves=tcurves)/2,
         fmt='s', color='saddlebrown', elinewidth=4, label='iSDSS')
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
