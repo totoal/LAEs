@@ -490,20 +490,18 @@ def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises ,
         w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
         )
 
-    '''
     ## Synthetic NB arround emission line##
     snb_w_Arr = g_w_Arr
     snb_T_Arr = np.zeros(snb_w_Arr.shape)
     snb_w     = w_line * (1 + my_z)
     snb_T_Arr[np.where(np.abs(snb_w_Arr - snb_w) < 72.)] = 1.
     snb_FWHM  = 144.
-    '''
 
     Noises_flux_snb = Synthetic_Photometry_measure_flux(
-            w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+            w_Arr, noisy_spectrum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM
             )
     source_flux_snb = Synthetic_Photometry_measure_flux(
-            w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+            w_Arr, IGM_obs_continum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM
             )
     
     Continum_normalization = (my_flux_g - Noises_flux_snb) * 1. / (source_flux_snb)

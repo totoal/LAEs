@@ -5,14 +5,15 @@ import csv
 from scipy.integrate import simpson
 from time import time
 import os
+import pandas as pd
 
 ####    Line wavelengths
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [2.5, 3.2]
-obs_area = 400 # deg**2
+z_lya = [1.9, 7.]
+obs_area = 5 # deg**2
 
 filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
 
@@ -57,8 +58,6 @@ z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
-'''
-# UNCOMMENT THIS
 # Define EW arr
 ew_x = np.linspace(10, 500, 10000)
 w_0 = 75
@@ -71,6 +70,7 @@ g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 '''
 g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-17 - -17.9) + -17.9)
 e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) + 10
+'''
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace(3000, 9000, 10)
@@ -155,11 +155,18 @@ for i in range(N_sources_LAE):
 
     EW_out_Arr.append(my_e)
     z_out_Arr.append(my_z)
+
 #Add errors
 m = err_fit_params[:, 0].reshape(-1, 1)
 b = err_fit_params[:, 1].reshape(-1, 1)
-pm_SEDs *= 1 + 10 ** (b + m * np.log10(np.abs(pm_SEDs)))\
-    * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
+pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
+
+lim_flx = (np.ones(pm_SEDs.shape) * 1e-19)
+err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
+where_low_flx = np.where(pm_SEDs < 1e-19)
+pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
+
+pm_SEDs += pm_SEDs_err * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
 
 utils = {
     'z_Arr': np.array(z_out_Arr),
@@ -167,8 +174,9 @@ utils = {
     'EW_Arr': np.array(EW_out_Arr)
 }
 
-np.save(filename + '/pm_SEDs.npy', pm_SEDs)
-np.save(filename + '/pm_SEDs_no_line.npy', pm_SEDs_no_line)
+np.save(filename + '/pm_flx.npy', pm_SEDs)
+np.save(filename + '/pm_flx_err.npy', pm_SEDs_err)
+np.save(filename + '/pm_flx_no_line_no_err.npy', pm_SEDs_no_line)
 np.save(filename + '/utils.npy', utils)
 
 print()
