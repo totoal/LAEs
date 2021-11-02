@@ -12,8 +12,8 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [1.9, 7.]
-obs_area = 5 # deg**2
+z_lya = [2.5, 3.2]
+obs_area = 400 # deg**2
 
 filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
 
