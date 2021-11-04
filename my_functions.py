@@ -8,6 +8,7 @@ from scipy.optimize import curve_fit
 from astropy.stats import bootstrap
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
+import time
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -367,16 +368,190 @@ def plot_JPAS_source(flx, err):
     ax = plt.gca()
     ax.errorbar(w_central[:-4], flx[:-4], yerr=err[:-4], c='gray', fmt='.',
         label='NB')
-    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4], xerr=nb_fwhm(-4, tcurves=tcurves)/2,
+    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
+        xerr=nb_fwhm(-4, tcurves=tcurves)/2,
         fmt='s', color='purple', elinewidth=4, label='uJPAS')
-    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3], xerr=nb_fwhm(-3, tcurves=tcurves)/2,
+    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
+        xerr=nb_fwhm(-3, tcurves=tcurves)/2,
         fmt='s', color='green', elinewidth=4, label='gSDSS')
-    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2], xerr=nb_fwhm(-2, tcurves=tcurves)/2,
+    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
+        xerr=nb_fwhm(-2, tcurves=tcurves)/2,
         fmt='s', color='red', elinewidth=4, label='rSDSS')
-    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1], xerr=nb_fwhm(-1, tcurves=tcurves)/2,
+    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
+        xerr=nb_fwhm(-1, tcurves=tcurves)/2,
         fmt='s', color='saddlebrown', elinewidth=4, label='iSDSS')
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
     ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
 
     return ax
+
+def identify_lines(line_Arr, qso_flx, nb_min=0, first=False):
+    '''
+    Returns a list of N lists with the index positions of the lines.
+
+    Input: 
+    line_Arr: Bool array of 3sigma detections in sources. Dim N_filters x N_sources
+    qso_flx:  Flambda data
+    nb_min
+    '''
+    N_fil, N_src = line_Arr.shape
+    line_list = []
+
+    for src in range(N_src):
+        fil = 0
+        this_src_lines = []
+        while fil < N_fil:
+            this_line = []
+            while ~line_Arr[fil, src]:
+                fil += 1
+                if fil == N_fil - 1: break
+            if fil == N_fil - 1: break
+            while line_Arr[fil, src]:
+                this_line.append(fil)
+                fil += 1
+                if fil == N_fil - 1: break
+            if fil == N_fil - 1: break
+            this_src_lines.append(
+                fil + np.argmax(qso_flx[np.array(this_line) + nb_min, src])\
+                - len(this_line) + nb_min
+            )
+        
+        if first:
+            try:
+                line_list.append(this_src_lines[0])
+            except:
+                line_list.append(-1)
+        if not first:
+            line_list.append(this_src_lines)
+    return line_list
+
+def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
+    ew0min_lya=30, ew0min_other=15, N_nb=6):
+    '''
+    Input:
+    qso_flx - Matrix of flambda (N_filters x N_sources)
+    qso_err - Matrix of flambda errors
+    nb_c_min - First filter to look at
+    nb_c_max - Last filter to look at
+    ew0min_lya - Rest-frame EW minimum for the Lya line
+    ew0min_other - Rest-frame EW minimum for all other lines
+    N_nb - Number of NB to use on each side to estimate the continuum
+
+    Output:
+    nice_lya_list - List of sources compatible with LAE QSOs
+    '''
+    t0 = time.time()
+    tcurves = load_tcurves(load_filter_tags())
+    w_central = central_wavelength(tcurves)
+    fwhm_Arr = []
+    for i in range(60):
+        fwhm_Arr.append(nb_fwhm(i, tcurves=tcurves))
+
+    N_sources = qso_flx.shape[1]
+
+    # Line rest-frame wavelengths (Angstroms)
+    w_lya = 1215.67
+    w_SiIV = 1397.61
+    w_CIV = 1549.48
+    w_CIII = 1908.73
+    w_MgII = 2799.12
+    
+    line_qso_lya = np.zeros((nb_c_max - nb_c_min, N_sources)).astype(bool)
+    line_qso_other = np.zeros((nb_c_max - nb_c_min, N_sources)).astype(bool)
+
+    # With this we obtain the first line with the ew0min_lya given, for each source
+    cont_est_Arr = []
+    cont_err_Arr = []
+    i = 0
+    for nb_c in range(nb_c_min, nb_c_max):
+        z_nb = w_central[nb_c] / w_lya - 1
+        fwhm = fwhm_Arr[nb_c]
+        cont_est_qso, cont_err_qso = stack_estimation(
+            qso_flx, qso_err, nb_c, N_nb, False
+        )
+
+        line_qso_lya[i] = (
+            (qso_flx[nb_c] - cont_est_qso > 3 * (cont_err_qso**2 + qso_err[nb_c]**2)\
+                ** 0.5 )
+            & (qso_flx[nb_c] - cont_est_qso > ew0min_lya*(1 + z_nb) * cont_est_qso/fwhm)
+        )
+        cont_est_Arr.append(cont_est_qso)
+        cont_err_Arr.append(cont_err_qso)
+        i += 1
+    line_list_lya = identify_lines(line_qso_lya, qso_flx, nb_c_min, first=True)
+    print('Lya list done. ({0:0.1f} s)'.format(time.time() - t0))
+
+    # Now we compute the redshift array assuming the first line is Lya
+    z_nb_Arr = np.ones(N_sources) * 999 # 999 means no line here, so no z
+    for src in range(N_sources):
+        l_lya = line_list_lya[src]
+        if l_lya != -1:
+            z_nb_Arr[src] = w_central[l_lya] / w_lya - 1
+
+    # Get the line positions array with ew0min_other
+    i = 0
+    for nb_c in range(nb_c_min, nb_c_max):
+        fwhm = fwhm_Arr[nb_c]
+        cont_est_qso = cont_est_Arr[i]
+        cont_err_qso = cont_err_Arr[i]
+
+        line_qso_other[i] = (
+            (qso_flx[nb_c] - cont_est_qso > 3 * (cont_err_qso**2 + qso_err[nb_c]**2)\
+                ** 0.5 )
+            & (qso_flx[nb_c] - cont_est_qso > ew0min_other*(1 + z_nb_Arr)\
+                * cont_est_qso / fwhm)
+        )
+        i += 1
+    line_list_other = identify_lines(line_qso_other, qso_flx, nb_c_min)
+    print('Other lines list done. ({0:0.1f} s)'.format(time.time() - t0))
+
+    # Time to check if the lines are compatible with QSOs
+    nice_lya_list = []
+    nice_lya_list_single = []
+    for src in range(N_sources):
+        l_lya = line_list_lya[src]
+        if l_lya == -1: continue
+        z_src = z_nb_Arr[src]
+
+        w_obs_lya = w_central[l_lya]
+        w_obs_SiIV = (1 + z_src) * w_SiIV
+        w_obs_CIV = (1 + z_src) * w_CIV
+        w_obs_CIII = (1 + z_src) * w_CIII
+        w_obs_MgII = (1 + z_src) * w_MgII
+
+        lya_flx = qso_flx[l_lya, src]
+
+        nice_lya = True
+
+        for l in line_list_other[src]:
+            w_obs_l = w_central[l]
+            if ~(   
+                # Lines are in expected possitions for QSOs
+                (
+                (np.abs(w_obs_l - w_obs_lya) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_MgII) < fwhm / 2)
+                | (w_obs_l > w_obs_MgII + fwhm / 2)
+                )
+                # The Lya line flux is the highest
+                & (qso_flx[l, src] - cont_est_Arr[l - nb_c_min][src]
+                    <= lya_flx - cont_est_Arr[l_lya - nb_c_min][src])
+                # g > r
+                & (qso_flx[-3, src] > qso_flx[-2, src])
+                # Max z for LAE set to 4.3
+                & (line_list_lya[src] < 28)
+                # More than 1 line
+                & (len(line_list_other[src]) > 1)
+                # Cannot be other lines bluer than Lya
+                & (l >= l_lya)
+            ):
+                nice_lya = False
+        if nice_lya:
+            nice_lya_list.append(src)
+        if (len(line_list_other[src]) <= 1) & nice_lya:
+            nice_lya_list_single.append(src)
+    print('Nice Lya list done. ({0:0.1f} )'.format(time.time() - t0))
+    return nice_lya_list, nice_lya_list_single, line_list_lya, line_list_other
