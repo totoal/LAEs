@@ -2,12 +2,12 @@ import numpy as np
 import csv
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib
 from scipy.integrate import simpson 
-from scipy.special import erf
 from scipy.optimize import curve_fit
-from astropy.stats import bootstrap
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
+from astropy.table import Table
 import time
 
 def mag_to_flux(m, w):
@@ -62,49 +62,27 @@ def load_tcurves(filters_tags):
     }
     return tcurves
 
-def central_wavelength(tcurves):
-    w_central = []
-
-    for fil in range(0,len(tcurves['tag'])):
-        w_min, w_max = nb_fwhm(fil, give_fwhm=False, tcurves=tcurves)
-        w_c = (w_min + w_max) * 0.5
-        w_central.append(w_c)
+def central_wavelength():
+    data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
+    w_central = data_tab['wavelength']
 
     return np.array(w_central)
 
 ### FWHM of a curve
 
-def nb_fwhm(nb_ind, give_fwhm = True, tcurves=None):
+def nb_fwhm(nb_ind, give_fwhm = True):
     '''
     Returns the FWHM of a filter in tcurves if give_fwhm is True. If it is False, the
     function returns a tuple with (w_central - fwhm/2, w_central + fwhm/2)
     '''
-    if tcurves == None: # For some calls it is too heavy to load tcurves each time
-        tcurves = load_tcurves(load_filter_tags())
-
-    t = tcurves['t'][nb_ind]
-    w = tcurves['w'][nb_ind]
-    
-    tmax = np.amax(t)
-    
-    for i in range(len(w)):
-        if t[i] < tmax/2:
-            pass
-        else:
-            w_min = w[i]
-            break
-            
-    for i in range(len(w)):
-        if t[-i] < tmax/2:
-            pass
-        else:
-            w_max = w[-i]
-            break
+    data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
+    w_central = data_tab['wavelength'][nb_ind]
+    fwhm = data_tab['width'][nb_ind]
             
     if give_fwhm == False:
-        return w_max, w_min
+        return w_central + fwhm / 2, w_central - fwhm / 2
     if give_fwhm == True:
-        return w_max-w_min
+        return fwhm
 
 ### Load no flag catalog
 
@@ -252,7 +230,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     Returns the weighted average and error of N_nb Narrow Bands
     arround the central one.
     '''
-    w_central = central_wavelength(load_tcurves(load_filter_tags()))
+    w_central = central_wavelength()
     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
     
     if IGM_T_correct:
@@ -363,23 +341,30 @@ def plot_JPAS_source(flx, err):
     '''
     Generates a plot with the JPAS data.
     '''
-    tcurves = load_tcurves(load_filter_tags())
-    w_central = central_wavelength(tcurves)
+
+    data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
+    cmap = data_tab['color_representation'][:-4]
+    w_central = data_tab['wavelength']
+    fwhm_Arr = data_tab['width']
+
     ax = plt.gca()
-    ax.errorbar(w_central[:-4], flx[:-4], yerr=err[:-4], c='gray', fmt='.',
-        label='NB')
+    for i, w in enumerate(w_central[:-4]):
+        ax.errorbar(w, flx[i], yerr=err[i],
+            marker='o', markeredgecolor='dimgray', markerfacecolor=cmap[i],
+            markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
+            label='NB', zorder=-99)
     ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
-        xerr=nb_fwhm(-4, tcurves=tcurves)/2,
-        fmt='s', color='purple', elinewidth=4, label='uJPAS')
+        xerr=fwhm_Arr[-4] / 2,
+        fmt='none', color='purple', elinewidth=5, label='uJPAS')
     ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
-        xerr=nb_fwhm(-3, tcurves=tcurves)/2,
-        fmt='s', color='green', elinewidth=4, label='gSDSS')
+        xerr=fwhm_Arr[-3] / 2,
+        fmt='none', color='green', elinewidth=5, label='gSDSS')
     ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
-        xerr=nb_fwhm(-2, tcurves=tcurves)/2,
-        fmt='s', color='red', elinewidth=4, label='rSDSS')
+        xerr=fwhm_Arr[-2] / 2,
+        fmt='none', color='red', elinewidth=5, label='rSDSS')
     ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
-        xerr=nb_fwhm(-1, tcurves=tcurves)/2,
-        fmt='s', color='saddlebrown', elinewidth=4, label='iSDSS')
+        xerr=fwhm_Arr[-1] / 2,
+        fmt='none', color='saddlebrown', elinewidth=5, label='iSDSS')
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
     ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
@@ -442,11 +427,9 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     nice_lya_list - List of sources compatible with LAE QSOs
     '''
     t0 = time.time()
-    tcurves = load_tcurves(load_filter_tags())
-    w_central = central_wavelength(tcurves)
-    fwhm_Arr = []
-    for i in range(60):
-        fwhm_Arr.append(nb_fwhm(i, tcurves=tcurves))
+    data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
+    w_central = data_tab['wavelength']
+    fwhm_Arr = data_tab['width']
 
     N_sources = qso_flx.shape[1]
 
