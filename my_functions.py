@@ -543,13 +543,11 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 & (qso_flx[-3, src] > qso_flx[-2, src])
                 # Max z for LAE set to 4.3
                 & (line_list_lya[src] < 28)
-                # More than 1 line
-                & (len(line_list_other[src]) > 1)
                 # Cannot be other lines bluer than Lya
                 & (l >= l_lya)
             ):
                 nice_lya = False
-        if nice_lya:
+        if (len(line_list_other[src]) > 1) & nice_lya:
             nice_lya_list.append(src)
         if (len(line_list_other[src]) <= 1) & nice_lya:
             nice_lya_list_single.append(src)
