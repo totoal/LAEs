@@ -337,7 +337,7 @@ def conf_matrix(line_Arr, z_Arr, nb_c):
 
     return np.array([[TP, FP], [FN, TN]]) 
 
-def plot_JPAS_source(flx, err):
+def plot_JPAS_source(flx, err, set_ylim=True):
     '''
     Generates a plot with the JPAS data.
     '''
@@ -347,24 +347,31 @@ def plot_JPAS_source(flx, err):
     w_central = data_tab['wavelength']
     fwhm_Arr = data_tab['width']
 
+    data_max = np.max(flx)
+    data_min = np.min(flx)
+    y_max = (data_max - data_min) * 2/3 + data_max
+    y_min = data_min - (data_max - data_min) * 2/3
+
     ax = plt.gca()
     for i, w in enumerate(w_central[:-4]):
         ax.errorbar(w, flx[i], yerr=err[i],
             marker='o', markeredgecolor='dimgray', markerfacecolor=cmap[i],
             markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
-            label='NB', zorder=-99)
+            zorder=-99)
     ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
         xerr=fwhm_Arr[-4] / 2,
-        fmt='none', color='purple', elinewidth=5, label='uJPAS')
+        fmt='none', color='purple', elinewidth=5)
     ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
         xerr=fwhm_Arr[-3] / 2,
-        fmt='none', color='green', elinewidth=5, label='gSDSS')
+        fmt='none', color='green', elinewidth=5)
     ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
         xerr=fwhm_Arr[-2] / 2,
-        fmt='none', color='red', elinewidth=5, label='rSDSS')
+        fmt='none', color='red', elinewidth=5)
     ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
         xerr=fwhm_Arr[-1] / 2,
-        fmt='none', color='saddlebrown', elinewidth=5, label='iSDSS')
+        fmt='none', color='saddlebrown', elinewidth=5)
+
+    if set_ylim: ax.set_ylim((y_min, y_max))
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
     ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
