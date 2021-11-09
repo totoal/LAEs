@@ -378,7 +378,7 @@ def plot_JPAS_source(flx, err, set_ylim=True):
 
     return ax
 
-def identify_lines(line_Arr, qso_flx, nb_min=0, first=False):
+def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
     '''
     Returns a list of N lists with the index positions of the lines.
 
@@ -469,15 +469,17 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
         cont_est_Arr.append(cont_est_qso)
         cont_err_Arr.append(cont_err_qso)
         i += 1
-    line_list_lya = identify_lines(line_qso_lya, qso_flx, nb_c_min, first=True)
+    line_list_lya = identify_lines(
+        line_qso_lya, qso_flx, qso_err, nb_c_min, first=True
+    )
     print('Lya list done. ({0:0.1f} s)'.format(time.time() - t0))
+    t0 = time.time()
 
     # Now we compute the redshift array assuming the first line is Lya
     z_nb_Arr = np.ones(N_sources) * 999 # 999 means no line here, so no z
     for src in range(N_sources):
         l_lya = line_list_lya[src]
-        if l_lya != -1:
-            z_nb_Arr[src] = w_central[l_lya] / w_lya - 1
+        z_nb_Arr[src] = w_central[l_lya] / w_lya - 1
 
     # Get the line positions array with ew0min_other
     i = 0
@@ -493,8 +495,9 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 * cont_est_qso / fwhm)
         )
         i += 1
-    line_list_other = identify_lines(line_qso_other, qso_flx, nb_c_min)
+    line_list_other = identify_lines(line_qso_other, qso_flx, qso_err, nb_c_min)
     print('Other lines list done. ({0:0.1f} s)'.format(time.time() - t0))
+    t0 = time.time()
 
     # Time to check if the lines are compatible with QSOs
     nice_lya_list = []
@@ -504,7 +507,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
         if l_lya == -1: continue
         z_src = z_nb_Arr[src]
 
-        w_obs_lya = w_central[l_lya]
+        w_obs_lya = (1 + z_src) * w_lya
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
         w_obs_CIII = (1 + z_src) * w_CIII
@@ -530,7 +533,8 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 & (qso_flx[l, src] - cont_est_Arr[l - nb_c_min][src]
                     <= lya_flx - cont_est_Arr[l_lya - nb_c_min][src])
                 # g > r
-                & (qso_flx[-3, src] > qso_flx[-2, src])
+                & (qso_flx[-3, src] - qso_flx[-2, src]\
+                    > (qso_err[-3, src]**2 + qso_err[-2, src]**2) ** 0.5)
                 # Max z for LAE set to 4.3
                 & (line_list_lya[src] < 28)
                 # Cannot be other lines bluer than Lya
