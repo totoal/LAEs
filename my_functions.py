@@ -533,8 +533,8 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 & (qso_flx[l, src] - cont_est_Arr[l - nb_c_min][src]
                     <= lya_flx - cont_est_Arr[l_lya - nb_c_min][src])
                 # g > r
-                & (qso_flx[-3, src] - qso_flx[-2, src]\
-                    > (qso_err[-3, src]**2 + qso_err[-2, src]**2) ** 0.5)
+                # & (qso_flx[-3, src] - qso_flx[-2, src]\
+                    # > (qso_err[-3, src]**2 + qso_err[-2, src]**2) ** 0.5)
                 # Max z for LAE set to 4.3
                 & (line_list_lya[src] < 28)
                 # Cannot be other lines bluer than Lya
@@ -543,7 +543,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 nice_lya = False
         if (len(line_list_other[src]) > 1) & nice_lya:
             nice_lya_list.append(src)
-        if (len(line_list_other[src]) <= 1) & nice_lya:
+        if (line_list_lya[src] != -1):
             nice_lya_list_single.append(src)
     print('Nice Lya list done. ({0:0.1f} )'.format(time.time() - t0))
     return nice_lya_list, nice_lya_list_single, line_list_lya, line_list_other
