@@ -84,146 +84,6 @@ def nb_fwhm(nb_ind, give_fwhm = True):
     if give_fwhm == True:
         return fwhm
 
-### Load no flag catalog
-
-def load_noflag_cat(filename):
-    with open(filename, mode='rb') as file:
-        catalog = pickle.load(file)
-    
-    noflag_cat = {}
-
-    pz        = []
-    odds      = []
-    mag       = []
-    mag_err   = []
-
-
-    for i in range(catalog['MAG'].shape[0]):
-        fsum = sum(catalog['FLAGS'][i] + catalog['MFLAGS'][i])
-            
-        if fsum == 0:
-            mag.append(catalog['MAG'][i])
-            mag_err.append(catalog['ERR'][i])
-            pz.append(catalog['PHOTOZ'][i])
-            odds.append(catalog['PZODDS'][i])
-            
-    noflag_cat['MAG'] = np.array(mag)
-    noflag_cat['ERR'] = np.array(mag_err)
-    noflag_cat['W'] = catalog['W_CENTRAL']
-    noflag_cat['FILTER'] = catalog['FILTER']
-    noflag_cat['PHOTOZ'] = np.array(pz)
-    noflag_cat['PZODDS'] = np.array(odds)
-
-    return noflag_cat
-
-def load_flambda_cat(filename):
-
-    cat = {
-            'FLAMBDA': np.array([]),
-            'RELERR': np.array([]),
-    }
-
-    with open(filename, mode='r') as csvfile:
-        rdlns = csv.reader(csvfile, delimiter=',')
-        next(rdlns, None)
-        next(rdlns, None)
-
-        flx = []
-        err = []
-        flg = []
-        mfl = []
-
-        for line in rdlns:
-            flx.append(line[0].split())
-            err.append(line[1].split())
-            flg.append(line[2].split())
-            mfl.append(line[3].split())
-
-        flg = np.array(flg).astype(float)
-        mfl = np.array(mfl).astype(float)
-        flx = np.array(flx).astype(float)
-        err = np.array(err).astype(float)
-        # Mask sources with flags and negative flux values
-        mask_flagged = (np.sum(flg, axis=1) + np.sum(mfl, axis=1)) == 0
-
-        cat['FLAMBDA'] = flx[mask_flagged]
-        cat['RELERR'] = err[mask_flagged]
-
-        return cat
-
-## Function that loads from a csv file the DualABMag minijpas catalog with associated pz,
-## odds, and GAIA apparent move data.
-def load_cat_photoz_gaia(filename):
-    with open(filename, mode='r') as csvfile:
-        rdlns = csv.reader(csvfile, delimiter=',')
-        next(rdlns, None)
-        next(rdlns, None)
-        
-        number = []
-        flx = []
-        flx_err = []
-        flags = []
-        mflags = []
-        photoz = []
-        odds = []
-        parallax = []
-        parallax_err = []
-        pmra = []
-        pmra_err = []
-        pmdec = []
-        pmdec_err = []
-        
-        for line in rdlns:
-            number.append(line[0])
-            flx.append(line[1].split())
-            flx_err.append(line[2].split())
-            flags.append(line[3].split())
-            mflags.append(line[4].split())
-            photoz.append(line[5])
-            odds.append(line[6])
-            parallax.append(line[7])
-            parallax_err.append(line[8])
-            pmra.append(line[9])
-            pmra_err.append(line[10])
-            pmdec.append(line[11])
-            pmdec_err.append(line[12])
-            
-    columns = [
-        number, flx, flx_err,
-        flags, mflags, photoz,
-        odds, parallax, parallax_err,
-        pmra, pmra_err, pmdec,
-        pmdec_err
-    ]
-    cat_keys = [
-        'number', 'flx', 'flx_err', 'flags',
-        'mflags', 'photoz', 'odds', 'parallax',
-        'parallax_err', 'pmra', 'pmra_err',
-        'pmdec', 'pmdec_err'
-    ]
-    cat_types = [
-        int, float, float, int,
-        int, float, float, float,
-        float, float, float, float,
-        float
-    ]
-    cat = {}
-    
-    for col,key in zip(columns, cat_keys):
-        cat[key] = np.array(col)
-    # Substitute empty values by NumPy NaN
-    for k,t in zip(cat.keys(), cat_types):
-        cat[k][np.where(cat[k] == '')] = np.nan
-        cat[k] = cat[k].astype(t)
-        
-    # Remove flagged sources
-    flags_arr = np.sum(cat['flags'], axis = 1) + np.sum(cat['mflags'], axis = 1)
-    mask_flags = flags_arr == 0
-    for k in cat.keys():
-        cat[k] = cat[k][mask_flags]
-    
-    return cat
-
 # Stack estimation
 def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     '''
@@ -258,27 +118,6 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     avg = np.average(flx, axis=0, weights=err_i**-2)
     sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err_i**-2, axis=0))**0.5
 
-    # ew0min = 0
-    # fwhm_nb = nb_fwhm(load_tcurves(load_filter_tags()), nb_c, True)
-
-    # # Sigma clipping
-    # for _ in range(5):
-        # err = err_i
-        # bbnb = flx - avg
-        # bbnb_err = (err**2 + sigma**2)**0.5
-        # z = (np.array(w_central)[nb_idx_Arr] / 1215.67 + 1).reshape(-1, 1)\
-                # * np.ones(bbnb.shape)
-        # outliers = (
-                # (np.abs(bbnb) > 3*bbnb_err)
-                # & (np.abs(bbnb) > ew0min * (1 + z) * avg / fwhm_nb)
-        # )
-        # out = np.where(outliers)
-        # out_symmetric = (N_nb - (out[0] - N_nb), out[1])
-        # err[out] = 999.
-        # err[out_symmetric] = 999.
-        # avg = np.average(flx, axis=0, weights=err**-2)
-        # sigma = ((len(nb_idx_Arr) - 1) / np.sum(err**-2, axis=0))**0.5
-
     mask = err == 999.
     flx_ma = np.ma.array(flx, mask=mask)
     err_ma = np.ma.array(err**-2, mask=mask)
@@ -287,6 +126,73 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     avg = np.array(np.ma.average(flx_ma, weights=err**-2, axis=0))
     sigma =  np.array((1. / err_ma.sum(axis=0))**0.5)
     return avg, sigma
+
+def estimate_continuum(NB_flx, NB_err, N_nb=6, IGM_T_correct=True):
+    '''
+    Returns a matrix with the continuum estimate at any NB in all sources.
+    '''
+    NB_flx = NB_flx[:56]
+    NB_err = NB_err[:56]
+
+    cont_est = np.zeros(NB_flx.shape)
+    cont_err = np.zeros(NB_flx.shape)
+    w_central = central_wavelength()
+
+
+    for nb_idx in range(1, NB_flx.shape[0]):
+        if nb_idx < N_nb:
+            if IGM_T_correct:
+                IGM_T = IGM_TRANSMISSION(
+                        np.array(w_central[: nb_idx - 1])
+                ).reshape(-1, 1)
+            else:
+                IGM_T = 1.
+            NBs_to_avg = np.vstack((
+                NB_flx[: nb_idx - 1] / IGM_T,
+                NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+            ))
+            NBs_errs = np.vstack((
+                NB_err[: nb_idx - 1] / IGM_T,
+                NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+            ))
+            print(NBs_to_avg)
+
+        if N_nb <= nb_idx < (NB_flx.shape[0] - 6):
+            if IGM_T_correct:
+                IGM_T = IGM_TRANSMISSION(
+                        np.array(w_central[nb_idx - N_nb : nb_idx - 1])
+                ).reshape(-1, 1)
+            else:
+                IGM_T = 1.
+            NBs_to_avg = np.vstack((
+                NB_flx[nb_idx - N_nb : nb_idx - 1] / IGM_T,
+                NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+            ))
+            NBs_errs = np.vstack((
+                NB_err[nb_idx - N_nb : nb_idx - 1] / IGM_T,
+                NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+            ))
+
+        if nb_idx >= (NB_flx.shape[0] - 6):
+            if IGM_T_correct:
+                IGM_T = IGM_TRANSMISSION(
+                        np.array(w_central[nb_idx - N_nb : nb_idx - 1])
+                ).reshape(-1, 1)
+            else:
+                IGM_T = 1.
+            NBs_to_avg = np.vstack((
+                NB_flx[nb_idx - N_nb : nb_idx - 1] / IGM_T,
+                NB_flx[nb_idx + 2 :]
+            ))
+            NBs_errs = np.vstack((
+                NB_err[nb_idx - N_nb : nb_idx - 1] / IGM_T,
+                NB_err[nb_idx + 2 :]
+            ))
+
+        cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_errs ** -2, axis=0)
+        cont_err[nb_idx] = np.sum(NBs_errs ** -2, axis=0) ** -0.5
+    return cont_est, cont_err
+
 
 def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     '''
@@ -378,7 +284,7 @@ def plot_JPAS_source(flx, err, set_ylim=True):
 
     return ax
 
-def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
+def identify_lines(line_Arr, qso_flx, nb_min=0, first=False):
     '''
     Returns a list of N lists with the index positions of the lines.
 
@@ -417,6 +323,43 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
         if not first:
             line_list.append(this_src_lines)
     return line_list
+
+def mask_proper_motion(cat):
+    '''
+    Masks sources with significant proper motion measurement in Gaia
+    '''
+    parallax_sn = np.abs(cat['parallax'] / cat['parallax_error'])
+    pmra_sn = np.abs(cat['pmra'] / cat['pmra_error'])
+    pmdec_sn = np.abs(cat['pmdec'] / cat['pmdec_error'])
+    mask = (
+        (np.sqrt(parallax_sn ** 2 + pmra_sn ** 2 + pmdec_sn**2) < 27 ** 0.5)
+        | (np.isnan(parallax_sn) | np.isnan(pmra_sn) | np.isnan(pmdec_sn))
+    )
+    return mask.to_numpy()
+
+def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True):
+    w_central = central_wavelength()[:-4]
+    fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
+    z_nb_Arr = (w_central / 1215.67 - 1).reshape(-1, 1)
+    line = (
+        # 3-sigma flux excess
+        (
+            pm_flx[:-4] - cont_est > 3 * (pm_err[:-4]**2 + cont_err**2) ** 0.5
+        )
+        # EW0 min threshold
+        & (
+            pm_flx[:-4] - cont_est > ew0min * (1 + z_nb_Arr) * cont_est / fwhm_Arr
+        )
+        # S/N > 5 on the selected band
+        & (
+            pm_flx[:-4] / pm_err[:-4] > 5
+        )
+        # Masks
+        & (
+            mask
+        )
+    )
+    return line
 
 def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     ew0min_lya=30, ew0min_other=15, N_nb=6):

@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import colorplot
-from my_functions import load_noflag_cat
 
 def perturb_phot(mag_nb, err_nb, mag_bb, err_bb,
                  ewmin, nb_ind, n_iter,
