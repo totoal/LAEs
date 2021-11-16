@@ -412,7 +412,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
         cont_err_Arr.append(cont_err_qso)
         i += 1
     line_list_lya = identify_lines(
-        line_qso_lya, qso_flx, qso_err, nb_c_min, first=True
+        line_qso_lya, qso_flx, nb_c_min, first=True
     )
     print('Lya list done. ({0:0.1f} s)'.format(time.time() - t0))
     t0 = time.time()
@@ -437,7 +437,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 * cont_est_qso / fwhm)
         )
         i += 1
-    line_list_other = identify_lines(line_qso_other, qso_flx, qso_err, nb_c_min)
+    line_list_other = identify_lines(line_qso_other, qso_flx, nb_c_min)
     print('Other lines list done. ({0:0.1f} s)'.format(time.time() - t0))
     t0 = time.time()
 
