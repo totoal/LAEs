@@ -38,7 +38,7 @@ def LumFunc(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0):
 
     return binning[:-1]+0.5*bin_width, Phi, error
 
-def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
+def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
                  obs_area=0.895, weights = []):
     w_lya = 1215.67 # A
     z = w_pivot/w_lya - 1
@@ -72,7 +72,6 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins, L_min = 0, L_max = 0,
             hist.append(np.sum(weights[np.where((L_line >= binning[i])
                 & (L_line < (binning[i] + bin_width)))[0]]))
 
-    print(hist)
     error = np.sqrt(hist)/volume/bin_width
     x = binning[:-1]+0.5*bin_width
     return x, hist, volume, bin_width

@@ -134,8 +134,8 @@ def estimate_continuum(NB_flx, NB_err, N_nb=6, IGM_T_correct=True):
     NB_flx = NB_flx[:56]
     NB_err = NB_err[:56]
 
-    cont_est = np.zeros(NB_flx.shape)
-    cont_err = np.zeros(NB_flx.shape)
+    cont_est = np.ones(NB_flx.shape) * 99.
+    cont_err = np.ones(NB_flx.shape) * 99.
     w_central = central_wavelength()
 
 
@@ -155,7 +155,6 @@ def estimate_continuum(NB_flx, NB_err, N_nb=6, IGM_T_correct=True):
                 NB_err[: nb_idx - 1] / IGM_T,
                 NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
             ))
-            print(NBs_to_avg)
 
         if N_nb <= nb_idx < (NB_flx.shape[0] - 6):
             if IGM_T_correct:
@@ -490,3 +489,56 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
             nice_lya_list_single.append(src)
     print('Nice Lya list done. ({0:0.1f} )'.format(time.time() - t0))
     return nice_lya_list, nice_lya_list_single, line_list_lya, line_list_other
+
+def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est):
+    N_sources = len(lya_lines)
+    w_central = central_wavelength()
+    fwhm_Arr = nb_fwhm(range(56))
+    nice_lya = np.zeros(N_sources).astype(bool)
+
+    # Line rest-frame wavelengths (Angstroms)
+    w_lya = 1215.67
+    w_SiIV = 1397.61
+    w_CIV = 1549.48
+    w_CIII = 1908.73
+    w_MgII = 2799.12
+
+    for src in np.where(np.array(lya_lines) != -1)[0]:
+        l_lya = lya_lines[src]
+        z_src = w_central[l_lya] / w_lya - 1
+    
+        w_obs_lya = (1 + z_src) * w_lya
+        w_obs_SiIV = (1 + z_src) * w_SiIV
+        w_obs_CIV = (1 + z_src) * w_CIV
+        w_obs_CIII = (1 + z_src) * w_CIII
+        w_obs_MgII = (1 + z_src) * w_MgII
+
+        this_nice = True
+        for l in other_lines[src]:
+            w_obs_l = w_central[l]
+            fwhm = fwhm_Arr[l]
+            if ~(   
+                # Lines are in expected possitions for QSOs
+                (
+                    (np.abs(w_obs_l - w_obs_lya) < fwhm / 2)
+                    | (np.abs(w_obs_l - w_obs_SiIV) < fwhm / 2)
+                    | (np.abs(w_obs_l - w_obs_CIV) < fwhm / 2)
+                    | (np.abs(w_obs_l - w_obs_CIII) < fwhm / 2)
+                    | (np.abs(w_obs_l - w_obs_MgII) < fwhm / 2)
+                    | (w_obs_l > w_obs_MgII + fwhm / 2)
+                )
+                # The Lya line flux is the highest
+                & (
+                    (pm_flx[l_lya, src] - cont_est[l_lya, src])
+                    - (pm_flx[l, src] - cont_est[l, src])
+                    >= 0
+                )
+                # Max z for LAE set to 4.3
+                & (l_lya < 28)
+                # Cannot be other lines bluer than Lya
+                & (l >= l_lya)
+            ):
+                this_nice = False
+        if this_nice:
+            nice_lya[src] = True
+    return nice_lya
