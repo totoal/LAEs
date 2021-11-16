@@ -1,8 +1,6 @@
 import numpy as np
 import csv
-import pickle
 import matplotlib.pyplot as plt
-import matplotlib
 from scipy.integrate import simpson 
 from scipy.optimize import curve_fit
 from astropy.cosmology import Planck18 as cosmo
