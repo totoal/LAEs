@@ -34,7 +34,7 @@ def three_filter_method(NB, BB_LC, BB_LU,
     a_NB = alpha(w_NB, t_NB)
     b_LC = beta(w_BB_LC, t_BB_LC, w_EL)
     b_NB = beta(w_NB, t_NB, w_EL)
-    c_a = (a_LU-a_LC)/(a_NB-a_LU)
+    c_a = (a_LU - a_LC) / (a_NB - a_LU)
 
     A_denominator = (a_NB - a_LU - b_NB/b_LC * (a_LC - a_LU))
 
