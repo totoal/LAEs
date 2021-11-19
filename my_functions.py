@@ -292,10 +292,12 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
     '''
     N_fil, N_src = line_Arr.shape
     line_list = []
+    line_cont_list = []
 
     for src in range(N_src):
         fil = 0
         this_src_lines = []
+        this_cont_lines = []
         while fil < N_fil:
             this_line = []
             while ~line_Arr[fil, src]:
@@ -307,29 +309,46 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
                 fil += 1
                 if fil == N_fil - 1: break
             if fil == N_fil - 1: break
+
+            aux = -len(this_line) + nb_min + fil
             
             if first:
-                this_src_lines.append(
+                this_cont_lines.append(
                     np.average(
-                        np.array(this_line) - len(this_line) + nb_min + fil,
-                        weights=qso_err[np.array(this_line), src]**-2
+                        np.array(this_line),
+                        weights=qso_flx[np.array(this_line), src]**2
                     )
-                    
                 )
-            if not first:
-                this_src_lines.append(
-                    np.argmax(qso_flx[np.array(this_line) + nb_min, src])
-                    - len(this_line) + nb_min + fil
-                )
+            this_src_lines.append(
+                np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
+            )
         
         if first:
             try:
                 line_list.append(this_src_lines[0])
+                line_cont_list.append(this_cont_lines[0])
             except:
                 line_list.append(-1)
+                line_cont_list.append(-1)
         if not first:
             line_list.append(this_src_lines)
+
+    if first: return line_list, line_cont_list
     return line_list
+
+def z_NB(cont_line_pos):
+    '''
+    Computes the Lya z for a continuum NB index.
+    '''
+    w_central = central_wavelength()
+    
+    w1 = w_central[cont_line_pos.astype(int)]
+    w2 = w_central[cont_line_pos.astype(int) + 1]
+
+    w = (w2 - w1) * cont_line_pos%1 + w1
+
+    return w / 1215.67 - 1
+    
 
 def mask_proper_motion(cat):
     '''
@@ -498,7 +517,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     print('Nice Lya list done. ({0:0.1f} )'.format(time.time() - t0))
     return nice_lya_list, nice_lya_list_single, line_list_lya, line_list_other
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est):
+def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -513,7 +532,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est):
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         l_lya = lya_lines[src]
-        z_src = w_central[l_lya] / w_lya - 1
+        z_src = z_Arr[src]
     
         w_obs_lya = (1 + z_src) * w_lya
         w_obs_SiIV = (1 + z_src) * w_SiIV
@@ -528,12 +547,12 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est):
             if ~(   
                 # Lines are in expected possitions for QSOs
                 (
-                    (np.abs(w_obs_l - w_obs_lya) < fwhm / 2)
-                    | (np.abs(w_obs_l - w_obs_SiIV) < fwhm / 2)
-                    | (np.abs(w_obs_l - w_obs_CIV) < fwhm / 2)
-                    | (np.abs(w_obs_l - w_obs_CIII) < fwhm / 2)
-                    | (np.abs(w_obs_l - w_obs_MgII) < fwhm / 2)
-                    | (w_obs_l > w_obs_MgII + fwhm / 2)
+                    (np.abs(w_obs_l - w_obs_lya) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_MgII) < fwhm)
+                    | (w_obs_l > w_obs_MgII + fwhm)
                 )
                 # The Lya line flux is the highest
                 & (

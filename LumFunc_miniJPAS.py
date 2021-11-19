@@ -67,10 +67,10 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
     for i in range(len(binning)-1):
         if len(weights) == 0:
             hist.append(len(np.where((L_line >= binning[i])
-                & (L_line < (binning[i] + bin_width)))[0]))
+                & (L_line <= (binning[i] + bin_width)))[0]))
         else:
             hist.append(np.sum(weights[np.where((L_line >= binning[i])
-                & (L_line < (binning[i] + bin_width)))[0]]))
+                & (L_line <= (binning[i] + bin_width)))[0]]))
 
     error = np.sqrt(hist)/volume/bin_width
     x = binning[:-1]+0.5*bin_width
