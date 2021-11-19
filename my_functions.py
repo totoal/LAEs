@@ -281,7 +281,7 @@ def plot_JPAS_source(flx, err, set_ylim=True):
 
     return ax
 
-def identify_lines(line_Arr, qso_flx, nb_min=0, first=False):
+def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
     '''
     Returns a list of N lists with the index positions of the lines.
 
@@ -307,10 +307,20 @@ def identify_lines(line_Arr, qso_flx, nb_min=0, first=False):
                 fil += 1
                 if fil == N_fil - 1: break
             if fil == N_fil - 1: break
-            this_src_lines.append(
-                fil + np.argmax(qso_flx[np.array(this_line) + nb_min, src])\
-                - len(this_line) + nb_min
-            )
+            
+            if first:
+                this_src_lines.append(
+                    np.average(
+                        np.array(this_line) - len(this_line) + nb_min + fil,
+                        weights=qso_err[np.array(this_line), src]**-2
+                    )
+                    
+                )
+            if not first:
+                this_src_lines.append(
+                    np.argmax(qso_flx[np.array(this_line) + nb_min, src])
+                    - len(this_line) + nb_min + fil
+                )
         
         if first:
             try:
