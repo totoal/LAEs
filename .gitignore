@@ -52,3 +52,4 @@ miniJPAS_photometry
 .gitignore
 selected_sources
 fits
+output
