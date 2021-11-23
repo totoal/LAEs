@@ -11,12 +11,12 @@ fiber = pd.read_csv(filename, sep=' ', usecols=[124]).to_numpy().reshape(-1, )
 
 N_sources = len(fiber)
 
-lya_EW = np.ones(N_sources) * -99.
 lya_cont = np.zeros(N_sources)
 lya_cont_err = np.zeros(N_sources)
+lya_F = np.zeros(N_sources)
 
 fread = fits.open('fits/spAllLine-v5_13_0.fits')
-lineinfo = fread[1].data[np.where(fread[1].data['LINEWAVE'] == 2800.315188621943)]
+lineinfo = fread[1].data[np.where(fread[1].data['LINEWAVE'] == 1215.67)]
 
 for src in range(N_sources):
     print(src)
@@ -27,14 +27,17 @@ for src in range(N_sources):
         & (lineinfo['FIBERID'] == fiber[src])
     )
 
-    lya_EW[src] = lineinfo['LINEEW'][where]
+    lya_F[src] = lineinfo['LINEAREA'][where]
     lya_cont[src] = lineinfo['LINECONTLEVEL'][where]
     lya_cont_err[src] = lineinfo['LINECONTLEVEL_ERR'][where]
 
+neg_cont = np.where(lya_cont < 0)
+lya_cont[neg_cont] = lya_cont_err[neg_cont]
+
 data = {
-    'MgIIEW': lya_EW,
-    'MgIICont': lya_cont,
-    'MgIICont_err': lya_cont_err
+    'LyaEW': lya_F / lya_cont,
+    'LyaCont': lya_cont,
+    'LyaCont_err': lya_cont_err
 }
 
-pd.DataFrame(data).to_csv('MgII_fts.csv')
+pd.DataFrame(data).to_csv('Lya_fts.csv')
