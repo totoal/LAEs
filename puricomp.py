@@ -54,14 +54,15 @@ def main(mag_cut):
     ew0lya_min = 0
     ew0lya_max = 70
     ew0lya_step = 8
-    ew0oth_min = 0
-    ew0oth_max = 50
-    ew0oth_step = 11
+    ew0oth_min = 10
+    ew0oth_max = 100
+    ew0oth_step = 10
 
     other_select_list = []
     for ew0min in np.linspace(ew0oth_min, ew0oth_max, ew0oth_step):
         print(ew0min)
-        line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other, ew0min)
+        line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other, ew0min,
+            obs=True)
         other_lines = identify_lines(line_other, pm_flx, pm_err, first=False)
 
         other_select_list.append(other_lines)
@@ -105,7 +106,7 @@ def main(mag_cut):
 
     width = 0.5
     height = 0.5
-    spacing = 0.04
+    spacing = 0.05
     cbar_width = 0.05
 
     # Define axes
@@ -130,9 +131,9 @@ def main(mag_cut):
     ax10.invert_yaxis()
 
     # Axes ticks
-    ax00.tick_params(bottom=False, labelbottom=False)
-    ax01.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-    ax11.tick_params(left=False, labelleft=False)
+    # ax00.tick_params(bottom=False, labelbottom=False)
+    # ax01.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
+    # ax11.tick_params(left=False, labelleft=False)
 
     xticks = range(ew0oth_step)
     yticks = range(ew0lya_step)
@@ -141,12 +142,28 @@ def main(mag_cut):
 
     ax00.set_yticks(yticks)
     ax00.set_yticklabels(ytick_labels)
+    ax00.set_xticks(xticks)
+    ax00.set_xticklabels(xtick_labels)
+    ax01.set_yticks(yticks)
+    ax01.set_yticklabels(ytick_labels)
+    ax01.set_xticks(xticks)
+    ax01.set_xticklabels(xtick_labels)
     ax10.set_yticks(yticks)
     ax10.set_yticklabels(ytick_labels)
     ax10.set_xticks(xticks)
     ax10.set_xticklabels(xtick_labels)
+    ax11.set_yticks(yticks)
+    ax11.set_yticklabels(ytick_labels)
     ax11.set_xticks(xticks)
     ax11.set_xticklabels(xtick_labels)
+
+    # Axes labels
+    ylabel = r'Ly$\alpha$ EW$_0$ ($\AA$)'
+    xlabel = 'Other lines EW$_\mathrm{obs}$ ($\AA$)'
+    ax00.set_ylabel(ylabel, fontsize=12)
+    ax10.set_ylabel(ylabel, fontsize=12)
+    ax10.set_xlabel(xlabel, fontsize=12)
+    ax11.set_xlabel(xlabel, fontsize=12)
 
     # Set titles
     ax00.set_title('Selected w/ correct z', fontsize=15)
@@ -183,6 +200,6 @@ def main(mag_cut):
     )
 
 if __name__ == '__main__':
-    main(20)
+    main(19)
     main(21)
-    main(22)
+    main(23)

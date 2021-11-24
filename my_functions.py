@@ -363,10 +363,16 @@ def mask_proper_motion(cat):
     )
     return mask.to_numpy()
 
-def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True):
+def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True, obs=False):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
     z_nb_Arr = (w_central / 1215.67 - 1).reshape(-1, 1)
+
+    if ~obs:
+        ew_Arr = ew0min * (1 + z_nb_Arr)
+    if obs:
+        ew_Arr = ew0min
+
     line = (
         # 3-sigma flux excess
         (
@@ -374,7 +380,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True):
         )
         # EW0 min threshold
         & (
-            pm_flx[:-4] - cont_est > ew0min * (1 + z_nb_Arr) * cont_est / fwhm_Arr
+            pm_flx[:-4] - cont_est > ew_Arr * cont_est / fwhm_Arr
         )
         # S/N > 5 on the selected band
         & (
@@ -561,9 +567,9 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
                     >= 0
                 )
                 # Max z for LAE set to 4.3
-                & (l_lya < 28)
+                & (l_lya < 30)
                 # Cannot be other lines bluer than Lya
-                & (l >= l_lya)
+                & (l >= l_lya - 1)
             ):
                 this_nice = False
         if this_nice:
