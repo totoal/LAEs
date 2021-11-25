@@ -14,8 +14,9 @@ N_sources = len(fiber)
 lya_cont = np.zeros(N_sources)
 lya_cont_err = np.zeros(N_sources)
 lya_F = np.zeros(N_sources)
+lya_F_err = np.zeros(N_sources)
 
-fread = fits.open('fits/spAllLine-v5_13_0.fits')
+fread = fits.open('/home/alberto/almacen/prolly_useful_files/spAllLine-v5_13_0.fits')
 lineinfo = fread[1].data[np.where(fread[1].data['LINEWAVE'] == 1215.67)]
 
 for src in range(N_sources):
@@ -28,14 +29,18 @@ for src in range(N_sources):
     )
 
     lya_F[src] = lineinfo['LINEAREA'][where]
+    lya_F_err[src] = lineinfo['LINEAREA_ERR'][where]
     lya_cont[src] = lineinfo['LINECONTLEVEL'][where]
     lya_cont_err[src] = lineinfo['LINECONTLEVEL_ERR'][where]
 
 neg_cont = np.where(lya_cont < 0)
-lya_cont[neg_cont] = lya_cont_err[neg_cont]
+lya_cont_corrected = np.copy(lya_cont)
+lya_cont_corrected[neg_cont] = lya_cont_err[neg_cont]
 
 data = {
-    'LyaEW': lya_F / lya_cont,
+    'LyaEW': lya_F / lya_cont_corrected,
+    'LyaF': lya_F,
+    'LyaF_err': lya_F_err,
     'LyaCont': lya_cont,
     'LyaCont_err': lya_cont_err
 }
