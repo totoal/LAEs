@@ -12,8 +12,8 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [2.5, 3.2]
-obs_area = 800 # deg**2
+z_lya = [2, 4.5]
+obs_area = 100 # deg**2
 
 filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
 
@@ -32,7 +32,7 @@ LINE = 'Lya'
 
 ####################################################################
 
-#####   Load LAE LF
+####    Load LAE LF
 
 filepath = '../csv/HETDEX_LumFunc.csv'
 LAE_LF = []
@@ -51,10 +51,9 @@ LF_p_cum = np.cumsum(np.interp(
     LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
 )
 LF_p_cum /= np.max(LF_p_cum)
-L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
 # Define z, widths and s Array
-z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
+# z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
@@ -63,20 +62,61 @@ ew_x = np.linspace(10, 500, 10000)
 w_0 = 75
 ew_dist_cum = np.cumsum(np.exp(-ew_x / w_0))
 ew_dist_cum /= np.max(ew_dist_cum)
-e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 
 # Define g flux array
-g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
-'''
-g_Arr = 10 ** (np.random.rand(N_sources_LAE) * (-17 - -17.9) + -17.9)
-e_Arr = np.random.rand(N_sources_LAE) * (150 - 10) + 10
-'''
+# g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
+
+
+# Iterate to find a good array of redshifts
+# It first creates e, L and g arrays 10 times longer than needed to select
+# good values. When the number of 'good' sources is found, the loop stops
+# and deletes the exceeding to obtain exactly N_sources_LAE sources.
+e_Arr = np.zeros(N_sources_LAE)
+L_Arr = np.zeros(N_sources_LAE)
+g_Arr = np.zeros(N_sources_LAE)
+z_Arr = np.zeros(N_sources_LAE)
+counter = 0
+
+if N_sources_LAE > 1000: # Set a max length for n otherwise the cpu explodes
+    n = 1000
+else:
+    n = N_sources_LAE
+
+while True:
+    print(f'Sampling... {counter}/{N_sources_LAE}', end='\r')
+    e_Arr_0 = np.interp(np.random.rand(n), ew_dist_cum, ew_x)
+    L_Arr_0 = np.interp(np.random.rand(n), LF_p_cum, LF_p_cum_x)
+    g_Arr_0 = np.ones(n) * 1e-17
+
+    z_Arr_0 = at_which_redshift(L_Arr_0, e_Arr_0, g_Arr_0)
+
+    good_ones = (z_Arr_0 >= z_lya[0]) & (z_Arr_0 <= z_lya[1])
+    this_counter = len(np.where(good_ones)[0])
+    if counter + this_counter <= N_sources_LAE:
+        e_Arr[counter : counter + this_counter] = e_Arr_0[good_ones]
+        L_Arr[counter : counter + this_counter] = L_Arr_0[good_ones]
+        g_Arr[counter : counter + this_counter] = g_Arr_0[good_ones]
+        z_Arr[counter : counter + this_counter] = z_Arr_0[good_ones]
+
+        counter += this_counter
+    else:
+        choose_good_ones = np.random.choice(
+                np.where(good_ones)[0], N_sources_LAE - counter
+        )
+        e_Arr[counter:N_sources_LAE] = e_Arr_0[choose_good_ones]
+        L_Arr[counter:N_sources_LAE] = L_Arr_0[choose_good_ones]
+        g_Arr[counter:N_sources_LAE] = g_Arr_0[choose_good_ones]
+        z_Arr[counter:N_sources_LAE] = z_Arr_0[choose_good_ones]
+
+        counter += this_counter
+        break
+print()
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace(3000, 9000, 10)
 Noise_Arr   = np.ones(len(Noise_w_Arr)) # Now it is flat.
 
-# Intergalactic medium mean absortion parameters : (From Faucher et al)
+# Intergalactic medium mean absortion parameters: (From Faucher et al)
 T_A = -0.001845
 T_B =  3.924
 
@@ -156,7 +196,7 @@ for i in range(N_sources_LAE):
     EW_out_Arr.append(my_e)
     z_out_Arr.append(my_z)
 
-#Add errors
+# Add errors
 m = err_fit_params[:, 0].reshape(-1, 1)
 b = err_fit_params[:, 1].reshape(-1, 1)
 pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))

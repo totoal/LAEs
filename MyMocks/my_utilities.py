@@ -1,8 +1,12 @@
 import numpy as np
-from astropy.cosmology import Planck15 as cosmo
+
 from scipy.stats import norm
 import scipy
+
+from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
+from scipy.optimize import fsolve
+from astropy.cosmology import z_at_value
 
 #import JBOSS as jp
 
@@ -700,9 +704,31 @@ def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
     return 10**L_Arr / ((1 + rand_z_Arr) * rand_EW_Arr * 4*np.pi * dL_Arr**2) 
 
 ### Computes EW array from g and L
-def L_g_to_ew(L_Arr, g_Arr, z_Arr):
-    dL_Arr = cosmo.luminosity_distance(z_Arr).to(u.cm).value
-    return 10**L_Arr / ((1 + z_Arr) * g_Arr * 4*np.pi * dL_Arr**2)
+# def L_g_to_ew(L_Arr, g_Arr, z_Arr):
+    # dL_Arr = cosmo.luminosity_distance(z_Arr).to(u.cm).value
+    # return 10**L_Arr / ((1 + z_Arr) * g_Arr * 4*np.pi * dL_Arr**2)
+
+### Computes z from L, EW, g
+def at_which_redshift(L_Arr, EW0_Arr, g_Arr):
+    p0 = np.ones(L_Arr.shape) * 2.5
+
+    z_x = np.linspace(0.5, 6, 10000)
+    d_x = cosmo.luminosity_distance(z_x)
+
+    f = lambda z: np.interp(((x / (1 + z)) ** 0.5), d_x, z_x) - z
+
+    x = 10 ** L_Arr / (EW0_Arr * 4*np.pi * g_Arr) * u.cm ** 2
+
+    return fsolve(f, p0) 
+    # for i, (L, EW0, g) in enumerate(zip(L_Arr, EW0_Arr, g_Arr)): 
+        # print(i)
+        # x = 10 ** L / (EW0 * 4*np.pi * g) * u.cm ** 2
+        # try:
+            # sol[i] = fsolve(f, 2.5)
+        # except:
+            # sol[i] = -1.
+
+    # return sol
 
 def JPAS_synth_phot(SEDs, w_Arr, tcurves):
     phot_len = len(tcurves['tag'])
