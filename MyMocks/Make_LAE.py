@@ -12,8 +12,8 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [2, 4.5]
-obs_area = 100 # deg**2
+z_lya = [1.9, 6]
+obs_area = 80 # deg**2
 
 filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
 
@@ -28,6 +28,7 @@ w_Arr = np.linspace(w_min , w_max , N_bins)
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
+g_in = [-17., -22]
 LINE = 'Lya'
 
 ####################################################################
@@ -66,9 +67,8 @@ ew_dist_cum /= np.max(ew_dist_cum)
 # Define g flux array
 # g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 
-
-# Iterate to find a good array of redshifts
-# It first creates e, L and g arrays 10 times longer than needed to select
+# Iterate to find a good array of redshifts:
+# It first creates e, L and g arrays to select
 # good values. When the number of 'good' sources is found, the loop stops
 # and deletes the exceeding to obtain exactly N_sources_LAE sources.
 e_Arr = np.zeros(N_sources_LAE)
@@ -77,7 +77,7 @@ g_Arr = np.zeros(N_sources_LAE)
 z_Arr = np.zeros(N_sources_LAE)
 counter = 0
 
-if N_sources_LAE > 1000: # Set a max length for n otherwise the cpu explodes
+if N_sources_LAE > 1000: # Set a max length n otherwise the cpu explodes
     n = 1000
 else:
     n = N_sources_LAE
@@ -86,11 +86,12 @@ while True:
     print(f'Sampling... {counter}/{N_sources_LAE}', end='\r')
     e_Arr_0 = np.interp(np.random.rand(n), ew_dist_cum, ew_x)
     L_Arr_0 = np.interp(np.random.rand(n), LF_p_cum, LF_p_cum_x)
-    g_Arr_0 = np.ones(n) * 1e-17
+    g_Arr_0 = 10 ** (np.random.rand(n) * (g_in[1] - g_in[0]) + g_in[0])
 
     z_Arr_0 = at_which_redshift(L_Arr_0, e_Arr_0, g_Arr_0)
 
-    good_ones = (z_Arr_0 >= z_lya[0]) & (z_Arr_0 <= z_lya[1])
+    good_ones = (z_Arr_0 > z_lya[0]) & (z_Arr_0 < z_lya[1])
+
     this_counter = len(np.where(good_ones)[0])
     if counter + this_counter <= N_sources_LAE:
         e_Arr[counter : counter + this_counter] = e_Arr_0[good_ones]
@@ -103,13 +104,14 @@ while True:
         choose_good_ones = np.random.choice(
                 np.where(good_ones)[0], N_sources_LAE - counter
         )
-        e_Arr[counter:N_sources_LAE] = e_Arr_0[choose_good_ones]
-        L_Arr[counter:N_sources_LAE] = L_Arr_0[choose_good_ones]
-        g_Arr[counter:N_sources_LAE] = g_Arr_0[choose_good_ones]
-        z_Arr[counter:N_sources_LAE] = z_Arr_0[choose_good_ones]
+        e_Arr[counter : N_sources_LAE] = e_Arr_0[choose_good_ones]
+        L_Arr[counter : N_sources_LAE] = L_Arr_0[choose_good_ones]
+        g_Arr[counter : N_sources_LAE] = g_Arr_0[choose_good_ones]
+        z_Arr[counter : N_sources_LAE] = z_Arr_0[choose_good_ones]
 
         counter += this_counter
         break
+
 print()
 
 # Dependece of noise with wavelength
@@ -201,7 +203,7 @@ m = err_fit_params[:, 0].reshape(-1, 1)
 b = err_fit_params[:, 1].reshape(-1, 1)
 pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
 
-lim_flx = (np.ones(pm_SEDs.shape) * 1e-19)
+lim_flx = np.ones(pm_SEDs.shape) * 1e-19
 err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
 where_low_flx = np.where(pm_SEDs < 1e-19)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
