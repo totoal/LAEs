@@ -12,10 +12,8 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 # z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [1.9, 6]
-obs_area = 80 # deg**2
-
-filename = 'LAE_' + str(obs_area) + 'deg_z' + str(z_lya[0]) + '-' + str(z_lya[1])
+z_lya = [1.9, 7]
+# obs_area = 80 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -28,30 +26,34 @@ w_Arr = np.linspace(w_min , w_max , N_bins)
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-g_in = [-17., -22]
+g_in = [-15.5, 18]
+L_in = [42., 47.]
+N_sources_LAE = 50_000
 LINE = 'Lya'
 
 ####################################################################
 
+filename = f'LAE_{N_sources_LAE}_z{z_lya[0]}-{z_lya[1]}'
+
 ####    Load LAE LF
 
-filepath = '../csv/HETDEX_LumFunc.csv'
-LAE_LF = []
-with open(filepath, mode='r') as csvfile:
-    rdlns = csv.reader(csvfile, delimiter=',')
-    for line in rdlns:
-        LAE_LF.append(line)
-LAE_LF = np.array(LAE_LF).astype(float)
+# filepath = '../csv/HETDEX_LumFunc.csv'
+# LAE_LF = []
+# with open(filepath, mode='r') as csvfile:
+    # rdlns = csv.reader(csvfile, delimiter=',')
+    # for line in rdlns:
+        # LAE_LF.append(line)
+# LAE_LF = np.array(LAE_LF).astype(float)
 
 ####    Compute the number of sources and L_line distribution 
 
-Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
-N_sources_LAE = int(simpson(LAE_LF[:,1], LAE_LF[:,0], dx=0.1) * Volume_LAE)
-LF_p_cum_x = np.linspace(LAE_LF[0,0], LAE_LF[-1,0], 1000)
-LF_p_cum = np.cumsum(np.interp(
-    LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
-)
-LF_p_cum /= np.max(LF_p_cum)
+# Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
+# N_sources_LAE = int(simpson(LAE_LF[:,1], LAE_LF[:,0], dx=0.1) * Volume_LAE)
+# LF_p_cum_x = np.linspace(LAE_LF[0,0], LAE_LF[-1,0], 1000)
+# LF_p_cum = np.cumsum(np.interp(
+    # LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
+# )
+# LF_p_cum /= np.max(LF_p_cum)
 
 # Define z, widths and s Array
 # z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
@@ -85,8 +87,8 @@ else:
 while True:
     print(f'Sampling... {counter}/{N_sources_LAE}', end='\r')
     e_Arr_0 = np.interp(np.random.rand(n), ew_dist_cum, ew_x)
-    L_Arr_0 = np.interp(np.random.rand(n), LF_p_cum, LF_p_cum_x)
     g_Arr_0 = 10 ** (np.random.rand(n) * (g_in[1] - g_in[0]) + g_in[0])
+    L_Arr_0 = np.random.rand(n) * (L_in[1] - L_in[0]) + L_in[0]
 
     z_Arr_0 = at_which_redshift(L_Arr_0, e_Arr_0, g_Arr_0)
 
@@ -95,8 +97,8 @@ while True:
     this_counter = len(np.where(good_ones)[0])
     if counter + this_counter <= N_sources_LAE:
         e_Arr[counter : counter + this_counter] = e_Arr_0[good_ones]
-        L_Arr[counter : counter + this_counter] = L_Arr_0[good_ones]
         g_Arr[counter : counter + this_counter] = g_Arr_0[good_ones]
+        L_Arr[counter : counter + this_counter] = L_Arr_0[good_ones]
         z_Arr[counter : counter + this_counter] = z_Arr_0[good_ones]
 
         counter += this_counter
@@ -105,8 +107,8 @@ while True:
                 np.where(good_ones)[0], N_sources_LAE - counter
         )
         e_Arr[counter : N_sources_LAE] = e_Arr_0[choose_good_ones]
-        L_Arr[counter : N_sources_LAE] = L_Arr_0[choose_good_ones]
         g_Arr[counter : N_sources_LAE] = g_Arr_0[choose_good_ones]
+        L_Arr[counter : N_sources_LAE] = L_Arr_0[choose_good_ones]
         z_Arr[counter : N_sources_LAE] = z_Arr_0[choose_good_ones]
 
         counter += this_counter
@@ -213,7 +215,8 @@ pm_SEDs += pm_SEDs_err * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
 utils = {
     'z_Arr': np.array(z_out_Arr),
     'w_Arr': w_Arr_reduced,
-    'EW_Arr': np.array(EW_out_Arr)
+    'EW_Arr': np.array(EW_out_Arr),
+    'L_Arr': L_Arr
 }
 
 np.save(filename + '/pm_flx.npy', pm_SEDs)

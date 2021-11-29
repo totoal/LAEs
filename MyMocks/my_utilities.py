@@ -440,7 +440,9 @@ def generate_random_number_from_distribution( x_Arr , Dist_Arr , N_random ):
 #======================================================#
 #======================================================#
 #======================================================#
-def generate_spectrum( LINE , my_z , my_ew , my_flux_g , my_widths , my_noises , my_MET , my_AGE , my_EXT , w_Arr , Grid_Dictionary , Noise_w_Arr , Noise_Arr , T_A , T_B , gSDSS_data ):
+def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
+    my_MET, my_AGE, my_EXT, w_Arr, Grid_Dictionary, Noise_w_Arr, Noise_Arr,
+    T_A, T_B, gSDSS_data):
 
     t0 = time.time()
 
@@ -709,26 +711,17 @@ def L_flux_to_g(L_Arr, rand_z_Arr, rand_EW_Arr):
     # return 10**L_Arr / ((1 + z_Arr) * g_Arr * 4*np.pi * dL_Arr**2)
 
 ### Computes z from L, EW, g
-def at_which_redshift(L_Arr, EW0_Arr, g_Arr):
+def at_which_redshift(L_Arr, EW0_Arr, f_Arr):
     p0 = np.ones(L_Arr.shape) * 2.5
 
-    z_x = np.linspace(0.5, 6, 10000)
+    z_x = np.linspace(0.1, 10, 100000)
     d_x = cosmo.luminosity_distance(z_x)
 
     f = lambda z: np.interp(((x / (1 + z)) ** 0.5), d_x, z_x) - z
 
-    x = 10 ** L_Arr / (EW0_Arr * 4*np.pi * g_Arr) * u.cm ** 2
+    x = 10 ** L_Arr / (EW0_Arr * 4*np.pi * f_Arr) * u.cm ** 2
 
     return fsolve(f, p0) 
-    # for i, (L, EW0, g) in enumerate(zip(L_Arr, EW0_Arr, g_Arr)): 
-        # print(i)
-        # x = 10 ** L / (EW0 * 4*np.pi * g) * u.cm ** 2
-        # try:
-            # sol[i] = fsolve(f, 2.5)
-        # except:
-            # sol[i] = -1.
-
-    # return sol
 
 def JPAS_synth_phot(SEDs, w_Arr, tcurves):
     phot_len = len(tcurves['tag'])
