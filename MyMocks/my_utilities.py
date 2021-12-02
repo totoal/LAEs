@@ -500,8 +500,8 @@ def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
     snb_w_Arr = g_w_Arr
     snb_T_Arr = np.zeros(snb_w_Arr.shape)
     snb_w     = w_line * (1 + my_z)
-    snb_T_Arr[np.where(np.abs(snb_w_Arr - snb_w) < 72.)] = 1.
-    snb_FWHM  = 144.
+    snb_T_Arr[np.where(np.abs(snb_w_Arr - snb_w) < 74.)] = 1.
+    snb_FWHM  = 148.
 
     Noises_flux_snb = Synthetic_Photometry_measure_flux(
             w_Arr, noisy_spectrum, snb_w_Arr, snb_T_Arr, snb_w, snb_FWHM

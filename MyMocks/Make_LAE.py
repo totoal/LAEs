@@ -7,6 +7,8 @@ from time import time
 import os
 import pandas as pd
 
+t0 = time()
+
 ####    Line wavelengths
 w_lya = 1215.67
 
@@ -26,8 +28,8 @@ w_Arr = np.linspace(w_min , w_max , N_bins)
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-g_in = [-15.5, 18]
-L_in = [42., 47.]
+g_in = [-16, -18]
+L_in = [43., 46.]
 N_sources_LAE = 50_000
 LINE = 'Lya'
 
@@ -114,6 +116,7 @@ while True:
         counter += this_counter
         break
 
+print(f'Sampling... {N_sources_LAE}/{N_sources_LAE}', end='\r')
 print()
 
 # Dependece of noise with wavelength
@@ -132,9 +135,12 @@ mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
                '400_Nb_100_z_1.9_3.0_sn_7.0_g_23.5_p_0.9_pp_50.0.npy',
                 allow_pickle=True).item()
 
-AGE_Arr = 10 ** mcmc['chains'][-N_sources_LAE:, 0]
-MET_Arr = mcmc['chains'][-N_sources_LAE:, 1]
-EXT_Arr = mcmc['chains'][-N_sources_LAE:, 2]
+
+n, r = divmod(N_sources_LAE, 32000)
+for k in range(n):
+    AGE_Arr = 10 ** mcmc['chains'][-N_sources_LAE:, 0]
+    MET_Arr = mcmc['chains'][-N_sources_LAE:, 1]
+    EXT_Arr = mcmc['chains'][-N_sources_LAE:, 2]
 
 #### Let's load the data of the gSDSS filter
 gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
@@ -169,10 +175,8 @@ err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 z_out_Arr = []
 EW_out_Arr = []
 
-t0 = time()
-
 for i in range(N_sources_LAE):
-    print('{}/{}'.format(i+1, N_sources_LAE), end='\r')
+    print('Generating spectrum {}/{}'.format(i+1, N_sources_LAE), end='\r')
 
     my_z = z_Arr[i]
     my_e = e_Arr[i]
@@ -205,9 +209,10 @@ m = err_fit_params[:, 0].reshape(-1, 1)
 b = err_fit_params[:, 1].reshape(-1, 1)
 pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
 
-lim_flx = np.ones(pm_SEDs.shape) * 1e-19
+detec_lim = 3e-18
+lim_flx = np.ones(pm_SEDs.shape) * detec_lim
 err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
-where_low_flx = np.where(pm_SEDs < 1e-19)
+where_low_flx = np.where(pm_SEDs < detec_lim)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
 
 pm_SEDs += pm_SEDs_err * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
