@@ -30,7 +30,7 @@ w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
 g_in = [-16, -18]
 L_in = [43., 46.]
-N_sources_LAE = 50_000
+N_sources_LAE = 100_000
 LINE = 'Lya'
 
 ####################################################################
