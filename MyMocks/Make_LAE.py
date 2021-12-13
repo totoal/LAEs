@@ -1,11 +1,10 @@
 import numpy as np
-from astropy.cosmology import Planck18 as cosmo
 from my_utilities import *
 import csv
+import pandas as pd
 from scipy.integrate import simpson
 from time import time
 import os
-import pandas as pd
 
 t0 = time()
 
@@ -13,9 +12,8 @@ t0 = time()
 w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
-# z_lya = [3.05619946, 3.17876562] # LAE z interval
-z_lya = [1.9, 7]
-# obs_area = 80 # deg**2
+z_lya = [2, 5]
+obs_area = 0.01 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -23,42 +21,43 @@ w_min  = 2500   # Minimum wavelength
 w_max  = 10000  # Maximum wavelegnth
 N_bins = 10000  # Number of bins
 
-w_Arr = np.linspace(w_min , w_max , N_bins)
+w_Arr = np.linspace(w_min, w_max, N_bins)
 
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-g_in = [-16, -18]
-L_in = [43., 46.]
-N_sources_LAE = 100_000
+L_in = [41.75, 44]
 LINE = 'Lya'
-
-####################################################################
-
-filename = f'LAE_{N_sources_LAE}_z{z_lya[0]}-{z_lya[1]}'
 
 ####    Load LAE LF
 
-# filepath = '../csv/HETDEX_LumFunc.csv'
-# LAE_LF = []
-# with open(filepath, mode='r') as csvfile:
-    # rdlns = csv.reader(csvfile, delimiter=',')
-    # for line in rdlns:
-        # LAE_LF.append(line)
-# LAE_LF = np.array(LAE_LF).astype(float)
+filepath = '../csv/Konno_LF.csv' # From Konno et al. 2016
+LAE_LF = []
+with open(filepath, mode='r') as csvfile:
+    rdlns = csv.reader(csvfile, delimiter=',')
+    for line in rdlns:
+        LAE_LF.append(line)
+LAE_LF = np.array(LAE_LF).astype(float)
 
 ####    Compute the number of sources and L_line distribution 
 
-# Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
-# N_sources_LAE = int(simpson(LAE_LF[:,1], LAE_LF[:,0], dx=0.1) * Volume_LAE)
-# LF_p_cum_x = np.linspace(LAE_LF[0,0], LAE_LF[-1,0], 1000)
-# LF_p_cum = np.cumsum(np.interp(
-    # LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
-# )
-# LF_p_cum /= np.max(LF_p_cum)
+Volume_LAE = z_volume(z_lya[0], z_lya[1], obs_area)
+LF_p_cum_x = np.linspace(L_in[0], L_in[1], 1000)
+N_sources_LAE = int(
+    simpson(
+        np.interp(LF_p_cum_x, LAE_LF[:, 0], LAE_LF[:, 1]), LF_p_cum_x
+    ) * Volume_LAE
+)
+print(f'N_sources = {N_sources_LAE}')
+LF_p_cum = np.cumsum(np.interp(
+    LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
+)
+LF_p_cum /= np.max(LF_p_cum)
+L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
-# Define z, widths and s Array
-# z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
+## Define z, widths and s Array
+
+z_Arr = np.random.rand(N_sources_LAE) * (z_lya[1] - z_lya[0]) + z_lya[0]
 widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
 s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
@@ -67,61 +66,14 @@ ew_x = np.linspace(10, 500, 10000)
 w_0 = 75
 ew_dist_cum = np.cumsum(np.exp(-ew_x / w_0))
 ew_dist_cum /= np.max(ew_dist_cum)
-
-# Define g flux array
-# g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
-
-# Iterate to find a good array of redshifts:
-# It first creates e, L and g arrays to select
-# good values. When the number of 'good' sources is found, the loop stops
-# and deletes the exceeding to obtain exactly N_sources_LAE sources.
-e_Arr = np.zeros(N_sources_LAE)
-L_Arr = np.zeros(N_sources_LAE)
-g_Arr = np.zeros(N_sources_LAE)
-z_Arr = np.zeros(N_sources_LAE)
-counter = 0
-
-if N_sources_LAE > 1000: # Set a max length n otherwise the cpu explodes
-    n = 1000
-else:
-    n = N_sources_LAE
-
-while True:
-    print(f'Sampling... {counter}/{N_sources_LAE}', end='\r')
-    e_Arr_0 = np.interp(np.random.rand(n), ew_dist_cum, ew_x)
-    g_Arr_0 = 10 ** (np.random.rand(n) * (g_in[1] - g_in[0]) + g_in[0])
-    L_Arr_0 = np.random.rand(n) * (L_in[1] - L_in[0]) + L_in[0]
-
-    z_Arr_0 = at_which_redshift(L_Arr_0, e_Arr_0, g_Arr_0)
-
-    good_ones = (z_Arr_0 > z_lya[0]) & (z_Arr_0 < z_lya[1])
-
-    this_counter = len(np.where(good_ones)[0])
-    if counter + this_counter <= N_sources_LAE:
-        e_Arr[counter : counter + this_counter] = e_Arr_0[good_ones]
-        g_Arr[counter : counter + this_counter] = g_Arr_0[good_ones]
-        L_Arr[counter : counter + this_counter] = L_Arr_0[good_ones]
-        z_Arr[counter : counter + this_counter] = z_Arr_0[good_ones]
-
-        counter += this_counter
-    else:
-        choose_good_ones = np.random.choice(
-                np.where(good_ones)[0], N_sources_LAE - counter
-        )
-        e_Arr[counter : N_sources_LAE] = e_Arr_0[choose_good_ones]
-        g_Arr[counter : N_sources_LAE] = g_Arr_0[choose_good_ones]
-        L_Arr[counter : N_sources_LAE] = L_Arr_0[choose_good_ones]
-        z_Arr[counter : N_sources_LAE] = z_Arr_0[choose_good_ones]
-
-        counter += this_counter
-        break
-
-print(f'Sampling... {N_sources_LAE}/{N_sources_LAE}', end='\r')
-print()
+e_Arr = np.interp(np.random.rand(N_sources_LAE), ew_dist_cum, ew_x)
 
 # Dependece of noise with wavelength
 Noise_w_Arr = np.linspace(3000, 9000, 10)
 Noise_Arr   = np.ones(len(Noise_w_Arr)) # Now it is flat.
+
+# Compute g_Arr
+g_Arr = L_flux_to_g(L_Arr, z_Arr, e_Arr)
 
 # Intergalactic medium mean absortion parameters: (From Faucher et al)
 T_A = -0.001845
@@ -136,11 +88,19 @@ mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
                 allow_pickle=True).item()
 
 
-n, r = divmod(N_sources_LAE, 32000)
+AGE_Arr = np.zeros(N_sources_LAE)
+MET_Arr = np.zeros(N_sources_LAE)
+EXT_Arr = np.zeros(N_sources_LAE)
+n_steps_mcmc = 32000
+n, r = divmod(N_sources_LAE, n_steps_mcmc)
 for k in range(n):
-    AGE_Arr = 10 ** mcmc['chains'][-N_sources_LAE:, 0]
-    MET_Arr = mcmc['chains'][-N_sources_LAE:, 1]
-    EXT_Arr = mcmc['chains'][-N_sources_LAE:, 2]
+    idx_slice = slice(k * n_steps_mcmc, (k+1) * n_steps_mcmc)
+    AGE_Arr[idx_slice] = 10 ** mcmc['chains'][-n_steps_mcmc:, 0]
+    MET_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 1]
+    EXT_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 2]
+AGE_Arr[-r:] = 10 ** mcmc['chains'][-r:, 0]
+MET_Arr[-r:] = mcmc['chains'][-r:, 1]
+EXT_Arr[-r:] = mcmc['chains'][-r:, 2]
 
 #### Let's load the data of the gSDSS filter
 gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
@@ -152,6 +112,10 @@ gSDSS_data['lambda_Arr_f'      ] = np.copy(gSDSS_lambda_Arr_f      )
 gSDSS_data['Transmission_Arr_f'] = np.copy(gSDSS_Transmission_Arr_f)
 gSDSS_data['lambda_pivot'      ] = np.copy(gSDSS_lambda_pivot      )
 gSDSS_data['FWHM'              ] = np.copy(gSDSS_FWHM              )
+
+####################################################################
+
+filename = f'LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}'
 
 os.mkdir(filename)
 
@@ -215,19 +179,14 @@ err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
 where_low_flx = np.where(pm_SEDs < detec_lim)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
 
-pm_SEDs += pm_SEDs_err * np.random.randn(pm_SEDs.shape[0], pm_SEDs.shape[1])
+np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
-utils = {
-    'z_Arr': np.array(z_out_Arr),
-    'w_Arr': w_Arr_reduced,
-    'EW_Arr': np.array(EW_out_Arr),
-    'L_Arr': L_Arr
-}
+hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
 
-np.save(filename + '/pm_flx.npy', pm_SEDs)
-np.save(filename + '/pm_flx_err.npy', pm_SEDs_err)
-np.save(filename + '/pm_flx_no_line_no_err.npy', pm_SEDs_no_line)
-np.save(filename + '/utils.npy', utils)
+pd.DataFrame(
+    data=np.hstack((pm_SEDs.T, pm_SEDs_err.T, np.array(z_out_Arr).reshape(-1, 1),
+    np.array(EW_out_Arr).reshape(-1, 1), L_Arr.reshape(-1, 1)))
+).to_csv(filename + '/data.csv', header=hdr)
 
 print()
 m, s = divmod(int(time() - t0), 60)

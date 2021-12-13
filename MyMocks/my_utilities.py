@@ -1,12 +1,12 @@
 import numpy as np
 
 from scipy.stats import norm
+from scipy.integrate import simpson
+from scipy.optimize import fsolve
 import scipy
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
-from scipy.optimize import fsolve
-from astropy.cosmology import z_at_value
 
 #import JBOSS as jp
 
@@ -696,7 +696,11 @@ def z_volume(z_min, z_max, area):
     dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
     d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
     d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
-    vol = 1./3. * (d_side_max**2*dc_max - d_side_min**2*dc_min)
+    vol = 1./3. * (d_side_max**2 * dc_max - d_side_min**2 * dc_min)
+    # z_x = np.linspace(z_min, z_max, 500)
+    # dV = cosmo.differential_comoving_volume(z_x).to(u.Mpc**3 / u.sr).value
+    # vol = simpson(dV, z_x) * (4*np.pi / 360)**2 * area
+    print('Volume = {0:3e} Mpc3'.format(vol))
     return vol
 
 #### Function to calculate EW from line flux
