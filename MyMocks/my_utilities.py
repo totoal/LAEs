@@ -36,7 +36,7 @@ def Load_Filter( filter_name ):
 #==============================================================#
 #==============================================================#
 #==============================================================#
-def FWHM_lambda_pivot_filter( filter_name ):
+def FWHM_lambda_pivot_filter(filter_name):
 
     '''
         Return the lambda pivot and the FWHM of a filter
@@ -697,9 +697,12 @@ def z_volume(z_min, z_max, area):
     # d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
     # d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
     # vol = 1./3. * (d_side_max**2 * dc_max - d_side_min**2 * dc_min)
-    z_x = np.linspace(z_min, z_max, 500)
+    z_x = np.linspace(z_min, z_max, 1000)
     dV = cosmo.differential_comoving_volume(z_x).to(u.Mpc**3 / u.sr).value
-    vol = simpson(dV, z_x) * (4*np.pi / 360)**2 * area
+    area *= (4 * np.pi / 360) ** 2
+    theta = np.arccos(1 - area / (2 * np.pi))
+    Omega = 2 * np.pi * (1 - np.cos(theta))
+    vol = simpson(dV, z_x) * Omega
     print('Volume = {0:3e} Mpc3'.format(vol))
     return vol
 
