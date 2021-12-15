@@ -13,7 +13,7 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2, 5]
-obs_area = 0.01 # deg**2
+obs_area = 1 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -26,7 +26,7 @@ w_Arr = np.linspace(w_min, w_max, N_bins)
 ####    Specific LAE parameters
 w_in  = [5, 5.1] # Line width interval
 s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-L_in = [41.75, 44]
+L_in = [41.75, 43]
 LINE = 'Lya'
 
 ####    Load LAE LF
