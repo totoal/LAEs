@@ -745,3 +745,7 @@ def JPAS_synth_phot(SEDs, w_Arr, tcurves):
         
         pm[fil] = sed_int / t_int
     return pm
+
+def mag_to_flux(m, w):
+    c = 29979245800
+    return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8

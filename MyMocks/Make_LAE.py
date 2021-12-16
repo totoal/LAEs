@@ -173,7 +173,14 @@ m = err_fit_params[:, 0].reshape(-1, 1)
 b = err_fit_params[:, 1].reshape(-1, 1)
 pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
 
-detec_lim = 3e-18
+detec_lim = np.vstack(
+    (
+        pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
+        pd.read_csv('csv/5sigma_depths_BB.csv', header=None),
+    )
+)
+detec_lim = mag_to_flux(detec_lim[:, 1], detec_lim[:, 0]).reshape(-1, 1)
+
 lim_flx = np.ones(pm_SEDs.shape) * detec_lim
 err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
 where_low_flx = np.where(pm_SEDs < detec_lim)
@@ -187,6 +194,9 @@ pd.DataFrame(
     data=np.hstack((pm_SEDs.T, pm_SEDs_err.T, np.array(z_out_Arr).reshape(-1, 1),
     np.array(EW_out_Arr).reshape(-1, 1), L_Arr.reshape(-1, 1)))
 ).to_csv(filename + '/data.csv', header=hdr)
+
+SED_file.close()
+SED_no_line_file.close()
 
 print()
 m, s = divmod(int(time() - t0), 60)
