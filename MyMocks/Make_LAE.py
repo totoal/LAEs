@@ -13,7 +13,7 @@ w_lya = 1215.67
 
 ####    Mock parameters. MUST BE THE SAME AS IN 'Make_OII.py'   ####
 z_lya = [2, 5]
-obs_area = 1 # deg**2
+obs_area = 0.1 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -48,7 +48,6 @@ N_sources_LAE = int(
         np.interp(LF_p_cum_x, LAE_LF[:, 0], LAE_LF[:, 1]), LF_p_cum_x
     ) * Volume_LAE
 )
-print(f'N_sources = {N_sources_LAE}')
 LF_p_cum = np.cumsum(np.interp(
     LF_p_cum_x, LAE_LF[:,0], LAE_LF[:,1])
 )
@@ -88,19 +87,19 @@ mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
                 allow_pickle=True).item()
 
 
-AGE_Arr = np.zeros(N_sources_LAE)
-MET_Arr = np.zeros(N_sources_LAE)
-EXT_Arr = np.zeros(N_sources_LAE)
-n_steps_mcmc = 32000
-n, r = divmod(N_sources_LAE, n_steps_mcmc)
-for k in range(n):
-    idx_slice = slice(k * n_steps_mcmc, (k+1) * n_steps_mcmc)
-    AGE_Arr[idx_slice] = 10 ** mcmc['chains'][-n_steps_mcmc:, 0]
-    MET_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 1]
-    EXT_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 2]
-AGE_Arr[-r:] = 10 ** mcmc['chains'][-r:, 0]
-MET_Arr[-r:] = mcmc['chains'][-r:, 1]
-EXT_Arr[-r:] = mcmc['chains'][-r:, 2]
+# AGE_Arr = np.zeros(N_sources_LAE)
+# MET_Arr = np.zeros(N_sources_LAE)
+# EXT_Arr = np.zeros(N_sources_LAE)
+# n_steps_mcmc = 10000
+# n, r = divmod(N_sources_LAE, n_steps_mcmc)
+# for k in range(n):
+#     idx_slice = slice(k * n_steps_mcmc, (k+1) * n_steps_mcmc)
+#     AGE_Arr[idx_slice] = 10 ** mcmc['chains'][-n_steps_mcmc:, 0]
+#     MET_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 1]
+#     EXT_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 2]
+# AGE_Arr[-r:] = 10 ** mcmc['chains'][-r:, 0]
+# MET_Arr[-r:] = mcmc['chains'][-r:, 1]
+# EXT_Arr[-r:] = mcmc['chains'][-r:, 2]
 
 #### Let's load the data of the gSDSS filter
 gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
@@ -126,9 +125,11 @@ SED_writer = csv.writer(SED_file)
 SED_no_line_writer = csv.writer(SED_no_line_file)
 
 tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
-
-pm_SEDs = np.zeros((60, N_sources_LAE))
-pm_SEDs_no_line = np.copy(pm_SEDs)
+# define a different tcurves only with r and i
+tcurves_sampling = {}
+tcurves_sampling['tag'] = [tcurves['tag'][-3], tcurves['tag'][-1]]
+tcurves_sampling['w'] = [tcurves['w'][-3], tcurves['w'][-1]]
+tcurves_sampling['t'] = [tcurves['t'][-3], tcurves['t'][-1]]
 
 w_Arr_reduced = np.interp(
     np.linspace(0, len(w_Arr), 1000), np.arange(len(w_Arr)), w_Arr
@@ -139,28 +140,49 @@ err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 z_out_Arr = []
 EW_out_Arr = []
 
-for i in range(N_sources_LAE):
-    print('Generating spectrum {}/{}'.format(i+1, N_sources_LAE), end='\r')
+good = np.where(g_Arr > 1e-19)[0]
+N_good_sources = len(good)
+
+pm_SEDs = np.zeros((60, N_good_sources))
+pm_SEDs_no_line = np.copy(pm_SEDs)
+
+
+print(f'N_sources = {N_good_sources}\n')
+
+for j, i in enumerate(good):
+    print('Generating spectrum {}/{}'.format(j+1, N_good_sources), end='\r')
 
     my_z = z_Arr[i]
     my_e = e_Arr[i]
     my_g = g_Arr[i]
     my_width = widths_Arr[i]
     my_s = s_Arr[i]
-    my_MET = MET_Arr[i]
-    my_AGE = AGE_Arr[i]
-    my_EXT = EXT_Arr[i]
+    # my_MET = MET_Arr[i]
+    # my_AGE = AGE_Arr[i]
+    # my_EXT = EXT_Arr[i]
 
-    SEDs, _, SEDs_no_line\
-            = generate_spectrum(
-            LINE, my_z, my_e, my_g,
-            my_width, my_s, my_MET,
-            my_AGE, my_EXT, w_Arr, Grid_Dictionary,
-            Noise_w_Arr, Noise_Arr, T_A, T_B,
-            gSDSS_data
-            )
-    pm_SEDs[:, i] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
-    pm_SEDs_no_line[:, i] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
+    ## Select AGE, MET, EXT so they don't produce a bad source, i. e.: i << g
+    while True:
+        chain_step = np.random.randint(0, 32000)
+
+        my_AGE = 10 ** mcmc['chains'][-chain_step, 0]
+        my_MET = mcmc['chains'][-chain_step, 1]
+        my_EXT = mcmc['chains'][-chain_step, 2]
+        SEDs, _, SEDs_no_line\
+                = generate_spectrum(
+                LINE, my_z, my_e, my_g,
+                my_width, my_s, my_MET,
+                my_AGE, my_EXT, w_Arr, Grid_Dictionary,
+                Noise_w_Arr, Noise_Arr, T_A, T_B,
+                gSDSS_data
+                )
+        aux_pm = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves_sampling)
+
+        if aux_pm[1] - aux_pm[0] < 1e-18:
+            break
+
+    pm_SEDs[:, j] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
+    pm_SEDs_no_line[:, j] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
 
     SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
     SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
@@ -192,7 +214,7 @@ hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya'
 
 pd.DataFrame(
     data=np.hstack((pm_SEDs.T, pm_SEDs_err.T, np.array(z_out_Arr).reshape(-1, 1),
-    np.array(EW_out_Arr).reshape(-1, 1), L_Arr.reshape(-1, 1)))
+    np.array(EW_out_Arr).reshape(-1, 1), L_Arr[good].reshape(-1, 1)))
 ).to_csv(filename + '/data.csv', header=hdr)
 
 SED_file.close()
