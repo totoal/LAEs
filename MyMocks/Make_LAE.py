@@ -208,6 +208,10 @@ err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
 where_low_flx = np.where(pm_SEDs < detec_lim)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
 
+### Delete this
+pm_SEDs_err = lim_flx / 5.
+###
+
 np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
 hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
