@@ -13,7 +13,7 @@ w_lya = 1215.67
 
 ####    Mock parameters.
 z_lya = [2, 5]
-obs_area = 1 # deg**2
+obs_area = 1.001 # deg**2
 
 # Wavelength array where to evaluate the spectrum
 
@@ -209,7 +209,7 @@ where_low_flx = np.where(pm_SEDs < detec_lim)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
 
 ### Maybe delete this (¿provisional? errors)
-pm_SEDs_err = lim_flx / 5.
+# pm_SEDs_err = lim_flx / 5.
 ###
 
 np.save(filename + '/w_Arr.npy', w_Arr_reduced)
