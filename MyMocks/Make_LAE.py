@@ -208,7 +208,7 @@ err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
 where_low_flx = np.where(pm_SEDs < detec_lim)
 pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
 
-### Delete this
+### Maybe delete this (¿provisional? errors)
 pm_SEDs_err = lim_flx / 5.
 ###
 
