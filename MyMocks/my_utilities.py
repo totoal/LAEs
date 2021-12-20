@@ -489,12 +489,12 @@ def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
     g_w     = gSDSS_data[ 'lambda_pivot'       ]
     g_FWHM  = gSDSS_data[ 'FWHM'               ]
 
-    Noises_flux_g = Synthetic_Photometry_measure_flux(
-        w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM
-        )
-    source_flux_g = Synthetic_Photometry_measure_flux(
-        w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
-        )
+    # Noises_flux_g = Synthetic_Photometry_measure_flux(
+    #     w_Arr, noisy_spectrum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+    #     )
+    # source_flux_g = Synthetic_Photometry_measure_flux(
+    #     w_Arr, IGM_obs_continum, g_w_Arr, g_T_Arr, g_w, g_FWHM
+    #     )
 
     ## Synthetic NB arround emission line##
     snb_w_Arr = g_w_Arr
