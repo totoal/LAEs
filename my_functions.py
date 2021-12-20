@@ -1,11 +1,13 @@
 import numpy as np
 import csv
 import matplotlib.pyplot as plt
+
 from scipy.integrate import simpson 
-from scipy.optimize import curve_fit
+
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
+
 import time
 
 def mag_to_flux(m, w):
@@ -206,11 +208,9 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
         return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
 
 def z_volume(z_min, z_max, area):
-    # dc_max = cosmo.comoving_distance(z_max).to(u.Mpc).value
-    # dc_min = cosmo.comoving_distance(z_min).to(u.Mpc).value
-    # d_side_max = cosmo.kpc_comoving_per_arcmin(z_max).to(u.Mpc/u.deg).value * area**0.5
-    # d_side_min = cosmo.kpc_comoving_per_arcmin(z_min).to(u.Mpc/u.deg).value * area**0.5
-    # vol = 1./3. * (d_side_max**2 * dc_max - d_side_min**2 * dc_min)
+    '''
+    Returns the comoving volume for an observation area between a range of redshifts
+    '''
     z_x = np.linspace(z_min, z_max, 1000)
     dV = cosmo.differential_comoving_volume(z_x).to(u.Mpc**3 / u.sr).value
     area *= (2 * np.pi / 360) ** 2
