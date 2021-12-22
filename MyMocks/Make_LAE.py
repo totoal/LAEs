@@ -155,7 +155,7 @@ def main(part):
     pm_SEDs_no_line = np.copy(pm_SEDs)
 
     # Initialize mask for the second cut. Used later
-    good2 = np.ones(g_Arr.shape).astype(bool)
+    good2 = np.ones(good.shape).astype(bool)
 
     print(f'N_sources = {N_good_sources}\n')
 
@@ -198,7 +198,7 @@ def main(part):
             
         # mag r < 24 cut
         if aux_pm[2] < 6e-19:
-            good2 = False
+            good2[j] = False
             continue
 
 
@@ -210,9 +210,6 @@ def main(part):
 
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
-
-    # Apply mag cut 2
-    good = good & good2
 
     # Add errors
     m = err_fit_params[:, 0].reshape(-1, 1)
@@ -241,8 +238,9 @@ def main(part):
     hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
 
     pd.DataFrame(
-        data=np.hstack((pm_SEDs.T, pm_SEDs_err.T, np.array(z_out_Arr).reshape(-1, 1),
-        np.array(EW_out_Arr).reshape(-1, 1), L_Arr[good].reshape(-1, 1)))
+        data=np.hstack((pm_SEDs.T[good2], pm_SEDs_err.T[good2],
+        np.array(z_out_Arr).reshape(-1, 1),
+        np.array(EW_out_Arr).reshape(-1, 1), L_Arr[good][good2].reshape(-1, 1)))
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
     SED_file.close()
