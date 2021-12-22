@@ -280,7 +280,10 @@ def plot_JPAS_source(flx, err, set_ylim=True):
         xerr=fwhm_Arr[-1] / 2,
         fmt='none', color='saddlebrown', elinewidth=5)
 
-    if set_ylim: ax.set_ylim((y_min, y_max))
+    try:
+        if set_ylim: ax.set_ylim((y_min, y_max))
+    except:
+        pass
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
     ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
