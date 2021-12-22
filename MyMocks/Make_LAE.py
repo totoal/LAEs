@@ -19,7 +19,7 @@ def main(part):
 
     ####    Mock parameters.
     z_lya = [2, 5]
-    obs_area = 5 # deg**2
+    obs_area = 10 # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -135,9 +135,9 @@ def main(part):
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
     # define a different tcurves only with r and i
     tcurves_sampling = {}
-    tcurves_sampling['tag'] = [tcurves['tag'][-3], tcurves['tag'][-1]]
-    tcurves_sampling['w'] = [tcurves['w'][-3], tcurves['w'][-1]]
-    tcurves_sampling['t'] = [tcurves['t'][-3], tcurves['t'][-1]]
+    tcurves_sampling['tag'] = [tcurves['tag'][-3], tcurves['tag'][-1], tcurves['tag'][-2]]
+    tcurves_sampling['w'] = [tcurves['w'][-3], tcurves['w'][-1], tcurves['w'][-2]]
+    tcurves_sampling['t'] = [tcurves['t'][-3], tcurves['t'][-1], tcurves['t'][-2]]
 
     w_Arr_reduced = np.interp(
         np.linspace(0, len(w_Arr), 1000), np.arange(len(w_Arr)), w_Arr
@@ -154,6 +154,8 @@ def main(part):
     pm_SEDs = np.zeros((60, N_good_sources))
     pm_SEDs_no_line = np.copy(pm_SEDs)
 
+    # Initialize mask for the second cut. Used later
+    good2 = np.ones(g_Arr.shape).astype(bool)
 
     print(f'N_sources = {N_good_sources}\n')
 
@@ -193,6 +195,12 @@ def main(part):
                 break
             if count == 10:
                 break
+            
+        # mag r < 24 cut
+        if aux_pm[2] < 6e-19:
+            good2 = False
+            continue
+
 
         pm_SEDs[:, j] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
         pm_SEDs_no_line[:, j] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
@@ -202,6 +210,9 @@ def main(part):
 
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
+
+    # Apply mag cut 2
+    good = good & good2
 
     # Add errors
     m = err_fit_params[:, 0].reshape(-1, 1)

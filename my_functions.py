@@ -388,10 +388,13 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True, obs=Fal
         & (
             pm_flx[:-4] - cont_est > ew_Arr * cont_est / fwhm_Arr
         )
-        # S/N > 5 on the selected band
         & (
-            pm_flx[:-4] / pm_err[:-4] > 5
+            pm_flx[:-4] > cont_est
         )
+        # S/N > 5 on the selected band
+        # & (
+        #     pm_flx[:-4] / pm_err[:-4] > 5
+        # )
         # Masks
         & (
             mask
