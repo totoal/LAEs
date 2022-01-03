@@ -18,7 +18,7 @@ def main(part):
     # w_lya = 1215.67
 
     ####    Mock parameters.
-    z_lya = [2, 5]
+    z_lya = [3, 4]
     obs_area = 50 # deg**2
 
     # Wavelength array where to evaluate the spectrum
