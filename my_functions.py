@@ -41,7 +41,7 @@ def load_tcurves(filters_tags):
 
     for tag in filters_tags:
 
-        filename = './JPAS_Transmission_Curves_20170316/JPAS_'+tag+'.tab'
+        filename = './JPAS_Transmission_Curves_20170316/JPAS_' + tag + '.tab'
         f = open(filename, mode='r')
         lines = f.readlines()[12:]
         w = []
@@ -334,8 +334,10 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
         
         if first:
             try:
-                line_list.append(this_src_lines[0])
-                line_cont_list.append(this_cont_lines[0])
+                idx = np.argmax(qso_flx[np.array(this_src_lines), src])
+
+                line_list.append(this_src_lines[idx])
+                line_cont_list.append(this_cont_lines[idx])
             except:
                 line_list.append(-1)
                 line_cont_list.append(-1)
@@ -424,6 +426,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     N_sources = qso_flx.shape[1]
 
     # Line rest-frame wavelengths (Angstroms)
+    w_OVI = 1033.82
     w_lya = 1215.67
     w_SiIV = 1397.61
     w_CIV = 1549.48
@@ -490,6 +493,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
         if l_lya == -1: continue
         z_src = z_nb_Arr[src]
 
+        w_obs_OVI = (1 + z_src) * w_OVI
         w_obs_lya = (1 + z_src) * w_lya
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
@@ -506,6 +510,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 # Lines are in expected possitions for QSOs
                 (
                 (np.abs(w_obs_l - w_obs_lya) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_OVI) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_SiIV) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_CIV) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_CIII) < fwhm / 2)
@@ -515,13 +520,17 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 # The Lya line flux is the highest
                 & (qso_flx[l, src] - cont_est_Arr[l - nb_c_min][src]
                     <= lya_flx - cont_est_Arr[l_lya - nb_c_min][src])
+                # Alsop check that Lya line + cont is the highest
+                & (
+                    qso_flx[l, src] <= lya_flx
+                )
                 # g > r
                 # & (qso_flx[-3, src] - qso_flx[-2, src]\
                     # > (qso_err[-3, src]**2 + qso_err[-2, src]**2) ** 0.5)
                 # Max z for LAE set to 4.3
                 & (line_list_lya[src] < 28)
-                # Cannot be other lines bluer than Lya
-                & (l >= l_lya)
+                # Cannot be other lines bluer than Lya <- This is false ?
+                # & (l >= l_lya)
             ):
                 nice_lya = False
         if (len(line_list_other[src]) > 1) & nice_lya:
@@ -538,6 +547,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
     nice_lya = np.zeros(N_sources).astype(bool)
 
     # Line rest-frame wavelengths (Angstroms)
+    w_OVI = 1033.82
     w_lya = 1215.67
     w_SiIV = 1397.61
     w_CIV = 1549.48
@@ -549,6 +559,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
         z_src = z_Arr[src]
     
         w_obs_lya = (1 + z_src) * w_lya
+        w_obs_OVI = (1 + z_src) * w_OVI
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
         w_obs_CIII = (1 + z_src) * w_CIII
@@ -562,6 +573,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
                 # Lines are in expected possitions for QSOs
                 (
                     (np.abs(w_obs_l - w_obs_lya) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_OVI) < fwhm)
                     | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
                     | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
                     | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
@@ -574,10 +586,14 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
                     - (pm_flx[l, src] - cont_est[l, src])
                     >= 0
                 )
+                # Also check that Lya line + cont is the highest
+                & (
+                    pm_flx[l, src] <= pm_flx[l_lya, src]
+                )
                 # Max z for LAE set to 4.3
-                & (l_lya < 30)
-                # Cannot be other lines bluer than Lya
-                & (l >= l_lya - 1)
+                # & (l_lya < 30)
+                # Cannot be other lines bluer than Lya - NOT TRUE
+                # & (l >= l_lya - 1)
             ):
                 this_nice = False
         if this_nice:
