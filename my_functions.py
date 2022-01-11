@@ -127,7 +127,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     sigma =  np.array((1. / err_ma.sum(axis=0))**0.5)
     return avg, sigma
 
-def estimate_continuum(NB_flx, NB_err, N_nb=6, IGM_T_correct=True):
+def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
     '''
@@ -217,7 +217,7 @@ def z_volume(z_min, z_max, area):
     theta = np.arccos(1 - area / (2 * np.pi))
     Omega = 2 * np.pi * (1 - np.cos(theta))
     vol = simpson(dV, z_x) * Omega
-    print('Volume = {0:3e} Mpc3'.format(vol))
+    # print('Volume = {0:3e} Mpc3'.format(vol))
     return vol
 
 def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
@@ -426,7 +426,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     N_sources = qso_flx.shape[1]
 
     # Line rest-frame wavelengths (Angstroms)
-    w_OVI = 1033.82
+    w_lyb = 1033.82
     w_lya = 1215.67
     w_SiIV = 1397.61
     w_CIV = 1549.48
@@ -493,7 +493,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
         if l_lya == -1: continue
         z_src = z_nb_Arr[src]
 
-        w_obs_OVI = (1 + z_src) * w_OVI
+        w_obs_lyb = (1 + z_src) * w_lyb
         w_obs_lya = (1 + z_src) * w_lya
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
@@ -510,7 +510,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
                 # Lines are in expected possitions for QSOs
                 (
                 (np.abs(w_obs_l - w_obs_lya) < fwhm / 2)
-                | (np.abs(w_obs_l - w_obs_OVI) < fwhm / 2)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_SiIV) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_CIV) < fwhm / 2)
                 | (np.abs(w_obs_l - w_obs_CIII) < fwhm / 2)
@@ -547,7 +547,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
     nice_lya = np.zeros(N_sources).astype(bool)
 
     # Line rest-frame wavelengths (Angstroms)
-    w_OVI = 1033.82
+    w_lyb = 1025.7220
     w_lya = 1215.67
     w_SiIV = 1397.61
     w_CIV = 1549.48
@@ -559,7 +559,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
         z_src = z_Arr[src]
     
         w_obs_lya = (1 + z_src) * w_lya
-        w_obs_OVI = (1 + z_src) * w_OVI
+        w_obs_lyb = (1 + z_src) * w_lyb
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
         w_obs_CIII = (1 + z_src) * w_CIII
@@ -573,7 +573,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
                 # Lines are in expected possitions for QSOs
                 (
                     (np.abs(w_obs_l - w_obs_lya) < fwhm)
-                    | (np.abs(w_obs_l - w_obs_OVI) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
                     | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
                     | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
                     | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
