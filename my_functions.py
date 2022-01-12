@@ -377,9 +377,9 @@ def mask_proper_motion(cat):
 def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True, obs=False):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
-    z_nb_Arr = (w_central / 1215.67 - 1).reshape(-1, 1)
 
-    if ~obs:
+    if not obs:
+        z_nb_Arr = (w_central / 1215.67 - 1).reshape(-1, 1)
         ew_Arr = ew0min * (1 + z_nb_Arr)
     if obs:
         ew_Arr = ew0min
