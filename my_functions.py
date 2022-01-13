@@ -127,7 +127,7 @@ def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
     sigma =  np.array((1. / err_ma.sum(axis=0))**0.5)
     return avg, sigma
 
-def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True):
+def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=False):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
     '''
@@ -140,23 +140,29 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True):
 
 
     for nb_idx in range(1, NB_flx.shape[0]):
-        if nb_idx < N_nb:
+        if (nb_idx < N_nb) or only_right :
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
                         np.array(w_central[: nb_idx - 1])
                 ).reshape(-1, 1)
             else:
                 IGM_T = 1.
-            NBs_to_avg = np.vstack((
-                NB_flx[: nb_idx - 1] / IGM_T,
-                NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
-            ))
-            NBs_errs = np.vstack((
-                NB_err[: nb_idx - 1] / IGM_T,
-                NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
-            ))
 
-        if N_nb <= nb_idx < (NB_flx.shape[0] - 6):
+            # Stack filters at both sides or only at the right of the central one
+            if not only_right:
+                NBs_to_avg = np.vstack((
+                    NB_flx[: nb_idx - 1] / IGM_T,
+                    NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+                ))
+                NBs_errs = np.vstack((
+                    NB_err[: nb_idx - 1] / IGM_T,
+                    NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+                ))
+            if only_right:
+                NBs_to_avg = NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+                NBs_errs = NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+
+        if (N_nb <= nb_idx < (NB_flx.shape[0] - 6)) and not only_right:
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
                         np.array(w_central[nb_idx - N_nb : nb_idx - 1])
