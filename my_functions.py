@@ -380,7 +380,8 @@ def mask_proper_motion(cat):
     )
     return mask.to_numpy()
 
-def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True, obs=False):
+def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, ew_max=999.,
+    mask=True, obs=False):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
 
@@ -398,6 +399,10 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, mask=True, obs=Fal
         # EW0 min threshold
         & (
             pm_flx[:-4] - cont_est > ew_Arr * cont_est / fwhm_Arr
+        )
+        # EW0 max
+        & (
+            pm_flx[:-4] - cont_est < ew_max * cont_est / fwhm_Arr
         )
         & (
             pm_flx[:-4] > cont_est
