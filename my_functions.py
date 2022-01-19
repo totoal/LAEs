@@ -551,7 +551,7 @@ def QSO_find_lines(qso_flx, qso_err, nb_c_min=6, nb_c_max=50,
     print('Nice Lya list done. ({0:0.1f} )'.format(time.time() - t0))
     return nice_lya_list, nice_lya_list_single, line_list_lya, line_list_other
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=True):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -609,4 +609,50 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, cont_est, z_Arr):
                 this_nice = False
         if this_nice:
             nice_lya[src] = True
-    return nice_lya
+
+
+    lya_L = np.zeros(N_sources)
+    lya_R = np.zeros(N_sources)
+    lya_R2 = np.zeros(N_sources)
+    lya_L_err = np.zeros(N_sources) * 99
+    lya_R_err = np.zeros(N_sources) * 99
+
+    for src in range(N_sources):
+        if z_Arr[src] == -1:
+                continue
+        l = lya_lines[src]
+        if l > 1:
+            if l > 6:
+                lya_L[src] = np.average(
+                    pm_flx[l - 7 : l - 1, src],
+                    weights=pm_err[l - 7 : l - 1, src] ** -2
+                )
+                lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
+            else:
+                lya_L[src] = np.average(
+                    pm_flx[:l - 1, src],
+                    weights=pm_err[:l - 1, src] ** -2
+                )
+                lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
+
+        lya_R[src] = np.average(
+            pm_flx[l + 1 : l + 8, src],
+            weights=pm_err[l + 1 : l + 8, src] ** -2
+        )
+        lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 7, src])
+
+        lya_R_err[src] = np.sum(pm_err[l + 1 : l + 8, src] ** -2) ** -0.5
+
+    nice_lya = (
+        nice_lya
+        & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
+        & (lya_R / lya_R2 > 1.)
+    )
+
+    return nice_lya & mask
+
+def count_true(arr):
+    '''
+    Counts how many True values in bool array
+    '''
+    return len(np.where(arr)[0])
