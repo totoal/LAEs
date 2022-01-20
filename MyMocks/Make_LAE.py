@@ -197,7 +197,7 @@ def main(part):
                 break
             
         # mag r < 23 cut
-        if aux_pm[2] < 1.5e-18:
+        if aux_pm[2] < 6e-19:
             good2[j] = False
             continue
 

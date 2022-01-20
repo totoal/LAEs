@@ -40,7 +40,7 @@ from my_functions import z_volume
 #     return binning[:-1]+0.5*bin_width, Phi, error
 
 def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
-                 obs_area=0.895, weights = []):
+                 obs_area=0.895):
     w_lya = 1215.67 # A
     z = w_pivot / w_lya - 1
     L_line = w_fwhm * f_lambda * 4*np.pi \

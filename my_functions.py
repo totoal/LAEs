@@ -656,3 +656,21 @@ def count_true(arr):
     Counts how many True values in bool array
     '''
     return len(np.where(arr)[0])
+
+def schechter(L, phistar, Lstar, alpha):
+    '''
+    Just the regular Schechter function
+    '''
+    return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
+
+def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2, logjoint):
+    '''
+    A double schechter.
+    '''
+    Phi = np.empty(L.shape)
+
+    first_mask = (L <= 10 ** logjoint)
+    Phi[first_mask] = schechter(L[first_mask], phistar1, Lstar1, alpha1)
+    Phi[~first_mask] = schechter(L[~first_mask], phistar2, Lstar2, alpha2)
+
+    return Phi
