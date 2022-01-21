@@ -445,6 +445,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
 
         this_nice = True
         for l in other_lines[src]:
+            # Ignore very red lines
+            if l > 51:
+                continue
+
             w_obs_l = w_central[l]
             fwhm = fwhm_Arr[l]
 
@@ -480,9 +484,6 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 # & (l_lya < 30)
                 # Cannot be other lines bluer than Lya - NOT TRUE
                 # & (l >= l_lya - 1)
-                & (
-                    l < 52
-                )
             ):
                 this_nice = False
         if this_nice:
