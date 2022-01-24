@@ -380,7 +380,7 @@ def mask_proper_motion(cat):
     )
     return mask.to_numpy()
 
-def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, ew_max=999.,
+def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     mask=True, obs=False):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
@@ -399,10 +399,6 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min, ew_max=999.,
         # EW0 min threshold
         & (
             pm_flx[:-4] - cont_est > ew_Arr * cont_est / fwhm_Arr
-        )
-        # EW0 max
-        & (
-            pm_flx[:-4] - cont_est < ew_max * cont_est / fwhm_Arr
         )
         & (
             pm_flx[:-4] > cont_est
@@ -430,10 +426,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     w_MgII = 2799.12
 
     if give_bad_lines:
-        good_lines_Arr = []
+        good_lines_Arr = np.copy(nice_lya)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
-        l_lya = lya_lines[src]
+        # l_lya = lya_lines[src]
         z_src = z_Arr[src]
     
         w_obs_lya = (1 + z_src) * w_lya
@@ -444,15 +440,16 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         w_obs_MgII = (1 + z_src) * w_MgII
 
         this_nice = True
+        good_lines = True
         for l in other_lines[src]:
-            # Ignore very red lines
-            if l > 51:
+            # Ignore very red and very blue NBs
+            if (l > 46) | (l < 3):
                 continue
 
             w_obs_l = w_central[l]
-            fwhm = fwhm_Arr[l]
+            fwhm = fwhm_Arr[l] * 1.5
 
-            good_lines = (
+            good_l = (
                 (np.abs(w_obs_l - w_obs_lya) < fwhm)
                 | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
                 | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
@@ -462,13 +459,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 | (w_obs_l > w_obs_MgII + fwhm)
             )
 
-            if give_bad_lines:
-                good_lines_Arr.append(good_lines)
-
             if ~(   
                 # Lines are in expected possitions for QSOs
                 (
-                    good_lines
+                    good_l
                 )
                 # The Lya line flux is the highest
                 # & (
@@ -486,8 +480,13 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 # & (l >= l_lya - 1)
             ):
                 this_nice = False
+                good_lines = False
+                break
         if this_nice:
             nice_lya[src] = True
+        
+        if give_bad_lines:
+            good_lines_Arr[src] = good_lines
 
 
     lya_L = np.zeros(N_sources)
@@ -496,7 +495,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     lya_L_err = np.zeros(N_sources) * 99
     lya_R_err = np.zeros(N_sources) * 99
 
-    for src in range(N_sources):
+    for src in range(N_sources): 
         if z_Arr[src] == -1:
                 continue
         l = lya_lines[src]
