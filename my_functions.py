@@ -447,7 +447,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 continue
 
             w_obs_l = w_central[l]
-            fwhm = fwhm_Arr[l] * 1.5
+            fwhm = fwhm_Arr[l] * 2
 
             good_l = (
                 (np.abs(w_obs_l - w_obs_lya) < fwhm)
@@ -523,7 +523,8 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
 
     nice_lya = (
         nice_lya
-        # & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
+        & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
+        & np.invert(lya_R2 - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
         # & (lya_R / lya_R2 > 1.)
     )
 
