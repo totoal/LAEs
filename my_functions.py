@@ -447,7 +447,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 continue
 
             w_obs_l = w_central[l]
-            fwhm = fwhm_Arr[l] * 2
+            fwhm = fwhm_Arr[l]
 
             good_l = (
                 (np.abs(w_obs_l - w_obs_lya) < fwhm)
@@ -589,32 +589,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
     flx_e = np.zeros(N_sources)
     flambda = np.zeros(N_sources)
 
-    # for src in np.where(np.array(lya_lines) != -1)[0]:
-    #     l = lya_lines[src]
-
-    #     fwhm = nb_fwhm_Arr[l]
-    #     flambda = pm_flx[l, src] - cont_flx[l, src]
-    #     EW_nb_Arr[src] = fwhm * flambda\
-    #         / cont_flx[l, src] / (1 + np.array(z_Arr[src]))
-    #     EW_nb_e[src] = EW_err(
-    #         pm_flx[l, src], pm_err[l, src], cont_flx[l, src], cont_err[l, src],
-    #         z_Arr[src], 0.06, fwhm
-    #     )
-
-    #     z_interval = [z_NB(l - 0.5), z_NB(l + 0.5)] # Error in z due to NB width
-
-    #     dL = cosmo.luminosity_distance(z_Arr[src]).to(u.cm).value
-    #     dL_err = (
-    #         cosmo.luminosity_distance(z_interval[1]).to(u.cm).value
-    #         - cosmo.luminosity_distance(z_interval[0]).to(u.cm).value
-    #     ) * 0.5
-
-    #     L_Arr[src] = np.log10(fwhm * (flambda) * 4 * np.pi * dL ** 2)
-    #     L_e_Arr[src] = (
-    #         (L_Arr[src] /flambda) ** 2 * (pm_err[l, src] ** 2 + cont_err[l, src] ** 2)
-    #         + (2 * L_Arr[src] / dL) ** 2 * dL_err ** 2
-    #     ) ** 0.5
-
     fwhm = nb_fwhm_Arr[lya_lines]
 
     for src in np.where(nice_lya)[0]: 
@@ -639,9 +613,9 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
 
     L_Arr = np.log10(fwhm * flambda * 4*np.pi * dL ** 2)
     L_e_Arr = (
-        (L_Arr / flambda) ** 2 * (flx_e ** 2 + cont_e ** 2)
+        (10 ** L_Arr / flambda) ** 2 * (flx_e ** 2 + cont_e ** 2)
         + (2 * L_Arr / dL) ** 2 * dL_e ** 2
-    )
+    ) ** 0.5
 
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr
