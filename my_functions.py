@@ -569,31 +569,79 @@ def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
 
     return (e1**2 + e2**2 + e3**2) ** 0.5
 
-def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines):
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
     N_sources = pm_flx.shape[1]
     nb_fwhm_Arr = nb_fwhm(range(56))
 
+    if nice_lya is None:
+        nice_lya = np.ones(N_sources).astype(bool)
+
     EW_nb_Arr = np.zeros(N_sources)
-    EW_nb_e = np.copy(EW_nb_Arr)
+    EW_nb_e = np.zeros(N_sources)
     L_Arr = np.zeros(N_sources)
-    flambda_Arr = np.zeros(N_sources)
+    L_e_Arr = np.zeros(N_sources)
+    cont = np.zeros(N_sources)
+    cont_e = np.zeros(N_sources)
+    flx = np.zeros(N_sources)
+    flx_e = np.zeros(N_sources)
+    flambda = np.zeros(N_sources)
 
-    for src in range(N_sources):
-        l = lya_lines[src]
-        flambda = pm_flx[l, src] - cont_flx[l, src]
-        EW_nb_Arr[src] = nb_fwhm_Arr[l] * flambda\
-            / cont_flx[l, src] / (1 + np.array(z_Arr[src]))
-        EW_nb_e[src] = EW_err(
-            pm_flx[l, src], pm_err[l, src], cont_flx[l, src], cont_err[l, src],
-            z_Arr[src], 0.06, 147
-        )
+    # for src in np.where(np.array(lya_lines) != -1)[0]:
+    #     l = lya_lines[src]
 
-        dL = cosmo.luminosity_distance(z_Arr[src]).to(u.cm).value
-        L_Arr[src] = np.log10(147 * (flambda)\
-            * 4 * np.pi * dL ** 2)
-        flambda_Arr[src] = flambda
+    #     fwhm = nb_fwhm_Arr[l]
+    #     flambda = pm_flx[l, src] - cont_flx[l, src]
+    #     EW_nb_Arr[src] = fwhm * flambda\
+    #         / cont_flx[l, src] / (1 + np.array(z_Arr[src]))
+    #     EW_nb_e[src] = EW_err(
+    #         pm_flx[l, src], pm_err[l, src], cont_flx[l, src], cont_err[l, src],
+    #         z_Arr[src], 0.06, fwhm
+    #     )
 
-    return EW_nb_Arr, EW_nb_e, L_Arr
+    #     z_interval = [z_NB(l - 0.5), z_NB(l + 0.5)] # Error in z due to NB width
+
+    #     dL = cosmo.luminosity_distance(z_Arr[src]).to(u.cm).value
+    #     dL_err = (
+    #         cosmo.luminosity_distance(z_interval[1]).to(u.cm).value
+    #         - cosmo.luminosity_distance(z_interval[0]).to(u.cm).value
+    #     ) * 0.5
+
+    #     L_Arr[src] = np.log10(fwhm * (flambda) * 4 * np.pi * dL ** 2)
+    #     L_e_Arr[src] = (
+    #         (L_Arr[src] /flambda) ** 2 * (pm_err[l, src] ** 2 + cont_err[l, src] ** 2)
+    #         + (2 * L_Arr[src] / dL) ** 2 * dL_err ** 2
+    #     ) ** 0.5
+
+    fwhm = nb_fwhm_Arr[lya_lines]
+
+    for src in np.where(nice_lya)[0]: 
+       l = lya_lines[src]
+       cont[src] = cont_flx[l, src]
+       cont_e[src] = cont_err[l, src]
+       flx[src] = pm_flx[l, src]
+       flx_e[src] = pm_err[l, src]
+       flambda = flx - cont
+    
+    EW_nb_Arr = fwhm * flambda / cont * (1 + z_Arr)
+    EW_nb_e = EW_err(flx, flx_e, cont, cont_e, z_Arr, 0.06, fwhm)
+
+    z_1 = z_NB(z_Arr - 0.5)
+    z_2 = z_NB(z_Arr + 0.5)
+    
+    dL = cosmo.luminosity_distance(z_Arr).to(u.cm).value
+    dL_e = (
+        cosmo.luminosity_distance(z_2).to(u.cm).value
+        - cosmo.luminosity_distance(z_1).to(u.cm).value
+    ) * 0.5
+
+    L_Arr = np.log10(fwhm * flambda * 4*np.pi * dL ** 2)
+    L_e_Arr = (
+        (L_Arr / flambda) ** 2 * (flx_e ** 2 + cont_e ** 2)
+        + (2 * L_Arr / dL) ** 2 * dL_e ** 2
+    )
+
+
+    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr
