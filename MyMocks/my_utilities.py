@@ -749,3 +749,9 @@ def JPAS_synth_phot(SEDs, w_Arr, tcurves):
 def mag_to_flux(m, w):
     c = 29979245800
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
+
+def schechter(L, phistar, Lstar, alpha):
+    '''
+    Just the regular Schechter function
+    '''
+    return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)

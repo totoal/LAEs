@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
-    'JPAS_mocks_classification_01sep_model11/Fluxes/Qso_jpas_mock_flam_100sq.cat')
+    'JPAS_mocks_classification_01sep_model11/Fluxes/Qso_jpas_mock_flam_train.cat')
 
 plate = pd.read_csv(filename, sep=' ', usecols=[122]).to_numpy().reshape(-1, )
 mjd = pd.read_csv(filename, sep=' ', usecols=[123]).to_numpy().reshape(-1, )
@@ -35,14 +35,14 @@ for src in range(N_sources):
 
 neg_cont = np.where(lya_cont < 0)
 lya_cont_corrected = np.copy(lya_cont)
-lya_cont_corrected[neg_cont] = lya_cont_err[neg_cont]
+lya_cont_corrected[neg_cont] = np.abs(lya_cont_err[neg_cont])
 
 data = {
-    'LyaEW': lya_F / lya_cont_corrected,
-    'LyaF': lya_F,
+    'LyaEW': np.abs(lya_F) / lya_cont_corrected,
+    'LyaF': np.abs(lya_F),
     'LyaF_err': lya_F_err,
-    'LyaCont': lya_cont,
+    'LyaCont': lya_cont_corrected,
     'LyaCont_err': lya_cont_err
 }
 
-pd.DataFrame(data).to_csv('Lya_fts_100sq.csv')
+pd.DataFrame(data).to_csv('Lya_fts.csv')

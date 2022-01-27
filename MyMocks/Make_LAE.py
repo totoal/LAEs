@@ -1,3 +1,4 @@
+#!/home/alberto/miniconda3/bin/python3
 import numpy as np
 
 from my_utilities import *
@@ -32,18 +33,21 @@ def main(part):
     ####    Specific LAE parameters
     w_in  = [5, 5.1] # Line width interval
     s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-    L_in = [41.75, 43]
+    L_in = [41.75, 44]
     LINE = 'Lya'
 
     ####    Load LAE LF
 
-    filepath = '../csv/Konno_LF.csv' # From Konno et al. 2016
-    LAE_LF = []
-    with open(filepath, mode='r') as csvfile:
-        rdlns = csv.reader(csvfile, delimiter=',')
-        for line in rdlns:
-            LAE_LF.append(line)
-    LAE_LF = np.array(LAE_LF).astype(float)
+    phistar = 10 ** -3.45
+    Lstar = 10 ** 42.93
+    alpha = -1.93
+
+    LAE_LF = np.empty((1000, 2))
+    Lx = np.linspace(10 ** L_in[0], 10 ** L_in[1], 1000)
+
+    LAE_LF[:, 1] = schechter(Lx, phistar, Lstar, alpha) * Lx * np.log(10)
+    LAE_LF[:, 0] = np.log10(Lx)
+    print(LAE_LF)
 
     ####    Compute the number of sources and L_line distribution 
 

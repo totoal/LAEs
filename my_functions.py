@@ -558,3 +558,42 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
     Phi[Phi1 < Phi2] = Phi2[Phi1 < Phi2]
 
     return Phi
+
+def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
+    '''
+    Computes the error of the function EW_nb
+    '''
+    e1 = fnb_err * fwhm / fcont / (1 + z)
+    e2 = fcont_err * fwhm / (-fcont ** -2 * (1 + z))
+    e3 = z_err * fwhm * (fnb - fcont) / fcont * (-1) / ((1 + z) ** 2)
+
+    return (e1**2 + e2**2 + e3**2) ** 0.5
+
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines):
+    '''
+    Returns the EW0 and the luminosity from a NB selection given by lya_lines
+    '''
+    N_sources = pm_flx.shape[1]
+    nb_fwhm_Arr = nb_fwhm(range(56))
+
+    EW_nb_Arr = np.zeros(N_sources)
+    EW_nb_e = np.copy(EW_nb_Arr)
+    L_Arr = np.zeros(N_sources)
+    flambda_Arr = np.zeros(N_sources)
+
+    for src in range(N_sources):
+        l = lya_lines[src]
+        flambda = pm_flx[l, src] - cont_flx[l, src]
+        EW_nb_Arr[src] = nb_fwhm_Arr[l] * flambda\
+            / cont_flx[l, src] / (1 + np.array(z_Arr[src]))
+        EW_nb_e[src] = EW_err(
+            pm_flx[l, src], pm_err[l, src], cont_flx[l, src], cont_err[l, src],
+            z_Arr[src], 0.06, 147
+        )
+
+        dL = cosmo.luminosity_distance(z_Arr[src]).to(u.cm).value
+        L_Arr[src] = np.log10(147 * (flambda)\
+            * 4 * np.pi * dL ** 2)
+        flambda_Arr[src] = flambda
+
+    return EW_nb_Arr, EW_nb_e, L_Arr
