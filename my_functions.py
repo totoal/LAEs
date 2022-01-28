@@ -569,7 +569,8 @@ def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
 
     return (e1**2 + e2**2 + e3**2) ** 0.5
 
-def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None):
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
+    nice_lya=None):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
@@ -578,6 +579,8 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
 
     if nice_lya is None:
         nice_lya = np.ones(N_sources).astype(bool)
+    if F_bias is None:
+        F_bias = np.ones(60)
 
     EW_nb_Arr = np.zeros(N_sources)
     EW_nb_e = np.zeros(N_sources)
@@ -587,7 +590,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
     cont_e = np.zeros(N_sources)
     flx = np.zeros(N_sources)
     flx_e = np.zeros(N_sources)
-    flambda = np.zeros(N_sources)
 
     fwhm = nb_fwhm_Arr[lya_lines]
 
@@ -595,9 +597,11 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
        l = lya_lines[src]
        cont[src] = cont_flx[l, src]
        cont_e[src] = cont_err[l, src]
-       flx[src] = pm_flx[l, src]
+       flx[src] = pm_flx[l, src] / F_bias[l]
        flx_e[src] = pm_err[l, src]
-       flambda = flx - cont
+
+    flambda = flx - cont
+    flambda_e = (flx_e ** 2 + cont_e ** 2) ** 0.5
     
     EW_nb_Arr = fwhm * flambda / cont * (1 + z_Arr)
     EW_nb_e = EW_err(flx, flx_e, cont, cont_e, z_Arr, 0.06, fwhm)
@@ -618,4 +622,4 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, nice_lya=None)
     ) ** 0.5
 
 
-    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr
+    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda * fwhm, flambda_e * fwhm
