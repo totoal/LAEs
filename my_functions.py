@@ -597,11 +597,11 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
        l = lya_lines[src]
        cont[src] = cont_flx[l, src]
        cont_e[src] = cont_err[l, src]
-       flx[src] = pm_flx[l, src] / F_bias[l]
+       flx[src] = pm_flx[l, src] 
        flx_e[src] = pm_err[l, src]
 
-    flambda = flx - cont
-    flambda_e = (flx_e ** 2 + cont_e ** 2) ** 0.5
+    flambda = (flx - cont) / F_bias[np.array(lya_lines)]
+    flambda_e = (flx_e ** 2 + cont_e ** 2) ** 0.5 / F_bias[np.array(lya_lines)]
     
     EW_nb_Arr = fwhm * flambda / cont * (1 + z_Arr)
     EW_nb_e = EW_err(flx, flx_e, cont, cont_e, z_Arr, 0.06, fwhm)
