@@ -1,8 +1,12 @@
 import numpy as np
+
+import pandas as pd
+
 import csv
 import matplotlib.pyplot as plt
 
 from scipy.integrate import simpson 
+from scipy.stats import binned_statistic_2d
 
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
@@ -623,3 +627,43 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
 
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda * fwhm, flambda_e * fwhm
+
+def weights_LF(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
+    w_mat = puri2d / comp2d
+    w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
+
+    # Add a zeros row to w_mat for perturbed luminosities exceeding the binning
+    w_mat = np.vstack([w_mat, np.zeros(w_mat.shape[1])])
+
+    bs = binned_statistic_2d(
+        L_Arr, r_Arr, None, 'count', bins=[L_bins, r_bins], expand_binnumbers=True
+    )
+    xx, yy = bs.binnumber
+
+    return w_mat[xx - 1, yy - 1]
+
+def completeness_curve(m50, k, mag):
+    return 1. - 1. / (np.exp(-k * (mag - m50)) + 1)
+
+def intrinsic_completeness(star_prob, r_Arr, tile_id):
+    TileImage = pd.read_csv('csv/minijpas.TileImage.csv', header=1)
+    where = np.zeros(r_Arr.shape).astype(int)
+
+    for src in range(len(r_Arr)):
+        where[src] = np.where(
+            (TileImage['TILE_ID'] == tile_id[src])
+            & (TileImage['FILTER_ID'] == 59)
+        )[0]
+
+    m50s = TileImage['M50S'][where]
+    ks = TileImage['KS'][where]
+    m50g = TileImage['M50G'][where]
+    kg = TileImage['KG'][where]
+
+    isstar = (star_prob >= 0.5).to_numpy()
+
+    intcomp = np.empty(r_Arr.shape)
+    intcomp[isstar] = completeness_curve(m50s[isstar], ks[isstar], r_Arr[isstar])
+    intcomp[~isstar] = completeness_curve(m50g[~isstar], kg[~isstar], r_Arr[~isstar])
+
+    return intcomp
