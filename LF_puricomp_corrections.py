@@ -14,6 +14,10 @@ def completeness_curve(m50, k, mag):
     return 1. - 1. / (np.exp(-k * (mag - m50)) + 1)
 
 def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
+    '''
+    Computes the completeness for each source based on its r-band flux according to the
+    completeness curves of minijpas. Bonoli et al. 2021
+    '''
     TileImage = pd.read_csv('csv/minijpas.TileImage.csv', header=1)
     where = np.zeros(r_Arr.shape).astype(int)
 
@@ -37,6 +41,10 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
     return intcomp
 
 def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
+    '''
+    Computes the weight (purity/completeness) of each source based on the selection in 
+    mocks.
+    '''
     w_mat = puri2d / comp2d
     w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
 
@@ -51,6 +59,10 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
     return w_mat[xx - 1, yy - 1]
 
 def Lya_intrisic_completeness(L, z, starprob=None):
+    '''
+    Computes the completeness for each source based on its L and its star/galaxy
+    classification given in the minijpas.TileImage table only using morphology.
+    '''
     if starprob is None:
         starprob = np.ones(L.shape)
     isstar = (starprob >= 0.5)
@@ -78,9 +90,19 @@ def Lya_intrisic_completeness(L, z, starprob=None):
 
     return completeness
 
-def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_id):
+def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_id,
+    which_w=[0, 1, 2]):
+    '''
+    Combines the contribution of the 3 above functions.
+    '''
     w1 = puricomp2d_weights(L_Arr, mag, puri2d, comp2d, L_bins, rbins)
     w2 = Lya_intrisic_completeness(L_Arr, z_Arr, starprob) ** -1
     w3 = r_intrinsic_completeness(starprob, mag, tile_id) ** -1
 
-    return w1 * w2 * w3
+    w_Arr = [w1, w2, w3]
+
+    wt = np.ones(L_Arr.shape)
+    for i in which_w:
+        wt *= w_Arr[i]
+
+    return wt
