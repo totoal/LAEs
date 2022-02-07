@@ -32,7 +32,7 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
     m50g = TileImage['M50G'][where]
     kg = TileImage['KG'][where]
 
-    isstar = (star_prob >= 0.5).to_numpy()
+    isstar = (star_prob >= 0.5)
 
     intcomp = np.empty(r_Arr.shape)
     intcomp[isstar] = completeness_curve(m50s[isstar], ks[isstar], r_Arr[isstar])
@@ -91,7 +91,7 @@ def Lya_intrisic_completeness(L, z, starprob=None):
     return completeness
 
 def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_id,
-    which_w=[0, 1, 2]):
+    which_w=[0, 2]):
     '''
     Combines the contribution of the 3 above functions.
     '''

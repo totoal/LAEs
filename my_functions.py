@@ -371,18 +371,18 @@ def z_NB(cont_line_pos):
     return w / 1215.67 - 1
     
 
-def mask_proper_motion(cat):
+def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
     '''
     Masks sources with significant proper motion measurement in Gaia
     '''
-    parallax_sn = np.abs(cat['parallax'] / cat['parallax_error'])
-    pmra_sn = np.abs(cat['pmra'] / cat['pmra_error'])
-    pmdec_sn = np.abs(cat['pmdec'] / cat['pmdec_error'])
+    # parallax_sn = np.abs(cat['parallax'] / cat['parallax_error'])
+    # pmra_sn = np.abs(cat['pmra'] / cat['pmra_error'])
+    # pmdec_sn = np.abs(cat['pmdec'] / cat['pmdec_error'])
     mask = (
         (np.sqrt(parallax_sn ** 2 + pmra_sn ** 2 + pmdec_sn**2) < 27 ** 0.5)
         | (np.isnan(parallax_sn) | np.isnan(pmra_sn) | np.isnan(pmdec_sn))
     )
-    return mask.to_numpy()
+    return mask
 
 def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     mask=True, obs=False):
@@ -553,15 +553,16 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
     '''
     A double schechter.
     '''
-    Phi = np.empty(L.shape)
+    # Phi = np.empty(L.shape)
 
     Phi2 = schechter(L, phistar1, Lstar1, alpha1)
     Phi1 = schechter(L, phistar2, Lstar2, alpha2)
 
-    Phi[Phi1 > Phi2] = Phi1[Phi1 > Phi2]
-    Phi[Phi1 < Phi2] = Phi2[Phi1 < Phi2]
+    # Phi[Phi1 > Phi2] = Phi1[Phi1 > Phi2]
+    # Phi[Phi1 < Phi2] = Phi2[Phi1 < Phi2]
 
-    return Phi
+    # return Phi
+    return Phi1 + Phi2
 
 def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
     '''
