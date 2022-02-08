@@ -553,15 +553,10 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
     '''
     A double schechter.
     '''
-    # Phi = np.empty(L.shape)
 
     Phi2 = schechter(L, phistar1, Lstar1, alpha1)
     Phi1 = schechter(L, phistar2, Lstar2, alpha2)
 
-    # Phi[Phi1 > Phi2] = Phi1[Phi1 > Phi2]
-    # Phi[Phi1 < Phi2] = Phi2[Phi1 < Phi2]
-
-    # return Phi
     return Phi1 + Phi2
 
 def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
