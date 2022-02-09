@@ -498,6 +498,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     lya_R2 = np.zeros(N_sources)
     lya_L_err = np.zeros(N_sources) * 99
     lya_R_err = np.zeros(N_sources) * 99
+    lya_R2_err = np.zeros(N_sources) * 99
 
     for src in range(N_sources): 
         if z_Arr[src] == -1:
@@ -518,17 +519,18 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
 
         lya_R[src] = np.average(
-            pm_flx[l + 1 : l + 8, src],
-            weights=pm_err[l + 1 : l + 8, src] ** -2
+            pm_flx[l + 2 : l + 8, src],
+            weights=pm_err[l + 2 : l + 8, src] ** -2
         )
-        lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 7, src])
+        lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 5, src])
 
-        lya_R_err[src] = np.sum(pm_err[l + 1 : l + 8, src] ** -2) ** -0.5
+        lya_R_err[src] = np.sum(pm_err[l + 2 : l + 8, src] ** -2) ** -0.5
+        lya_R2_err[src] = np.sum(pm_err[l + 12 : l + 12 + 5, src] ** -2) ** -0.5
 
     nice_lya = (
         nice_lya
         & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
-        & np.invert(lya_R2 - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
+        & np.invert(lya_R2 - lya_R > 3 * (lya_R_err ** 2 + lya_R2_err ** 2) ** 0.5)
         & (lya_R / lya_R2 > 1.)
     )
 
@@ -603,7 +605,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     flambda = (flx - cont) / F_bias[np.array(lya_lines)]
     flambda_e = (flx_e ** 2 + cont_e ** 2) ** 0.5 / F_bias[np.array(lya_lines)]
     
-    EW_nb_Arr = fwhm * flambda / cont * (1 + z_Arr)
+    EW_nb_Arr = fwhm * flambda / cont / (1 + z_Arr)
     EW_nb_e = EW_err(flx, flx_e, cont, cont_e, z_Arr, 0.06, fwhm)
 
     z_1 = z_NB(z_Arr - 0.5)

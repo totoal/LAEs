@@ -20,7 +20,7 @@ def main(part):
 
     ####    Mock parameters.
     z_lya = [2, 5]
-    obs_area = 10 # deg**2
+    obs_area = 0.1 # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -216,26 +216,28 @@ def main(part):
         z_out_Arr.append(my_z)
 
     # Add errors
-    m = err_fit_params[:, 0].reshape(-1, 1)
+    a = err_fit_params[:, 0].reshape(-1, 1)
     b = err_fit_params[:, 1].reshape(-1, 1)
-    pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
+    c = err_fit_params[:, 2].reshape(-1, 1)
+    expfit = lambda x: a * np.exp(b * x + c)
 
-    detec_lim = np.vstack(
-        (
-            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
-            pd.read_csv('csv/5sigma_depths_BB.csv', header=None),
-        )
-    )
-    detec_lim = mag_to_flux(detec_lim[:, 1], detec_lim[:, 0]).reshape(-1, 1)
+    w_central = central_wavelength().reshape(-1, 1)
+    mags = flux_to_mag(pm_SEDs, w_central)
+    mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
-    lim_flx = np.ones(pm_SEDs.shape) * detec_lim
-    err_lim = lim_flx * 10 ** (b + m * np.log10(np.abs(lim_flx)))
-    where_low_flx = np.where(pm_SEDs < detec_lim)
-    pm_SEDs_err[where_low_flx] = err_lim[where_low_flx]
+    mag_err = expfit(mags)
+    mag_err[mags > 24] == expfit(24)
 
-    ### Maybe delete this (¿provisional? errors)
-    pm_SEDs_err = lim_flx / 5.
-    ###
+    # Perturb according to the error
+    mags = mags + np.random.normal(size=mags.shape) * mag_err
+
+    # Now recompute the error
+    mag_err = expfit(mags)
+    mag_err[mags > 24] == expfit(24)
+
+    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs = mag_to_flux(mags, w_central)
+    # pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 

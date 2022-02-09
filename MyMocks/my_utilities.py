@@ -7,6 +7,7 @@ import scipy
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
+from astropy.table import Table
 
 #import JBOSS as jp
 
@@ -750,8 +751,18 @@ def mag_to_flux(m, w):
     c = 29979245800
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
+def flux_to_mag(f, w):
+    c = 29979245800
+    return -2.5 * np.log10(f * w**2/c * 1e-8) - 48.60
+
 def schechter(L, phistar, Lstar, alpha):
     '''
     Just the regular Schechter function
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
+
+def central_wavelength():
+    data_tab = Table.read('../fits/FILTERs_table.fits', format='fits')
+    w_central = data_tab['wavelength']
+
+    return np.array(w_central)
