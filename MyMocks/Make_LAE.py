@@ -1,4 +1,5 @@
 #!/home/alberto/miniconda3/bin/python3
+
 import numpy as np
 
 from my_utilities import *
@@ -20,7 +21,7 @@ def main(part):
 
     ####    Mock parameters.
     z_lya = [2, 5]
-    obs_area = 0.1 # deg**2
+    obs_area = 10 # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -36,7 +37,7 @@ def main(part):
     L_in = [41.75, 44]
     LINE = 'Lya'
 
-    ####    Load LAE LF
+    ####    Load LAE LF (Sobral 2016)
 
     phistar = 10 ** -3.45
     Lstar = 10 ** 42.93
@@ -95,21 +96,6 @@ def main(part):
     mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
                 '400_Nb_100_z_1.9_3.0_sn_7.0_g_23.5_p_0.9_pp_50.0.npy',
                     allow_pickle=True).item()
-
-
-    # AGE_Arr = np.zeros(N_sources_LAE)
-    # MET_Arr = np.zeros(N_sources_LAE)
-    # EXT_Arr = np.zeros(N_sources_LAE)
-    # n_steps_mcmc = 10000
-    # n, r = divmod(N_sources_LAE, n_steps_mcmc)
-    # for k in range(n):
-    #     idx_slice = slice(k * n_steps_mcmc, (k+1) * n_steps_mcmc)
-    #     AGE_Arr[idx_slice] = 10 ** mcmc['chains'][-n_steps_mcmc:, 0]
-    #     MET_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 1]
-    #     EXT_Arr[idx_slice] = mcmc['chains'][-n_steps_mcmc:, 2]
-    # AGE_Arr[-r:] = 10 ** mcmc['chains'][-r:, 0]
-    # MET_Arr[-r:] = mcmc['chains'][-r:, 1]
-    # EXT_Arr[-r:] = mcmc['chains'][-r:, 2]
 
     #### Let's load the data of the gSDSS filter
     gSDSS_lambda_Arr_f, gSDSS_Transmission_Arr_f = Load_Filter('gSDSS')
@@ -171,9 +157,6 @@ def main(part):
         my_g = g_Arr[i]
         my_width = widths_Arr[i]
         my_s = s_Arr[i]
-        # my_MET = MET_Arr[i]
-        # my_AGE = AGE_Arr[i]
-        # my_EXT = EXT_Arr[i]
 
         ## Select AGE, MET, EXT so they don't produce a bad source, i. e.: i << g
         count = 0
@@ -200,11 +183,10 @@ def main(part):
             if count == 10:
                 break
             
-        # mag r < 23 cut
+        # mag r < 24 cut
         if aux_pm[2] < 6e-19:
             good2[j] = False
             continue
-
 
         pm_SEDs[:, j] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
         pm_SEDs_no_line[:, j] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
@@ -215,6 +197,14 @@ def main(part):
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
 
+    # Load limit mags
+    detec_lim = np.vstack(
+        (
+            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
+            pd.read_csv('csv/5sigma_depths_BB.csv', header=None)
+        )
+    )[:, 1].reshape(-1, 1)
+
     # Add errors
     a = err_fit_params[:, 0].reshape(-1, 1)
     b = err_fit_params[:, 1].reshape(-1, 1)
@@ -222,22 +212,32 @@ def main(part):
     expfit = lambda x: a * np.exp(b * x + c)
 
     w_central = central_wavelength().reshape(-1, 1)
+
     mags = flux_to_mag(pm_SEDs, w_central)
     mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
     mag_err = expfit(mags)
-    mag_err[mags > 24] == expfit(24)
+    where_himag = np.where(mags > detec_lim)
 
-    # Perturb according to the error
-    mags = mags + np.random.normal(size=mags.shape) * mag_err
-
-    # Now recompute the error
-    mag_err = expfit(mags)
-    mag_err[mags > 24] == expfit(24)
+    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
     pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
-    pm_SEDs = mag_to_flux(mags, w_central)
-    # pm_SEDs_err = pm_SEDs * 10 ** (b + m * np.log10(np.abs(pm_SEDs)))
+
+    # Perturb according to the error
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+
+    # Now recompute the error
+    mags = flux_to_mag(pm_SEDs, w_central)
+    mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
+    mag_err = expfit(mags)
+    where_himag = np.where(mags > detec_lim)
+
+    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
+
+    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    # pm_SEDs = mag_to_flux(mags, w_central)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
