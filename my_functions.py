@@ -531,7 +531,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         nice_lya
         & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
         & np.invert(lya_R2 - lya_R > 3 * (lya_R_err ** 2 + lya_R2_err ** 2) ** 0.5)
-        & (lya_R / lya_R2 > 1.)
+        # & (lya_R / lya_R2 > 1.)
     )
 
     if give_bad_lines:
