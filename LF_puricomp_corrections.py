@@ -95,9 +95,21 @@ def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_
     '''
     Combines the contribution of the 3 above functions.
     '''
-    w1 = puricomp2d_weights(L_Arr, mag, puri2d, comp2d, L_bins, rbins)
-    w2 = Lya_intrisic_completeness(L_Arr, z_Arr, starprob) ** -1
-    w3 = r_intrinsic_completeness(starprob, mag, tile_id) ** -1
+    args1 = (L_Arr, mag, puri2d, comp2d, L_bins, rbins)
+    args2 = (L_Arr, z_Arr, starprob)
+    args3 = (starprob, mag, tile_id)
+
+    w1 = 0
+    w2 = 0
+    w3 = 0
+
+    for i in which_w:
+        if i == 0:
+            w1 = puricomp2d_weights(*args1)
+        if i == 1:
+            w2 = Lya_intrisic_completeness(*args2) ** -1
+        if i == 2:
+            w3 = r_intrinsic_completeness(*args3) ** -1
 
     w_Arr = [w1, w2, w3]
 

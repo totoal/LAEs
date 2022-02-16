@@ -1,18 +1,13 @@
 import numpy as np
 
-import pandas as pd
-
 import csv
 import matplotlib.pyplot as plt
 
 from scipy.integrate import simpson 
-from scipy.stats import binned_statistic_2d
 
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
-
-import time
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -234,8 +229,7 @@ def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
     '''
     Returns the IGM transmission associated with the Lya Break.
     '''
-    Transmission_Arr = np.exp(A * (w_Arr / 1215.67)**B)
-    return Transmission_Arr
+    return np.exp(A * (w_Arr / 1215.67)**B)
 
 def conf_matrix(line_Arr, z_Arr, nb_c):
     '''
@@ -300,7 +294,8 @@ def plot_JPAS_source(flx, err, set_ylim=True):
 
     return ax
 
-def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
+def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False,
+    return_line_width=False):
     '''
     Returns a list of N lists with the index positions of the lines.
 
@@ -311,6 +306,7 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
     '''
     N_fil, N_src = line_Arr.shape
     line_list = []
+    line_len_list = []
     line_cont_list = []
 
     for src in range(N_src):
@@ -347,14 +343,21 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False):
                 idx = np.argmax(qso_flx[np.array(this_src_lines), src])
 
                 line_list.append(this_src_lines[idx])
+                line_len_list.append(this_src_lines)
                 line_cont_list.append(this_cont_lines[idx])
             except:
                 line_list.append(-1)
+                line_len_list.append([-1])
                 line_cont_list.append(-1)
+
         if not first:
             line_list.append(this_src_lines)
 
-    if first: return line_list, line_cont_list
+    if first:
+        if return_line_width:
+            return line_list, line_cont_list, line_len_list
+        else:
+            return line_list, line_cont_list
     return line_list
 
 def z_NB(cont_line_pos):
@@ -571,11 +574,19 @@ def EW_err(fnb, fnb_err, fcont, fcont_err, z, z_err, fwhm):
 
     return (e1**2 + e2**2 + e3**2) ** 0.5
 
+# GAUSSIAN curve
+def gauss(x, a, x0, sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
 def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     nice_lya=None):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
+
+    tcurves = load_tcurves(load_filter_tags())
+    w_central = central_wavelength()
+
     N_sources = pm_flx.shape[1]
     nb_fwhm_Arr = nb_fwhm(range(56))
 
@@ -590,38 +601,60 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     L_e_Arr = np.zeros(N_sources)
     cont = np.zeros(N_sources)
     cont_e = np.zeros(N_sources)
-    flx = np.zeros(N_sources)
-    flx_e = np.zeros(N_sources)
-
-    fwhm = nb_fwhm_Arr[lya_lines]
+    flambda = np.zeros(N_sources)
 
     for src in np.where(nice_lya)[0]: 
-       l = lya_lines[src]
-       cont[src] = cont_flx[l, src]
-       cont_e[src] = cont_err[l, src]
-       flx[src] = pm_flx[l, src] 
-       flx_e[src] = pm_err[l, src]
+        # print(f'{src} / {N_sources}')
+        l = lya_lines[src]
+        if l == -1: continue
+        
+        cont[src] = cont_flx[l, src]
+        cont_e[src] = cont_err[l, src]
 
-    flambda = (flx - cont) / F_bias[np.array(lya_lines)]
-    flambda_e = (flx_e ** 2 + cont_e ** 2) ** 0.5 / F_bias[np.array(lya_lines)]
-    
-    EW_nb_Arr = fwhm * flambda / cont / (1 + z_Arr)
-    EW_nb_e = EW_err(flx, flx_e, cont, cont_e, z_Arr, 0.06, fwhm)
+        # Let's integrate the NB flux over the transmission curves to obtain Flambda
+        lw = [l-1, l, l + 1]
 
-    z_1 = z_NB(z_Arr - 0.5)
-    z_2 = z_NB(z_Arr + 0.5)
-    
+        x_t_start = w_central[lw[0]] - nb_fwhm_Arr[lw[0]] * 0.5
+        x_t_stop = w_central[lw[-1]] + nb_fwhm_Arr[lw[-1]] * 0.5
+
+        t_res = 200 # Resolution for the t curve
+        x_t = np.linspace(x_t_start, x_t_stop, t_res)
+
+        IGM_T_Arr = np.array([
+            IGM_TRANSMISSION(w_central[lw[0]]),
+            (IGM_TRANSMISSION(w_central[lw[1]]) + 1) * 0.5,
+            1.
+        ])
+
+        pm_flx[l - 1 : l + 1 + 1, src] / IGM_T_Arr
+
+        for n, i in enumerate(range(lw[0], lw[-1] + 1)):
+            this_flambda = pm_flx[i, src] * nb_fwhm_Arr[i]
+
+            if n == 0:
+                flambda[src] = this_flambda
+                continue
+            else:
+                this_t = np.interp(x_t, tcurves['w'][i], tcurves['t'][i])
+                prev_t = np.interp(x_t, tcurves['w'][i - 1], tcurves['t'][i - 1])
+                intersec_mask = (this_t * prev_t > 0.001)
+
+                this_intersec_flambda = simpson(
+                    this_t[intersec_mask] * (pm_flx[i, src] - cont[src]),
+                    x_t[intersec_mask]
+                )
+                prev_intersec_flambda = simpson(
+                    prev_t[intersec_mask] * (pm_flx[i - 1, src] - cont[src]),
+                    x_t[intersec_mask]
+                )
+
+                intersec_flambda = np.max([this_intersec_flambda, prev_intersec_flambda])
+
+                flambda[src] += this_flambda - intersec_flambda
+
+    EW_nb_Arr = flambda / cont / (1 + z_Arr) / F_bias[np.array(lya_lines)]
     dL = cosmo.luminosity_distance(z_Arr).to(u.cm).value
-    dL_e = (
-        cosmo.luminosity_distance(z_2).to(u.cm).value
-        - cosmo.luminosity_distance(z_1).to(u.cm).value
-    ) * 0.5
+    L_Arr = np.log10(flambda * 4*np.pi * dL ** 2)
 
-    L_Arr = np.log10(fwhm * flambda * 4*np.pi * dL ** 2)
-    L_e_Arr = (
-        (10 ** L_Arr / flambda) ** 2 * (flx_e ** 2 + cont_e ** 2)
-        + (2 * L_Arr / dL) ** 2 * dL_e ** 2
-    ) ** 0.5
-
-
-    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda * fwhm, flambda_e * fwhm
+    flambda_e = None # Placeholder
+    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
