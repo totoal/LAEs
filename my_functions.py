@@ -572,7 +572,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     w_central = central_wavelength()
 
     N_sources = pm_flx.shape[1]
-    nb_fwhm_Arr = nb_fwhm(range(56))
+    nb_fwhm_Arr = np.array(nb_fwhm(range(56)))
 
     if nice_lya is None:
         nice_lya = np.ones(N_sources).astype(bool)
@@ -580,7 +580,9 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         F_bias = np.ones(60)
 
     EW_nb_Arr = np.zeros(N_sources)
+    EW_nb_e = np.zeros(N_sources)
     L_Arr = np.zeros(N_sources)
+    L_e_Arr = np.zeros(N_sources)
     cont = np.zeros(N_sources)
     cont_e = np.zeros(N_sources)
     flambda = np.zeros(N_sources)
@@ -595,10 +597,16 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         cont_e[src] = cont_err[l, src]
 
         # Let's integrate the NB flux over the transmission curves to obtain Flambda
-        N_nb = 1
+        N_nb = 3
         l_start = np.max([0, l - N_nb])
 
         lw = np.arange(l_start, l + N_nb + 1)
+
+        # x_t_start = w_central[lw[0]] - nb_fwhm_Arr[lw[0]] * 0.5
+        # x_t_stop = w_central[lw[-1]] + nb_fwhm_Arr[lw[-1]] * 0.5
+
+        # t_res = 1000 # Resolution for the t curve
+        # x_t = np.linspace(x_t_start, x_t_stop, t_res)
 
         IGM_T_Arr = np.ones(len(lw))
         IGM_T_Arr[: l - l_start] = IGM_TRANSMISSION(w_central[lw[: l - l_start]])
@@ -619,9 +627,14 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
 
         flambda[src] = np.sum(
             (pm_flx[lw[0] : lw[-1] + 1, src] - cont[src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
-        ) - intersec
-        flambda_e[src] = np.sum(
-            (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
+            ) - intersec
+        flambda_e[src] = (
+            np.sum(
+                (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
+            )
+            + np.sum(
+                (cont_e[src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1])
+            ) ** 2
         ) ** 0.5
 
     flambda /= F_bias[np.array(lya_lines)]
@@ -629,9 +642,26 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     EW_nb_Arr = flambda / cont / (1 + z_Arr)
     EW_nb_e = flambda_e / cont / (1 + z_Arr)
 
-    dL = cosmo.luminosity_distance(z_Arr).to(u.cm).value
+    LumDist = lambda z: cosmo.luminosity_distance(z).to(u.cm).value
+    Redshift = lambda w: w / 1215.67 - 1
+    dL = LumDist(z_Arr)
+    dL_e = (
+        LumDist(
+            Redshift(
+                w_central[lya_lines] + 0.5 * nb_fwhm_Arr[lya_lines]
+            )
+        )
+        - LumDist(
+            Redshift(
+                w_central[lya_lines]
+            )
+        )
+    )
 
     L_Arr = np.log10(flambda * 4*np.pi * dL ** 2)
-    L_e_Arr = 4*np.pi * dL ** 2 * flambda_e
+    L_e_Arr = (
+        (4*np.pi * dL ** 2 * flambda_e) ** 2
+        + (4*np.pi * dL_e **2 * flambda) ** 2
+    ) ** 0.5
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
