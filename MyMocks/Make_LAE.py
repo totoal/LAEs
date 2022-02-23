@@ -237,7 +237,6 @@ def main(part):
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
     pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
-    # pm_SEDs = mag_to_flux(mags, w_central)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 

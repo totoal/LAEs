@@ -409,6 +409,10 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
         & (
             pm_flx[:-4] > cont_est
         )
+        # # S/N > 5
+        # & (
+        #     pm_flx[:-4] / pm_err[:-4] > 5.
+        # )
         # Masks
         & (
             mask
