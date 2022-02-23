@@ -136,7 +136,6 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=Fa
     cont_err = np.ones(NB_flx.shape) * 99.
     w_central = central_wavelength()
 
-
     for nb_idx in range(1, NB_flx.shape[0]):
         if (nb_idx < N_nb) or only_right :
             if IGM_T_correct:
