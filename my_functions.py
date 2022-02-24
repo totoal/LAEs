@@ -600,7 +600,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         cont_e[src] = cont_err[l, src]
 
         # Let's integrate the NB flux over the transmission curves to obtain Flambda
-        N_nb = 0
+        N_nb = 1
         l_start = np.max([0, l - N_nb])
 
         lw = np.arange(l_start, l + N_nb + 1)
