@@ -202,7 +202,7 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     central wavelength w_c with a fwhm.
     '''
     synth_tcurve = np.zeros(w_Arr.shape)
-    synth_tcurve[np.where(np.abs(w_Arr - w_c) < fwhm*0.5)] += 1.
+    synth_tcurve[np.where(np.abs(w_Arr - w_c) <= fwhm*0.5)] += 1.
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
     if len(f.shape) == 1:
@@ -600,22 +600,17 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         cont_e[src] = cont_err[l, src]
 
         # Let's integrate the NB flux over the transmission curves to obtain Flambda
-        N_nb = 3
+        N_nb = 0
         l_start = np.max([0, l - N_nb])
 
         lw = np.arange(l_start, l + N_nb + 1)
-
-        # x_t_start = w_central[lw[0]] - nb_fwhm_Arr[lw[0]] * 0.5
-        # x_t_stop = w_central[lw[-1]] + nb_fwhm_Arr[lw[-1]] * 0.5
-
-        # t_res = 1000 # Resolution for the t curve
-        # x_t = np.linspace(x_t_start, x_t_stop, t_res)
 
         IGM_T_Arr = np.ones(len(lw))
         IGM_T_Arr[: l - l_start] = IGM_TRANSMISSION(w_central[lw[: l - l_start]])
         IGM_T_Arr[l - l_start] = (IGM_TRANSMISSION(w_central[lw[l - l_start]]) + 1) * 0.5
 
-        pm_flx[l_start : l + N_nb + 1, src] / IGM_T_Arr
+        pm_flx[l_start : l + N_nb + 1, src] /= IGM_T_Arr
+        pm_flx[l_start : l + N_nb + 1, src][pm_flx[l_start : l + N_nb + 1, src] < cont[src]] = cont[src]
 
         intersec = 0.
         for i in range(lw[0], lw[-1]):
@@ -624,13 +619,18 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
                 - (w_central[i + 1] - w_central[i])
             )
             intersec += np.min(
-                [(pm_flx[i, src] - cont[src]) * intersec_dlambda,
-                (pm_flx[i + 1, src] - cont[src]) * intersec_dlambda]
+                [(pm_flx[i, src]) * intersec_dlambda,
+                (pm_flx[i + 1, src]) * intersec_dlambda]
             )
 
+        flambda_cont = cont[src] * (
+            w_central[l + N_nb] + nb_fwhm_Arr[l + N_nb] * 0.5
+            - (w_central[l_start] - nb_fwhm_Arr[l_start] * 0.5)
+        )
+
         flambda[src] = np.sum(
-            (pm_flx[lw[0] : lw[-1] + 1, src] - cont[src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
-            ) - intersec
+            (pm_flx[lw[0] : lw[-1] + 1, src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
+            ) - intersec - flambda_cont
         flambda_e[src] = (
             np.sum(
                 (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
