@@ -60,21 +60,20 @@ def main(part):
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    files = glob.glob('QSO_Spectra/')
+    files = glob.glob('/home/alberto/cosmos/SDSS_Spectra/fits/*')
     N_sources = len(files)
 
     pm_SEDs = np.empty((60, N_sources))
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
-    w_min  = 2500   # Minimum wavelength
-    w_max  = 10000  # Maximum wavelegnth
-    N_bins = 10000  # Number of bins
-    w_Arr = np.linspace(w_min, w_max, N_bins)
-
     # Do the integrated photometry
     for src in N_sources:
-        pm_SEDs[:, src] = JPAS_synth_phot(spec_flx, w_Arr, tcurves)
+        spec_name = files[src]
+        spec = Table.read(spec_name)
+        pm_SEDs[:, src] = JPAS_synth_phot(
+            spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
+        )
 
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
