@@ -6,6 +6,53 @@ import numpy as np
 
 from my_utilities import *
 
+def add_errors(pm_SEDs):
+
+    err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
+
+    # Load limit mags
+    detec_lim = np.vstack(
+        (
+            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
+            pd.read_csv('csv/5sigma_depths_BB.csv', header=None)
+        )
+    )[:, 1].reshape(-1, 1)
+
+    # Add errors
+    a = err_fit_params[:, 0].reshape(-1, 1)
+    b = err_fit_params[:, 1].reshape(-1, 1)
+    c = err_fit_params[:, 2].reshape(-1, 1)
+    expfit = lambda x: a * np.exp(b * x + c)
+
+    w_central = central_wavelength().reshape(-1, 1)
+
+    mags = flux_to_mag(pm_SEDs, w_central)
+    mags[np.isnan(mags) | np.isinf(mags)] = 99.
+
+    mag_err = expfit(mags)
+    where_himag = np.where(mags > detec_lim)
+
+    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
+
+    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+
+    # Perturb according to the error
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+
+    # Now recompute the error
+    mags = flux_to_mag(pm_SEDs, w_central)
+    mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
+    mag_err = expfit(mags)
+    where_himag = np.where(mags > detec_lim)
+
+    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
+
+    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+
+    return pm_SEDs, pm_SEDs_err
+
 def main():
     files = glob.glob('QSO_Spectra/')
     N_sources = len(files)
@@ -19,6 +66,9 @@ def main():
     N_bins = 10000  # Number of bins
     w_Arr = np.linspace(w_min, w_max, N_bins)
 
+    # Do the integrated photometry
     for src in N_sources:
         pm_SEDs[:, src] = JPAS_synth_phot(spec_flx, w_Arr, tcurves)
+
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
  
