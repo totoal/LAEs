@@ -1,3 +1,5 @@
+import sys
+import os
 import glob
 
 import pandas as pd
@@ -7,7 +9,6 @@ import numpy as np
 from my_utilities import *
 
 def add_errors(pm_SEDs):
-
     err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 
     # Load limit mags
@@ -53,7 +54,12 @@ def add_errors(pm_SEDs):
 
     return pm_SEDs, pm_SEDs_err
 
-def main():
+def main(part):
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
+
+    if not os.path.exists(filename):
+        os.mkdir(filename)
+
     files = glob.glob('QSO_Spectra/')
     N_sources = len(files)
 
@@ -71,4 +77,12 @@ def main():
         pm_SEDs[:, src] = JPAS_synth_phot(spec_flx, w_Arr, tcurves)
 
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
- 
+
+    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']]
+
+    pd.DataFrame(
+            data=np.hstack((pm_SEDs.T, pm_SEDs_err.T))
+    ).to_csv(filename + f'/data{part}.csv', header=hdr)
+
+if __name__ == '__main__':
+    main(sys.argv[1])
