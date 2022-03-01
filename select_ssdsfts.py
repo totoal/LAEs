@@ -15,12 +15,13 @@ lya_cont = np.zeros(N_sources)
 lya_cont_err = np.zeros(N_sources)
 lya_F = np.zeros(N_sources)
 lya_F_err = np.zeros(N_sources)
+lya_z = np.zeros(N_sources)
 
 fread = fits.open('/home/alberto/almacen/prolly_useful_files/spAllLine-v5_13_0.fits')
 lineinfo = fread[1].data[np.where(fread[1].data['LINEWAVE'] == 1215.67)]
 
 for src in range(N_sources):
-    print(src)
+    print(f'{src} / {N_sources}', end='\r')
 
     where = (
         (lineinfo['MJD'] == mjd[src])
@@ -32,6 +33,7 @@ for src in range(N_sources):
     lya_F_err[src] = lineinfo['LINEAREA_ERR'][where]
     lya_cont[src] = lineinfo['LINECONTLEVEL'][where]
     lya_cont_err[src] = lineinfo['LINECONTLEVEL_ERR'][where]
+    lya_z[src] = lineinfo['LINEZ'][where]
 
 neg_cont = np.where(lya_cont < 0)
 lya_cont_corrected = np.copy(lya_cont)
@@ -42,7 +44,11 @@ data = {
     'LyaF': np.abs(lya_F),
     'LyaF_err': lya_F_err,
     'LyaCont': lya_cont_corrected,
-    'LyaCont_err': lya_cont_err
+    'LyaCont_err': lya_cont_err,
+    'Lya_z': lya_z,
+    'mjd': mjd,
+    'plate': plate,
+    'fiberid': fiber
 }
 
 pd.DataFrame(data).to_csv('Lya_fts.csv')

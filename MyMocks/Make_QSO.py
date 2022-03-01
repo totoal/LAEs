@@ -1,6 +1,10 @@
-import sys
 import os
+import sys
 import glob
+from time import perf_counter
+
+from astropy.cosmology import Planck18 as cosmo
+import astropy.units as u
 
 import pandas as pd
 
@@ -54,34 +58,81 @@ def add_errors(pm_SEDs):
 
     return pm_SEDs, pm_SEDs_err
 
+def SDSS_QSO_line_fts(mjd, plate, fiber):
+    Lya_fts = pd.read_csv('csv/Lya_fts.csv')
+
+    N_sources = len(mjd)
+    z = np.empty(N_sources)
+    EW0 = np.empty(N_sources)
+    L = np.empty(N_sources)
+    Flambda = np.empty(N_sources) # Provisional
+
+    for src in range(N_sources):
+        where = (
+            (mjd[src] == Lya_fts['mjd'])
+            & (plate[src] == Lya_fts['plate'])
+            & (fiber[src] == Lya_fts['fiber'])
+        )
+
+        z[src] = Lya_fts['Lya_z'][src]
+        EW0[src] = np.abs(Lya_fts['LyaEW'][src]) # Obs frame EW by now
+        Flambda[src] = Lya_fts['LyaF']
+
+    EW0 /= 1 + z # Now it's rest frame EW0
+
+    dL = cosmo.luminosity_distance(z).to(u.cm).value
+    L = np.log10(Flambda * 4*np.pi * dL ** 2)
+
+    return z, EW0, L
+
 def main(part):
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    files = glob.glob('/home/alberto/cosmos/SDSS_Spectra/fits/*')
+    files = glob.glob('/home/alberto/almacen/SDSS_QSO_fits/fits/*')
     N_sources = len(files)
 
     pm_SEDs = np.empty((60, N_sources))
+    mjd = np.zeros(N_sources).astype(int)
+    plate = np.zeros(N_sources).astype(int)
+    fiber = np.zeros(N_sources).astype(int)
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
     # Do the integrated photometry
-    for src in N_sources:
+    print('Extracting band fluxes from the spectra...')
+    for src in range(N_sources):
+        print(f'{src} / {N_sources}', end='\r')
         spec_name = files[src]
-        spec = Table.read(spec_name)
+        spec = Table.read(spec_name, hdu=1)
         pm_SEDs[:, src] = JPAS_synth_phot(
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
         )
 
+        mjd[src] = int(spec_name[-20 : -16])
+        plate[src] = int(spec_name[-15 : -10])
+        mjd[src] = int(spec_name[-9 : -5])
+
+    print('Adding errors...')
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
-    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']]
+    print('Extracting line features...')
+    z, EW0, L = SDSS_QSO_line_fts(mjd, plate, fiber)
+
+    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
 
     pd.DataFrame(
-            data=np.hstack((pm_SEDs.T, pm_SEDs_err.T))
-    ).to_csv(filename + f'/data{part}.csv', header=hdr)
+        data=np.hstack(
+            (
+                pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), EW0.reshape(-1, 1),
+                L.reshape(-1, 1)
+            )
+        )
+    ).to_csv(filename + '/data{part}.csv', header=hdr)
 
 if __name__ == '__main__':
+    t0 = perf_counter()
     main(sys.argv[1])
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))
