@@ -5,9 +5,9 @@ import numpy as np
 filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
     'JPAS_mocks_classification_01sep_model11/Fluxes/Qso_jpas_mock_flam_train.cat')
 
-plate = pd.read_csv(filename, sep=' ', usecols=[122]).to_numpy().reshape(-1, )
-mjd = pd.read_csv(filename, sep=' ', usecols=[123]).to_numpy().reshape(-1, )
-fiber = pd.read_csv(filename, sep=' ', usecols=[124]).to_numpy().reshape(-1, )
+plate = pd.read_csv(filename, sep=' ', usecols=[122]).to_numpy().reshape(-1,)
+mjd = pd.read_csv(filename, sep=' ', usecols=[123]).to_numpy().reshape(-1,)
+fiber = pd.read_csv(filename, sep=' ', usecols=[124]).to_numpy().reshape(-1,)
 
 N_sources = len(fiber)
 
