@@ -68,15 +68,15 @@ def SDSS_QSO_line_fts(mjd, plate, fiber):
     Flambda = np.empty(N_sources) # Provisional
 
     for src in range(N_sources):
-        where = (
+        where = np.where(
             (mjd[src] == Lya_fts['mjd'])
             & (plate[src] == Lya_fts['plate'])
             & (fiber[src] == Lya_fts['fiber'])
         )
 
-        z[src] = Lya_fts['Lya_z'][src]
-        EW0[src] = np.abs(Lya_fts['LyaEW'][src]) # Obs frame EW by now
-        Flambda[src] = Lya_fts['LyaF']
+        z[src] = Lya_fts['Lya_z'][where]
+        EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
+        Flambda[src] = Lya_fts['LyaF'][where]
 
     EW0 /= 1 + z # Now it's rest frame EW0
 
@@ -130,7 +130,7 @@ def main(part):
                 L.reshape(-1, 1)
             )
         )
-    ).to_csv(filename + '/data{part}.csv', header=hdr)
+    ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
 if __name__ == '__main__':
     t0 = perf_counter()
