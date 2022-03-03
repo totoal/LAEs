@@ -20,7 +20,7 @@ def main(part):
     # w_lya = 1215.67
 
     ####    Mock parameters.
-    z_lya = [2, 5]
+    z_lya = [2, 4]
     obs_area = 10 # deg**2
 
     # Wavelength array where to evaluate the spectrum
@@ -34,7 +34,7 @@ def main(part):
     ####    Specific LAE parameters
     w_in  = [5, 5.1] # Line width interval
     s_in = [-31., -30.] # Logarithmic uncertainty in flux density # 
-    L_in = [41.75, 44]
+    L_in = [41.75, 45]
     LINE = 'Lya'
 
     ####    Load LAE LF (Sobral 2016)
@@ -222,7 +222,7 @@ def main(part):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
     pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
@@ -236,7 +236,7 @@ def main(part):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 

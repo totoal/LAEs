@@ -40,7 +40,7 @@ def add_errors(pm_SEDs):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
 
     # Perturb according to the error
     pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
@@ -54,12 +54,12 @@ def add_errors(pm_SEDs):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags + mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
 
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber):
-    Lya_fts = pd.read_csv('csv/Lya_fts.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
     z = np.empty(N_sources)
@@ -85,35 +85,66 @@ def SDSS_QSO_line_fts(mjd, plate, fiber):
 
     return z, EW0, L
 
+def load_QSO_prior_mock():
+    filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
+        'JPAS_mocks_classification_19nov_model11/Fluxes_model_11/Qso_jpas_mock_flam_train.cat')
+
+    qso_flx = pd.read_csv(
+        filename, sep=' ', usecols=28 # 28 is rSDSS
+    ).to_numpy().flatten()
+
+    format_string4 = lambda x: '{:04d}'.format(int(x))
+    format_string5 = lambda x: '{:05d}'.format(int(x))
+    convert_dict = {
+        122: format_string4,
+        123: format_string5,
+        124: format_string4
+    }
+    plate_mjd_fiber = pd.read_csv(
+        filename, sep=' ', usecols=[122, 123, 124],
+        converters=convert_dict
+    ).to_numpy().T
+
+    return qso_flx, plate_mjd_fiber
+
 def main(part):
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    files = glob.glob('/home/alberto/almacen/SDSS_QSO_fits/fits/*')
-    N_sources = len(files)
-
-    pm_SEDs = np.empty((60, N_sources))
-    mjd = np.zeros(N_sources).astype(int)
-    plate = np.zeros(N_sources).astype(int)
-    fiber = np.zeros(N_sources).astype(int)
+    fits_dir = '/home/alberto/almacen/SDSS_QSO_fits/fits/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
+
+    # Loading the Carolina's QSO mock
+    qso_r_flx, plate_mjd_fiber = load_QSO_prior_mock()
+    N_sources = len(qso_r_flx)
+
+    pm_SEDs = np.empty((60, N_sources))
+    plate = np.empty((60, N_sources))
+    mjd = np.empty((60, N_sources))
+    fiber = np.empty((60, N_sources))
 
     # Do the integrated photometry
     print('Extracting band fluxes from the spectra...')
     for src in range(N_sources):
         print(f'{src} / {N_sources}', end='\r')
-        spec_name = files[src]
-        spec = Table.read(spec_name, hdu=1)
+
+        plate[src] = plate_mjd_fiber[0, src]
+        mjd[src] = plate_mjd_fiber[1, src]
+        fiber[src] = plate_mjd_fiber[2, src]
+
+        spec_name = fits_dir + f'spec-{plate}-{mjd}-{fiber}.fits'
+
+        spec = Table.read(spec_name, hdu=1, format='fits')
         pm_SEDs[:, src] = JPAS_synth_phot(
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
         )
 
-        mjd[src] = int(spec_name[-20 : -16])
-        plate[src] = int(spec_name[-15 : -10])
-        mjd[src] = int(spec_name[-9 : -5])
+        # Adjust flux to match the prior mock
+        correct_factor = qso_r_flx / pm_SEDs[-2, src]
+        pm_SEDs[:, src] *= correct_factor
 
     print('Adding errors...')
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
