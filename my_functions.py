@@ -567,7 +567,7 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
     return Phi1 + Phi2
 
 def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
-    nice_lya=None):
+    nice_lya=None, N_nb=1):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
@@ -594,13 +594,13 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     for src in np.where(nice_lya)[0]: 
         print(f'{src} / {N_sources}')
         l = lya_lines[src]
-        if l == -1: continue
+        if l < 5: continue
+        if l > 50: continue # Safety limits
         
         cont[src] = cont_flx[l, src]
         cont_e[src] = cont_err[l, src]
 
         # Let's integrate the NB flux over the transmission curves to obtain Flambda
-        N_nb = 1
         l_start = np.max([0, l - N_nb])
 
         lw = np.arange(l_start, l + N_nb + 1)
@@ -610,7 +610,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         IGM_T_Arr[l - l_start] = (IGM_TRANSMISSION(w_central[lw[l - l_start]]) + 1) * 0.5
 
         pm_flx[l_start : l + N_nb + 1, src] /= IGM_T_Arr
-        pm_flx[l_start : l + N_nb + 1, src][pm_flx[l_start : l + N_nb + 1, src] < cont[src]] = cont[src]
 
         intersec = 0.
         for i in range(lw[0], lw[-1]):
@@ -623,22 +622,34 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
                 (pm_flx[i + 1, src]) * intersec_dlambda]
             )
 
-        flambda_cont = cont[src] * (
+        interval = slice(lw[0], lw[-1] + 1)
+        weights = pm_err[interval, src] ** -2
+        weights /= weights.max()
+        
+        flambda_cont = cont[src] * np.sum(weights) * (
             w_central[l + N_nb] + nb_fwhm_Arr[l + N_nb] * 0.5
             - (w_central[l_start] - nb_fwhm_Arr[l_start] * 0.5)
         )
 
         flambda[src] = np.sum(
-            (pm_flx[lw[0] : lw[-1] + 1, src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
+            pm_flx[interval, src] * nb_fwhm_Arr[interval] * weights
             ) - intersec - flambda_cont
+
         flambda_e[src] = (
             np.sum(
-                (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
+                (pm_err[interval, src] * nb_fwhm_Arr[interval] * weights) ** 2
             )
-            + np.sum(
-                (cont_e[src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1])
+            + (
+                cont_e[src] * (
+                    w_central[l + N_nb] + nb_fwhm_Arr[l + N_nb] * 0.5
+                    - (w_central[l_start] - nb_fwhm_Arr[l_start] * 0.5)
+                ) * weights.sum()
             ) ** 2
         ) ** 0.5
+
+    neg_flambda = flambda < 0
+    flambda[neg_flambda] = 1e-99
+    flambda_e[neg_flambda] = 99.
 
     flambda /= F_bias[np.array(lya_lines)]
 
@@ -668,3 +679,40 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     ) ** 0.5
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
+
+def Best_L(pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines):
+
+    EW_nb_Arr1, EW_nb_e1, L_Arr1, L_e_Arr1, flambda1, flambda_e1 = EW_L_NB(
+        pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=1
+    )
+
+    EW_nb_Arr0, EW_nb_e0, L_Arr0, L_e_Arr0, flambda0, flambda_e0 = EW_L_NB(
+        pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
+    )
+
+    N_sources = len(z_Arr)
+    EW_nb_Arr = np.empty(N_sources)
+    EW_nb_e = np.empty(N_sources)
+    L_Arr = np.empty(N_sources)
+    L_e_Arr = np.empty(N_sources)
+    flambda = np.empty(N_sources)
+    flambda_e = np.empty(N_sources)
+
+    # Where N_nb is best
+    best_L1 = (flambda1 / flambda_e1) > (flambda0 / flambda_e0)
+
+    EW_nb_Arr[best_L1] = EW_nb_Arr1[best_L1]
+    EW_nb_e[best_L1] = EW_nb_e1[best_L1]
+    L_Arr[best_L1] = L_Arr1[best_L1]
+    L_e_Arr[best_L1] = L_e_Arr1[best_L1]
+    flambda[best_L1] = flambda1[best_L1]
+    flambda_e[best_L1] = flambda_e1[best_L1]
+
+    EW_nb_Arr[~best_L1] = EW_nb_Arr0[~best_L1]
+    EW_nb_e[~best_L1] = EW_nb_e0[~best_L1]
+    L_Arr[~best_L1] = L_Arr0[~best_L1]
+    L_e_Arr[~best_L1] = L_e_Arr0[~best_L1]
+    flambda[~best_L1] = flambda0[~best_L1]
+    flambda_e[~best_L1] = flambda_e0[~best_L1]
+
+    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e, best_L1

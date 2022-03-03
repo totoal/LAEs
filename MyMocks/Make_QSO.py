@@ -1,6 +1,4 @@
 import os
-import sys
-import glob
 from time import perf_counter
 
 from astropy.cosmology import Planck18 as cosmo
@@ -69,16 +67,20 @@ def SDSS_QSO_line_fts(mjd, plate, fiber):
 
     for src in range(N_sources):
         where = np.where(
-            (mjd[src] == Lya_fts['mjd'])
-            & (plate[src] == Lya_fts['plate'])
-            & (fiber[src] == Lya_fts['fiber'])
+            (int(mjd[src]) == Lya_fts['mjd'].to_numpy().flatten())
+            & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
+            & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
         )
+        
+        # Sources are repeated, so we take the first occurence
+        where = where[0][0]
 
         z[src] = Lya_fts['Lya_z'][where]
         EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
 
     EW0 /= 1 + z # Now it's rest frame EW0
+    Flambda *= 1e-17 # Correct units
 
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(Flambda * 4*np.pi * dL ** 2)
@@ -90,7 +92,7 @@ def load_QSO_prior_mock():
         'JPAS_mocks_classification_19nov_model11/Fluxes_model_11/Qso_jpas_mock_flam_train.cat')
 
     qso_flx = pd.read_csv(
-        filename, sep=' ', usecols=28 # 28 is rSDSS
+        filename, sep=' ', usecols=[28] # 28 is rSDSS
     ).to_numpy().flatten()
 
     format_string4 = lambda x: '{:04d}'.format(int(x))
@@ -107,7 +109,7 @@ def load_QSO_prior_mock():
 
     return qso_flx, plate_mjd_fiber
 
-def main(part):
+def main():
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
 
     if not os.path.exists(filename):
@@ -122,9 +124,9 @@ def main(part):
     N_sources = len(qso_r_flx)
 
     pm_SEDs = np.empty((60, N_sources))
-    plate = np.empty((60, N_sources))
-    mjd = np.empty((60, N_sources))
-    fiber = np.empty((60, N_sources))
+    plate = np.zeros(N_sources).astype(str)
+    mjd = np.zeros(N_sources).astype(str)
+    fiber = np.zeros(N_sources).astype(str)
 
     # Do the integrated photometry
     print('Extracting band fluxes from the spectra...')
@@ -135,7 +137,7 @@ def main(part):
         mjd[src] = plate_mjd_fiber[1, src]
         fiber[src] = plate_mjd_fiber[2, src]
 
-        spec_name = fits_dir + f'spec-{plate}-{mjd}-{fiber}.fits'
+        spec_name = fits_dir + f'spec-{plate[src]}-{mjd[src]}-{fiber[src]}.fits'
 
         spec = Table.read(spec_name, hdu=1, format='fits')
         pm_SEDs[:, src] = JPAS_synth_phot(
@@ -143,7 +145,7 @@ def main(part):
         )
 
         # Adjust flux to match the prior mock
-        correct_factor = qso_r_flx / pm_SEDs[-2, src]
+        correct_factor = qso_r_flx[src] / pm_SEDs[-2, src]
         pm_SEDs[:, src] *= correct_factor
 
     print('Adding errors...')
@@ -161,9 +163,9 @@ def main(part):
                 L.reshape(-1, 1)
             )
         )
-    ).to_csv(filename + f'/data{part}.csv', header=hdr)
+    ).to_csv(filename + f'/data.csv', header=hdr)
 
 if __name__ == '__main__':
     t0 = perf_counter()
-    main(sys.argv[1])
+    main()
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))
