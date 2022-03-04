@@ -222,7 +222,7 @@ def main(part):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
 
     # Perturb according to the error
     pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
@@ -236,7 +236,7 @@ def main(part):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
