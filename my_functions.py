@@ -82,49 +82,6 @@ def nb_fwhm(nb_ind, give_fwhm=True):
     if give_fwhm == True:
         return fwhm
 
-# Stack estimation
-# def stack_estimation(pm_flx, pm_err, nb_c, N_nb, IGM_T_correct=True):
-#     '''
-#     Returns the weighted average and error of N_nb Narrow Bands
-#     arround the central one.
-#     '''
-#     w_central = central_wavelength()
-#     nb_idx_Arr = np.array([*range(nb_c-N_nb, nb_c+N_nb+1)])
-    
-#     if IGM_T_correct:
-#         IGM_T = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb:nb_c])).reshape(-1, 1)
-#     else:
-#         IGM_T = 1.
-
-#     flx = pm_flx[nb_idx_Arr]
-#     flx[:N_nb] /= IGM_T
-#     err_i = pm_err[nb_idx_Arr]
-#     err_i[:N_nb] /= IGM_T
-
-#     err_i[N_nb - 1 : N_nb + 2] = 999.
-
-#     ## Let's discard NB too faint. flux because in the mocks they have small errs and
-#     ## that's wrong
-#     zero_mask = np.where(flx < 1e-20)
-#     zero_mask_symmetric = (N_nb - (zero_mask[0] - N_nb), zero_mask[1])
-#     err_i[zero_mask] = 999.
-#     err_i[zero_mask_symmetric] = 999.
-
-#     err = err_i
-    
-#     ## First compute the continuum to find outliers to this first estimate
-#     avg = np.average(flx, axis=0, weights=err_i**-2)
-#     sigma =  ((len(nb_idx_Arr) - 1) / np.sum(err_i**-2, axis=0))**0.5
-
-#     mask = err == 999.
-#     flx_ma = np.ma.array(flx, mask=mask)
-#     err_ma = np.ma.array(err**-2, mask=mask)
-
-#     ## Now recompute this but with no outliers
-#     avg = np.array(np.ma.average(flx_ma, weights=err**-2, axis=0))
-#     sigma =  np.array((1. / err_ma.sum(axis=0))**0.5)
-#     return avg, sigma
-
 def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=False):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
@@ -566,13 +523,18 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
 
     return Phi1 + Phi2
 
-def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
-    nice_lya=None, N_nb=1):
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, zspec, lya_lines, F_bias=None,
+    nice_lya=None):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
 
     w_central = central_wavelength()
+
+    if zspec is None:
+        z_Arr = w_central[lya_lines] / 1215.67 - 1
+    else:
+        z_Arr = zspec
 
     N_sources = pm_flx.shape[1]
     nb_fwhm_Arr = np.array(nb_fwhm(range(56)))
@@ -592,15 +554,15 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     flambda_e = np.zeros(N_sources)
 
     for src in np.where(nice_lya)[0]: 
-        print(f'{src} / {N_sources}')
         l = lya_lines[src]
-        if l < 5: continue
-        if l > 50: continue # Safety limits
+        z = z_Arr[src]
+        if (l < 5) | (l > 40): continue
         
         cont[src] = cont_flx[l, src]
         cont_e[src] = cont_err[l, src]
 
         # Let's integrate the NB flux over the transmission curves to obtain Flambda
+        N_nb = 0
         l_start = np.max([0, l - N_nb])
 
         lw = np.arange(l_start, l + N_nb + 1)
@@ -610,6 +572,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         IGM_T_Arr[l - l_start] = (IGM_TRANSMISSION(w_central[lw[l - l_start]]) + 1) * 0.5
 
         pm_flx[l_start : l + N_nb + 1, src] /= IGM_T_Arr
+        pm_flx[l_start : l + N_nb + 1, src][pm_flx[l_start : l + N_nb + 1, src] < cont[src]] = cont[src]
 
         intersec = 0.
         for i in range(lw[0], lw[-1]):
@@ -622,43 +585,32 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
                 (pm_flx[i + 1, src]) * intersec_dlambda]
             )
 
-        interval = slice(lw[0], lw[-1] + 1)
-        weights = pm_err[interval, src] ** -2
-        weights /= weights.max()
-        
-        flambda_cont = cont[src] * np.sum(weights) * (
+        flambda_cont = cont[src] * (
             w_central[l + N_nb] + nb_fwhm_Arr[l + N_nb] * 0.5
             - (w_central[l_start] - nb_fwhm_Arr[l_start] * 0.5)
         )
 
         flambda[src] = np.sum(
-            pm_flx[interval, src] * nb_fwhm_Arr[interval] * weights
+            (pm_flx[lw[0] : lw[-1] + 1, src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
             ) - intersec - flambda_cont
 
         flambda_e[src] = (
             np.sum(
-                (pm_err[interval, src] * nb_fwhm_Arr[interval] * weights) ** 2
+                (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
             )
-            + (
-                cont_e[src] * (
-                    w_central[l + N_nb] + nb_fwhm_Arr[l + N_nb] * 0.5
-                    - (w_central[l_start] - nb_fwhm_Arr[l_start] * 0.5)
-                ) * weights.sum()
+            + np.sum(
+                (cont_e[src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1])
             ) ** 2
         ) ** 0.5
 
-    neg_flambda = flambda < 0
-    flambda[neg_flambda] = 1e-99
-    flambda_e[neg_flambda] = 99.
-
     flambda /= F_bias[np.array(lya_lines)]
 
-    EW_nb_Arr = flambda / cont / (1 + z_Arr)
-    EW_nb_e = flambda_e / cont / (1 + z_Arr)
+    EW_nb_Arr = flambda / cont / (1 + z)
+    EW_nb_e = flambda_e / cont / (1 + z)
 
     LumDist = lambda z: cosmo.luminosity_distance(z).to(u.cm).value
     Redshift = lambda w: w / 1215.67 - 1
-    dL = LumDist(z_Arr)
+    dL = LumDist(z)
     dL_e = (
         LumDist(
             Redshift(

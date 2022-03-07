@@ -38,10 +38,10 @@ def add_errors(pm_SEDs):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
+    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     mags = flux_to_mag(pm_SEDs, w_central)
@@ -52,11 +52,11 @@ def add_errors(pm_SEDs):
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = -mag_to_flux(mags + mag_err, w_central) + mag_to_flux(mags, w_central)
+    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     return pm_SEDs, pm_SEDs_err
 
-def SDSS_QSO_line_fts(mjd, plate, fiber):
+def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
     Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
@@ -79,13 +79,13 @@ def SDSS_QSO_line_fts(mjd, plate, fiber):
         EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
 
-    EW0 /= 1 + z # Now it's rest frame EW0
-    Flambda *= 1e-17 # Correct units
+    EW0 /= (1 + z) * correct # Now it's rest frame EW0 & apply correction
+    Flambda *= 1e-17 * correct # Correct units & apply correction
 
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(Flambda * 4*np.pi * dL ** 2)
 
-    return z, EW0, L
+    return z, EW0, L, Flambda
 
 def load_QSO_prior_mock():
     filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
@@ -110,7 +110,7 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100001'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -127,6 +127,7 @@ def main():
     plate = np.zeros(N_sources).astype(str)
     mjd = np.zeros(N_sources).astype(str)
     fiber = np.zeros(N_sources).astype(str)
+    correct = np.zeros(N_sources)
 
     # Do the integrated photometry
     print('Extracting band fluxes from the spectra...')
@@ -145,22 +146,22 @@ def main():
         )
 
         # Adjust flux to match the prior mock
-        correct_factor = qso_r_flx[src] / pm_SEDs[-2, src]
-        pm_SEDs[:, src] *= correct_factor
+        correct[src] = qso_r_flx[src] / pm_SEDs[-2, src]
+        pm_SEDs[:, src] *= correct[src]
 
     print('Adding errors...')
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
     print('Extracting line features...')
-    z, EW0, L = SDSS_QSO_line_fts(mjd, plate, fiber)
+    z, EW0, L, F_line = SDSS_QSO_line_fts(mjd, plate, fiber, correct)
 
-    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
+    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya', 'F_line']
 
     pd.DataFrame(
         data=np.hstack(
             (
                 pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), EW0.reshape(-1, 1),
-                L.reshape(-1, 1)
+                L.reshape(-1, 1), F_line.reshape(-1, 1)
             )
         )
     ).to_csv(filename + f'/data.csv', header=hdr)
