@@ -628,7 +628,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     L_Arr = np.log10(flambda * 4*np.pi * dL ** 2)
     L_e_Arr = (
         (4*np.pi * dL ** 2 * flambda_e) ** 2
-        + (4*np.pi * dL_e **2 * flambda) ** 2
+        + (4*np.pi * 2*dL * dL_e * flambda) ** 2
     ) ** 0.5
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
