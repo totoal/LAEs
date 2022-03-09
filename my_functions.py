@@ -151,14 +151,24 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=Fa
         cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_errs ** -2, axis=0)
         cont_err[nb_idx] = np.sum(NBs_errs ** -2, axis=0) ** -0.5
 
-        # Let's compute the error using bootstrap
-        # n_boots = 20
-        # aux_cont = np.empty(n_boots)
-        # for i in range(n_boots):
-        #     boots_idx = np.random.randint(0, NBs_to_avg.shape[0], size=NBs_to_avg.shape)
-        #     aux_cont = np.
-
     return cont_est, cont_err
+
+def estimate_continuum_error(NB_flx, NB_err, N_nb=7, N_iter=10):
+    '''
+    Gives a more realistic error of the continuum estimate.
+    '''
+    cont_est_i = np.empty((N_iter, *NB_flx.shape))
+
+    print('Estimating cont err...')
+    for i in range(N_iter):
+        print(f'Iteration {i} / {N_iter}')
+        # First we perturb the NB fluxes according to their errors.
+        this_NB_flx = NB_flx + np.random.normal(size=NB_flx.shape) * NB_err
+
+        # Cont. estimate of this iteration
+        cont_est_i[i], _ = estimate_continuum(this_NB_flx, NB_err, N_nb)
+
+    return np.std(cont_est_i, axis=0)
 
 
 def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
