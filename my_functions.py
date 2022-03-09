@@ -150,6 +150,14 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=Fa
 
         cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_errs ** -2, axis=0)
         cont_err[nb_idx] = np.sum(NBs_errs ** -2, axis=0) ** -0.5
+
+        # Let's compute the error using bootstrap
+        # n_boots = 20
+        # aux_cont = np.empty(n_boots)
+        # for i in range(n_boots):
+        #     boots_idx = np.random.randint(0, NBs_to_avg.shape[0], size=NBs_to_avg.shape)
+        #     aux_cont = np.
+
     return cont_est, cont_err
 
 
