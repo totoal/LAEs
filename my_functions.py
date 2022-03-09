@@ -82,7 +82,10 @@ def nb_fwhm(nb_ind, give_fwhm=True):
     if give_fwhm == True:
         return fwhm
 
-def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=False):
+def estimate_continuum(
+    NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=False,
+    N_nb_min=0, N_nb_max=56
+):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
     '''
@@ -94,6 +97,12 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=Fa
     w_central = central_wavelength()
 
     for nb_idx in range(1, NB_flx.shape[0]):
+        # Limits on where to make the estimation
+        if nb_idx < N_nb_min:
+            continue
+        if nb_idx > N_nb_max:
+            break
+
         if (nb_idx < N_nb) or only_right :
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
@@ -153,20 +162,24 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=Fa
 
     return cont_est, cont_err
 
-def estimate_continuum_error(NB_flx, NB_err, N_nb=7, N_iter=10):
+def estimate_continuum_error(
+    NB_flx, NB_err, N_nb=7, N_iter=10, N_nb_min=0, N_nb_max=56
+):
     '''
     Gives a more realistic error of the continuum estimate.
     '''
-    cont_est_i = np.empty((N_iter, *NB_flx.shape))
+    cont_est_i = np.empty((N_iter, 56, NB_flx.shape[1]))
 
     print('Estimating cont err...')
     for i in range(N_iter):
-        print(f'Iteration {i} / {N_iter}')
+        print(f'Iteration {i} / {N_iter}', end='\r')
         # First we perturb the NB fluxes according to their errors.
         this_NB_flx = NB_flx + np.random.normal(size=NB_flx.shape) * NB_err
 
         # Cont. estimate of this iteration
-        cont_est_i[i], _ = estimate_continuum(this_NB_flx, NB_err, N_nb)
+        cont_est_i[i], _ = estimate_continuum(
+            this_NB_flx, NB_err, N_nb, N_nb_min=N_nb_min, N_nb_max=N_nb_max
+        )
 
     return np.std(cont_est_i, axis=0)
 
