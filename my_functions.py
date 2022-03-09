@@ -162,28 +162,6 @@ def estimate_continuum(
 
     return cont_est, cont_err
 
-def estimate_continuum_error(
-    NB_flx, NB_err, N_nb=7, N_iter=10, N_nb_min=0, N_nb_max=56
-):
-    '''
-    Gives a more realistic error of the continuum estimate.
-    '''
-    cont_est_i = np.empty((N_iter, 56, NB_flx.shape[1]))
-
-    print('Estimating cont err...')
-    for i in range(N_iter):
-        print(f'Iteration {i} / {N_iter}', end='\r')
-        # First we perturb the NB fluxes according to their errors.
-        this_NB_flx = NB_flx + np.random.normal(size=NB_flx.shape) * NB_err
-
-        # Cont. estimate of this iteration
-        cont_est_i[i], _ = estimate_continuum(
-            this_NB_flx, NB_err, N_nb, N_nb_min=N_nb_min, N_nb_max=N_nb_max
-        )
-
-    return np.std(cont_est_i, axis=0)
-
-
 def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     '''
     Returns the synthetic photometry of a set f of (N_sources x binning) in a
