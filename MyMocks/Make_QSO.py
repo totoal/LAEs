@@ -44,15 +44,15 @@ def add_errors(pm_SEDs):
     pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
-    mags = flux_to_mag(pm_SEDs, w_central)
-    mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
-    mag_err = expfit(mags)
-    where_himag = np.where(mags > detec_lim)
+    # mags = flux_to_mag(pm_SEDs, w_central)
+    # mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
+    # mag_err = expfit(mags)
+    # where_himag = np.where(mags > detec_lim)
 
-    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
+    # mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+    # mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    # pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     return pm_SEDs, pm_SEDs_err
 
