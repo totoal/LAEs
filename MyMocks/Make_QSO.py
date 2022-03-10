@@ -79,7 +79,7 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
         EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
 
-    EW0 /= (1 + z) * correct # Now it's rest frame EW0 & apply correction
+    EW0 /= (1 + z) # Now it's rest frame EW0 & apply correction
     Flambda *= 1e-17 * correct # Correct units & apply correction
 
     dL = cosmo.luminosity_distance(z).to(u.cm).value
