@@ -41,8 +41,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
-    !!!!
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -64,7 +63,8 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
     z = np.empty(N_sources)
     EW0 = np.empty(N_sources)
     L = np.empty(N_sources)
-    Flambda = np.empty(N_sources) # Provisional
+    Flambda = np.empty(N_sources)
+    Flambda_err = np.empty(N_sources)
 
     for src in range(N_sources):
         where = np.where(
@@ -79,14 +79,16 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
         z[src] = Lya_fts['Lya_z'][where]
         EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
+        Flambda_err[src] = Lya_fts['LyaF_err'][where]
 
     EW0 /= (1 + z) # Now it's rest frame EW0 & apply correction
     Flambda *= 1e-17 * correct # Correct units & apply correction
+    Flambda_err *= 1e-17 * correct # Correct units & apply correction
 
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(Flambda * 4*np.pi * dL ** 2)
 
-    return z, EW0, L, Flambda
+    return z, EW0, L, Flambda, Flambda_err
 
 def load_QSO_prior_mock():
     filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
@@ -111,7 +113,7 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100001'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -154,15 +156,19 @@ def main():
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
     print('Extracting line features...')
-    z, EW0, L, F_line = SDSS_QSO_line_fts(mjd, plate, fiber, correct)
+    z, EW0, L, F_line, F_line_err = SDSS_QSO_line_fts(mjd, plate, fiber, correct)
 
-    hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya', 'F_line']
+    hdr = (
+        tcurves['tag']
+        + [s + '_e' for s in tcurves['tag']]
+        + ['z', 'EW0', 'L_lya', 'F_line', 'F_line_err']
+    )
 
     pd.DataFrame(
         data=np.hstack(
             (
                 pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), EW0.reshape(-1, 1),
-                L.reshape(-1, 1), F_line.reshape(-1, 1)
+                L.reshape(-1, 1), F_line.reshape(-1, 1), F_line_err.reshape(-1, 1)
             )
         )
     ).to_csv(filename + f'/data.csv', header=hdr)
