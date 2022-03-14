@@ -599,9 +599,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
             np.sum(
                 (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
             )
-            + np.sum(
-                (cont_e[src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1])
-            ) ** 2
+            + (flambda_cont / cont[src] * cont_e[src]) ** 2
         ) ** 0.5
 
     flambda /= F_bias[np.array(lya_lines)]
