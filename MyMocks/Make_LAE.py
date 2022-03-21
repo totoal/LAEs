@@ -204,6 +204,9 @@ def main(part):
         )
     )[:, 1].reshape(-1, 1)
 
+    # !!! Provisionaly (?) setting this limit higher
+    detec_lim[...] = 27.
+
     # Add errors
     a = err_fit_params[:, 0].reshape(-1, 1)
     b = err_fit_params[:, 1].reshape(-1, 1)
