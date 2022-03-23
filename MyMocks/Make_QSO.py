@@ -56,12 +56,11 @@ def add_errors(pm_SEDs):
 
     return pm_SEDs, pm_SEDs_err
 
-def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
+def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
     Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
-    z = np.empty(N_sources)
-    EW0 = np.empty(N_sources)
+    EW = np.empty(N_sources)
     L = np.empty(N_sources)
     Flambda = np.empty(N_sources)
     Flambda_err = np.empty(N_sources)
@@ -73,22 +72,25 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct):
             & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
         )
         
-        # Sources are repeated, so we take the first occurence
+        # Some sources are repeated, so we take the first occurence
         where = where[0][0]
 
-        z[src] = Lya_fts['Lya_z'][where]
-        EW0[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
+        EW[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
         Flambda_err[src] = Lya_fts['LyaF_err'][where]
 
-    EW0 /= (1 + z) # Now it's rest frame EW0 & apply correction
+    EW0 = EW / (1 + z) # Now it's rest frame EW0 & apply correction
     Flambda *= 1e-17 * correct # Correct units & apply correction
     Flambda_err *= 1e-17 * correct # Correct units & apply correction
+
+    # From the EW formula:
+    f_cont = Flambda / EW
+    f_cont_err = Flambda_err / EW
 
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(Flambda * 4*np.pi * dL ** 2)
 
-    return z, EW0, L, Flambda, Flambda_err
+    return EW0, L, Flambda, Flambda_err, f_cont, f_cont_err
 
 def load_QSO_prior_mock():
     filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
@@ -126,6 +128,9 @@ def main():
     qso_r_flx, plate_mjd_fiber = load_QSO_prior_mock()
     N_sources = len(qso_r_flx)
 
+    # Declare some arrays
+    z = np.empty(N_sources)
+
     pm_SEDs = np.empty((60, N_sources))
     plate = np.zeros(N_sources).astype(str)
     mjd = np.zeros(N_sources).astype(str)
@@ -144,6 +149,15 @@ def main():
         spec_name = fits_dir + f'spec-{plate[src]}-{mjd[src]}-{fiber[src]}.fits'
 
         spec = Table.read(spec_name, hdu=1, format='fits')
+        spzline = Table.read(spec_name, hdu=3, format='fits')
+
+        # Select the source's z as the z from any line not being Lya.
+        # Lya z is biased because is taken from the position of the peak of the line,
+        # and in general Lya is assymmetrical.
+        z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
+        z_Arr = z_Arr[z_Arr != 0.]
+        z[src] = z_Arr[-1]
+
         pm_SEDs[:, src] = JPAS_synth_phot(
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
         )
@@ -156,7 +170,7 @@ def main():
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
     print('Extracting line features...')
-    z, EW0, L, F_line, F_line_err = SDSS_QSO_line_fts(mjd, plate, fiber, correct)
+    EW0, L, F_line, F_line_err, _, _ = SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
 
     hdr = (
         tcurves['tag']
