@@ -115,7 +115,7 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_v5'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -155,8 +155,11 @@ def main():
         # Lya z is biased because is taken from the position of the peak of the line,
         # and in general Lya is assymmetrical.
         z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
-        z_Arr = z_Arr[z_Arr != 0.]
-        z[src] = z_Arr[-1]
+        z_Arr = np.atleast_1d(z_Arr[z_Arr != 0.])
+        if len(z_Arr) > 0:
+            z[src] = z_Arr[-1]
+        else:
+            z[src] = 0.
 
         pm_SEDs[:, src] = JPAS_synth_phot(
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
