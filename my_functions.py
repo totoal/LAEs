@@ -1,5 +1,7 @@
 import numpy as np
 
+import pandas as pd
+
 import csv
 import matplotlib.pyplot as plt
 
@@ -667,3 +669,32 @@ def Best_L(pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines):
     flambda_e[~best_L1] = flambda_e0[~best_L1]
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e, best_L1
+
+def Zero_point_error(tile_id_Arr, catname):
+    w_central = central_wavelength()
+
+    ## Load Zero Point magnitudes
+    zpt_cat = pd.read_csv(f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+
+    zpt_mag = zpt_cat['ZPT'].to_numpy()
+    zpt_err = zpt_cat['ERRZPT'].to_numpy()
+
+    ones = np.ones((len(w_central), len(zpt_mag)))
+
+    zpt_err = (
+        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
+        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
+    )
+
+    # Duplicate rows to match the tile_ID of each source
+    idx = np.empty(tile_id_Arr.shape).astype(int)
+
+    zpt_id = zpt_cat['TILE_ID'].to_numpy()
+    for src in range(len(tile_id_Arr)):
+        idx[src] = np.where(
+            (zpt_id == tile_id_Arr[src]) & (zpt_cat['IS_REFERENCE_METHOD'] == 1)
+        )[0][0]
+    
+    zpt_err = zpt_err[:, idx]
+
+    return zpt_err

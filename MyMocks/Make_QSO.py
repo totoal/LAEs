@@ -10,6 +10,8 @@ import numpy as np
 
 from my_utilities import *
 
+w_lya = 1215.67
+
 def add_errors(pm_SEDs):
     err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 
@@ -79,7 +81,7 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
         Flambda[src] = Lya_fts['LyaF'][where]
         Flambda_err[src] = Lya_fts['LyaF_err'][where]
 
-    EW0 = EW / (1 + z) # Now it's rest frame EW0 & apply correction
+    EW0 = EW / (1 + z) # Now it's rest frame EW0
     Flambda *= 1e-17 * correct # Correct units & apply correction
     Flambda_err *= 1e-17 * correct # Correct units & apply correction
 
@@ -93,8 +95,11 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
     return EW0, L, Flambda, Flambda_err, f_cont, f_cont_err
 
 def load_QSO_prior_mock():
-    filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
-        'JPAS_mocks_classification_19nov_model11/Fluxes_model_11/Qso_jpas_mock_flam_train.cat')
+    filename = (
+        '/home/alberto/cosmos/JPAS_mocks_sep2021/'
+        'JPAS_mocks_classification_19nov_model11/'
+        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
+    )
 
     qso_flx = pd.read_csv(
         filename, sep=' ', usecols=[28] # 28 is rSDSS
@@ -115,7 +120,7 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_v5'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -130,6 +135,7 @@ def main():
 
     # Declare some arrays
     z = np.empty(N_sources)
+    lya_band = np.zeros(N_sources)
 
     pm_SEDs = np.empty((60, N_sources))
     plate = np.zeros(N_sources).astype(str)
@@ -165,6 +171,23 @@ def main():
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
         )
 
+        # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
+        w_lya_obs = w_lya * (1 + z[src])
+        lya_band_res = 500 # Resolution of the Lya band
+        lya_band_hw = 75 # Half width of the Lya band in Angstroms
+
+        lya_band_tcurves = {
+            'tag': ['lyaband'],
+            't': [np.ones(lya_band_res)],
+            'w': [np.linspace(
+                w_lya_obs - lya_band_hw, w_lya_obs + lya_band_hw, lya_band_res
+            )]
+        }
+        if z[src] > 0:
+            lya_band[src] = JPAS_synth_phot(
+                spec['flux'] * 1e-17, 10 ** spec['loglam'], lya_band_tcurves
+            )
+
         # Adjust flux to match the prior mock
         correct[src] = qso_r_flx[src] / pm_SEDs[-2, src]
         pm_SEDs[:, src] *= correct[src]
@@ -173,7 +196,15 @@ def main():
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
     print('Extracting line features...')
-    EW0, L, F_line, F_line_err, _, _ = SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+    _, _, _, _, f_cont, _ =\
+         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+    
+    ## Computing L using Lya_band
+    F_line = (lya_band - f_cont) * 2 * lya_band_hw
+    F_line_err = np.zeros(lya_band.shape)
+    EW0 = F_line / f_cont / (1 + z)
+    dL = cosmo.luminosity_distance(z).to(u.cm).value
+    L = np.log10(F_line * 4*np.pi * dL ** 2)
 
     hdr = (
         tcurves['tag']
