@@ -215,7 +215,14 @@ def main(part):
     mags = flux_to_mag(pm_SEDs, w_central)
     mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
-    mag_err = expfit(mags)
+    # Zero point error
+    zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2243, 'minijpas')
+
+    mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
+    where_himag = np.where(mags > detec_lim)
+
+    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+
     where_himag = np.where(mags > detec_lim)
 
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)

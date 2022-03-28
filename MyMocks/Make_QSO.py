@@ -34,10 +34,14 @@ def add_errors(pm_SEDs):
     mags = flux_to_mag(pm_SEDs, w_central)
     mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
-    mag_err = expfit(mags)
+    # Zero point error
+    zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2243, 'minijpas')
+
+    mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
     where_himag = np.where(mags > detec_lim)
 
     mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+
     mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
@@ -200,6 +204,9 @@ def main():
          SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
     
     ## Computing L using Lya_band
+    f_cont *= correct
+    lya_band *= correct
+
     F_line = (lya_band - f_cont) * 2 * lya_band_hw
     F_line_err = np.zeros(lya_band.shape)
     EW0 = F_line / f_cont / (1 + z)
