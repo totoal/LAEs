@@ -331,6 +331,9 @@ def z_NB(cont_line_pos):
     Computes the Lya z for a continuum NB index.
     '''
     w_central = central_wavelength()
+
+    # Convert to numpy arr
+    cont_line_pos = np.atleast_1d(cont_line_pos)
     
     w1 = w_central[cont_line_pos.astype(int)]
     w2 = w_central[cont_line_pos.astype(int) + 1]
@@ -676,15 +679,11 @@ def Zero_point_error(tile_id_Arr, catname):
     ## Load Zero Point magnitudes
     zpt_cat = pd.read_csv(f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
 
-    zpt_mag = zpt_cat['ZPT'].to_numpy()
     zpt_err = zpt_cat['ERRZPT'].to_numpy()
 
-    ones = np.ones((len(w_central), len(zpt_mag)))
+    ones = np.ones((len(w_central), len(zpt_err)))
 
-    zpt_err = (
-        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
-        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
-    )
+    zpt_err = ones * zpt_err
 
     # Duplicate rows to match the tile_ID of each source
     idx = np.empty(tile_id_Arr.shape).astype(int)
