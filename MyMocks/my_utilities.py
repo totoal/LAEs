@@ -1,5 +1,7 @@
 import numpy as np
 
+import pandas as pd
+
 from scipy.stats import norm
 from scipy.integrate import simpson
 from scipy.optimize import fsolve
@@ -443,3 +445,28 @@ def central_wavelength():
     w_central = data_tab['wavelength']
 
     return np.array(w_central)
+
+def Zero_point_error(tile_id_Arr, catname):
+    w_central = central_wavelength()
+
+    ## Load Zero Point magnitudes
+    zpt_cat = pd.read_csv(f'../csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+
+    zpt_err = zpt_cat['ERRZPT'].to_numpy()
+
+    ones = np.ones((len(w_central), len(zpt_err)))
+
+    zpt_err = ones * zpt_err
+
+    # Duplicate rows to match the tile_ID of each source
+    idx = np.empty(tile_id_Arr.shape).astype(int)
+
+    zpt_id = zpt_cat['TILE_ID'].to_numpy()
+    for src in range(len(tile_id_Arr)):
+        idx[src] = np.where(
+            (zpt_id == tile_id_Arr[src]) & (zpt_cat['IS_REFERENCE_METHOD'] == 1)
+        )[0][0]
+    
+    zpt_err = zpt_err[:, idx]
+
+    return zpt_err
