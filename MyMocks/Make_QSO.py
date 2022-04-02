@@ -124,7 +124,7 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_v7_double'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
