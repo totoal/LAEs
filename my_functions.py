@@ -1,5 +1,7 @@
 import numpy as np
 
+import pickle
+
 import pandas as pd
 
 import csv
@@ -10,6 +12,8 @@ from scipy.integrate import simpson
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
+
+from sklearn.preprocessing import MinMaxScaler
 
 def mag_to_flux(m, w):
     c = 29979245800
@@ -537,8 +541,8 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
 
     return Phi1 + Phi2
 
-def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
-    nice_lya=None, N_nb=0):
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias_qso=None, F_bias_sf=None,
+    nice_lya=None, N_nb=0, is_qso_pred=None):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
@@ -550,8 +554,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
 
     if nice_lya is None:
         nice_lya = np.ones(N_sources).astype(bool)
-    if F_bias is None:
-        F_bias = np.ones(60)
 
     EW_nb_Arr = np.zeros(N_sources)
     EW_nb_e = np.zeros(N_sources)
@@ -607,7 +609,9 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
             + (flambda_cont / cont[src] * cont_e[src]) ** 2
         ) ** 0.5
 
-    flambda /= F_bias[np.array(lya_lines)]
+    if is_qso_pred is not None:
+        flambda[is_qso_pred] /= F_bias_qso[np.array(lya_lines[is_qso_pred])]
+        flambda[~is_qso_pred] /= F_bias_sf[np.array(lya_lines[~is_qso_pred])]
 
     EW_nb_Arr = flambda / cont / (1 + z_Arr)
     EW_nb_e = flambda_e / cont / (1 + z_Arr)
@@ -697,3 +701,37 @@ def Zero_point_error(tile_id_Arr, catname):
     zpt_err = zpt_err[:, idx]
 
     return zpt_err
+
+def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr):
+    '''
+    A function that uses the regressor trained in NN_lya.ipynb on data.
+    '''
+    NNdata = np.hstack(
+        (
+            pm_flx[:55].T,
+            pm_flx[-4:].T,
+            pm_err[:55].T / pm_flx[:55].T,
+            pm_err[-4:].T / pm_flx[-4:].T,
+            L_Arr.reshape(-1, 1),
+            z_Arr.reshape(-1, 1)
+        )
+    )
+
+    # Pre-processing
+    NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
+    NNdata[np.isnan(NNdata)] = 99.
+
+    NNdata = MinMaxScaler().fit_transform(NNdata)
+
+    with open('MLmodels/NN_QSO-SF_pca.sav', 'rb') as file:
+        pca = pickle.load(file)
+    NNdata = pca.transform(NNdata)
+
+    # Import the regressor
+    with open('MLmodels/NN_QSO-SF_regressor.sav', 'rb') as file:
+        reg = pickle.load(file)
+
+    # is_qso_pred = clf.predict(NNdata)
+    L_Arr_pred = reg.predict(NNdata)
+
+    return L_Arr_pred
