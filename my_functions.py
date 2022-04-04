@@ -541,8 +541,8 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
 
     return Phi1 + Phi2
 
-def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias_qso=None, F_bias_sf=None,
-    nice_lya=None, N_nb=0, is_qso_pred=None):
+def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
+    nice_lya=None, N_nb=0):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
@@ -609,9 +609,8 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias_qso=Non
             + (flambda_cont / cont[src] * cont_e[src]) ** 2
         ) ** 0.5
 
-    if is_qso_pred is not None:
-        flambda[is_qso_pred] /= F_bias_qso[np.array(lya_lines[is_qso_pred])]
-        flambda[~is_qso_pred] /= F_bias_sf[np.array(lya_lines[~is_qso_pred])]
+    if F_bias is not None:
+        flambda /= F_bias[np.array(lya_lines)]
 
     EW_nb_Arr = flambda / cont / (1 + z_Arr)
     EW_nb_e = flambda_e / cont / (1 + z_Arr)
@@ -702,7 +701,7 @@ def Zero_point_error(tile_id_Arr, catname):
 
     return zpt_err
 
-def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr):
+def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     '''
     A function that uses the regressor trained in NN_lya.ipynb on data.
     '''
@@ -723,15 +722,14 @@ def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr):
 
     NNdata = MinMaxScaler().fit_transform(NNdata)
 
-    with open('MLmodels/NN_QSO-SF_pca.sav', 'rb') as file:
+    with open('MLmodels/QSO-SF_pca.sav', 'rb') as file:
         pca = pickle.load(file)
     NNdata = pca.transform(NNdata)
 
     # Import the regressor
-    with open('MLmodels/NN_QSO-SF_regressor.sav', 'rb') as file:
+    with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
         reg = pickle.load(file)
 
-    # is_qso_pred = clf.predict(NNdata)
     L_Arr_pred = reg.predict(NNdata)
 
     return L_Arr_pred
