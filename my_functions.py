@@ -13,8 +13,6 @@ from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
 
-from sklearn.preprocessing import MinMaxScaler
-
 def mag_to_flux(m, w):
     c = 29979245800
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
@@ -701,9 +699,9 @@ def Zero_point_error(tile_id_Arr, catname):
 
     return zpt_err
 
-def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
+def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     '''
-    A function that uses the regressor trained in NN_lya.ipynb on data.
+    Predicts the L given the photometry fluxes and the peviously estimated z and L.
     '''
     NNdata = np.hstack(
         (
@@ -716,15 +714,21 @@ def NN_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
         )
     )
 
-    # Pre-processing
+    ####### Pre-processing #######
     NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
-    NNdata[np.isnan(NNdata)] = 99.
+    NNdata[np.isnan(NNdata)] = -99.
 
-    NNdata = MinMaxScaler().fit_transform(NNdata)
+    # MinMaxScaler
+    with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
+        mms = pickle.load(file)
+    NNdata = mms.transform(NNdata)
 
-    with open('MLmodels/QSO-SF_pca.sav', 'rb') as file:
+    # PCA
+    with open(f'MLmodels/{regname}_QSO-SF_pca.sav', 'rb') as file:
         pca = pickle.load(file)
     NNdata = pca.transform(NNdata)
+
+    ##############################
 
     # Import the regressor
     with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
