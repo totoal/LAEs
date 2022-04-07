@@ -717,6 +717,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     ####### Pre-processing #######
     NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
     NNdata[np.isnan(NNdata)] = -99.
+    NNdata[NNdata > 99.] = 99.
 
     # MinMaxScaler
     with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
