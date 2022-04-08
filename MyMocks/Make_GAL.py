@@ -1,9 +1,6 @@
 import os
 from time import perf_counter
 
-from astropy.cosmology import Planck18 as cosmo
-import astropy.units as u
-
 import pandas as pd
 
 import numpy as np

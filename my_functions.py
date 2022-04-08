@@ -533,7 +533,6 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
     '''
     A double schechter.
     '''
-
     Phi2 = schechter(L, phistar1, Lstar1, alpha1)
     Phi1 = schechter(L, phistar2, Lstar2, alpha2)
 
@@ -636,43 +635,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     ) ** 0.5
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
-
-def Best_L(pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines):
-
-    EW_nb_Arr1, EW_nb_e1, L_Arr1, L_e_Arr1, flambda1, flambda_e1 = EW_L_NB(
-        pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=1
-    )
-
-    EW_nb_Arr0, EW_nb_e0, L_Arr0, L_e_Arr0, flambda0, flambda_e0 = EW_L_NB(
-        pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
-    )
-
-    N_sources = len(z_Arr)
-    EW_nb_Arr = np.empty(N_sources)
-    EW_nb_e = np.empty(N_sources)
-    L_Arr = np.empty(N_sources)
-    L_e_Arr = np.empty(N_sources)
-    flambda = np.empty(N_sources)
-    flambda_e = np.empty(N_sources)
-
-    # Where N_nb is best
-    best_L1 = (flambda1 / flambda_e1) > (flambda0 / flambda_e0)
-
-    EW_nb_Arr[best_L1] = EW_nb_Arr1[best_L1]
-    EW_nb_e[best_L1] = EW_nb_e1[best_L1]
-    L_Arr[best_L1] = L_Arr1[best_L1]
-    L_e_Arr[best_L1] = L_e_Arr1[best_L1]
-    flambda[best_L1] = flambda1[best_L1]
-    flambda_e[best_L1] = flambda_e1[best_L1]
-
-    EW_nb_Arr[~best_L1] = EW_nb_Arr0[~best_L1]
-    EW_nb_e[~best_L1] = EW_nb_e0[~best_L1]
-    L_Arr[~best_L1] = L_Arr0[~best_L1]
-    L_e_Arr[~best_L1] = L_e_Arr0[~best_L1]
-    flambda[~best_L1] = flambda0[~best_L1]
-    flambda_e[~best_L1] = flambda_e0[~best_L1]
-
-    return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e, best_L1
 
 def Zero_point_error(tile_id_Arr, catname):
     w_central = central_wavelength()
