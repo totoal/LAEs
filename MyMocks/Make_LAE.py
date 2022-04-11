@@ -21,7 +21,7 @@ def main(part):
 
     ####    Mock parameters.
     z_lya = [2, 4]
-    obs_area = 10 # deg**2
+    obs_area = 2 # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -110,7 +110,7 @@ def main(part):
     ####################################################################
 
     filename =\
-        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_v7_double'
+        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -231,7 +231,7 @@ def main(part):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)

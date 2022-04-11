@@ -124,12 +124,12 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_0'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_QSO_fits/fits/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/test/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
