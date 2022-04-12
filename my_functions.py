@@ -696,6 +696,8 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     # Import the regressor
     with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
         reg = pickle.load(file)
+    
+    reg.set_params(n_jobs=10)
 
     L_Arr_pred = reg.predict(NNdata)
 

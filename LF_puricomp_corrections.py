@@ -48,8 +48,9 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
     w_mat = puri2d / comp2d
     w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
 
-    # Add a zeros row to w_mat for perturbed luminosities exceeding the binning
+    # Add a zeros row & column to w_mat for perturbed luminosities exceeding the binning
     w_mat = np.vstack([w_mat, np.zeros(w_mat.shape[1])])
+    w_mat = np.hstack([w_mat, np.zeros(w_mat.shape[0]).reshape(-1, 1)])
 
     bs = binned_statistic_2d(
         L_Arr, r_Arr, None, 'count', bins=[L_bins, r_bins], expand_binnumbers=True

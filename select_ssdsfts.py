@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 filename = ('/home/alberto/cosmos/JPAS_mocks_sep2021/'
-    'JPAS_mocks_classification_01sep_model11/Fluxes/Qso_jpas_mock_flam_train.cat')
+    'JPAS_mocks_classification_19nov_model11/Fluxes_model_11/Qso_jpas_mock_flam_test.cat')
 
 plate = pd.read_csv(filename, sep=' ', usecols=[122]).to_numpy().reshape(-1,)
 mjd = pd.read_csv(filename, sep=' ', usecols=[123]).to_numpy().reshape(-1,)
@@ -51,4 +51,4 @@ data = {
     'fiberid': fiber
 }
 
-pd.DataFrame(data).to_csv('Lya_fts.csv')
+pd.DataFrame(data).to_csv('csv/Lya_fts_test.csv')

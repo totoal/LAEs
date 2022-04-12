@@ -63,7 +63,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -102,7 +102,7 @@ def load_QSO_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
+        'Fluxes_model_11/Qso_jpas_mock_flam_test.cat'
     )
 
     qso_flx = pd.read_csv(
