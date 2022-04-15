@@ -44,7 +44,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -59,49 +59,11 @@ def add_errors(pm_SEDs):
 
     return pm_SEDs, pm_SEDs_err
 
-'''
-def SDSS_GAL_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
-
-    N_sources = len(mjd)
-    EW = np.empty(N_sources)
-    L = np.empty(N_sources)
-    Flambda = np.empty(N_sources)
-    Flambda_err = np.empty(N_sources)
-
-    for src in range(N_sources):
-        where = np.where(
-            (int(mjd[src]) == Lya_fts['mjd'].to_numpy().flatten())
-            & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
-            & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
-        )
-        
-        # Some sources are repeated, so we take the first occurence
-        where = where[0][0]
-
-        EW[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
-        Flambda[src] = Lya_fts['LyaF'][where]
-        Flambda_err[src] = Lya_fts['LyaF_err'][where]
-
-    EW0 = EW / (1 + z) # Now it's rest frame EW0
-    Flambda *= 1e-17 * correct # Correct units & apply correction
-    Flambda_err *= 1e-17 * correct # Correct units & apply correction
-
-    # From the EW formula:
-    f_cont = Flambda / EW
-    f_cont_err = Flambda_err / EW
-
-    dL = cosmo.luminosity_distance(z).to(u.cm).value
-    L = np.log10(Flambda * 4*np.pi * dL ** 2)
-
-    return EW0, L, Flambda, Flambda_err, f_cont, f_cont_err
-'''
-
 def load_GAL_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Gal_jpas_mock_flam_train.cat'
+        'Fluxes_model_11/Gal_jpas_mock_flam_test.cat'
     )
 
     gal_flx = pd.read_csv(
@@ -123,12 +85,12 @@ def load_GAL_prior_mock():
     return gal_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/test/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
