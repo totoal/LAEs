@@ -343,7 +343,29 @@ def z_NB(cont_line_pos):
     w = (w2 - w1) * cont_line_pos%1 + w1
 
     return w / 1215.67 - 1
+
+def NB_z(z):
+    '''
+    Takes a redshift as an argument and returns the corresponding NB to that redshift.
+    Returns -1 if the Lya redshift is out of boundaries.
+    '''
+    z = np.atleast_1d(z)
+    w_central_NB = central_wavelength()[:56]
+    w_lya_obs = (z + 1) * 1215.67
+
+    n_NB = np.zeros(len(z)).astype(int)
+    for i, w in enumerate(w_lya_obs):
+        n_NB[i] = int(np.argmin(np.abs(w_central_NB - w)))
     
+    # 0 means the medium band, so thats a bad value -> assign it -1
+    # 55 It's too much, so let's assign also -1
+    n_NB[(n_NB < 1) | (n_NB > 54)] = -1
+
+    # If only one value passed, return as a number instead of numpy array
+    if len(n_NB) == 1:
+        n_NB = n_NB[0]
+    
+    return n_NB
 
 def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
     '''
