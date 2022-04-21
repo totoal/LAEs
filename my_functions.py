@@ -687,6 +687,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     '''
     Predicts the L given the photometry fluxes and the peviously estimated z and L.
     '''
+    w_central = central_wavelength()
     NNdata = np.hstack(
         (
             pm_flx[:55].T,
@@ -699,9 +700,19 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     )
 
     ####### Pre-processing #######
-    NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
-    NNdata[np.isnan(NNdata)] = -99.
-    NNdata[NNdata > 99.] = 99.
+
+    # Take the relative fluxes to the selected one
+    NB_lya_position = NB_z(NNdata[:, -1].reshape(-1,))
+    for i, nb in enumerate(NB_lya_position):
+        NNdata[i, :55] = (
+            flux_to_mag(NNdata[i, :55], w_central[:55])
+            - flux_to_mag(NNdata[i, :55][nb], w_central[nb])
+        )
+        NNdata[i, 55 : 55 + 4] = flux_to_mag(NNdata[i, 55 : 55 + 4], w_central[-4:])
+    
+    # NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
+    NNdata[np.isnan(NNdata)] = 99.
+    # NNdata[NNdata > 99.] = 99.
 
     # MinMaxScaler
     with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
@@ -719,7 +730,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
         reg = pickle.load(file)
     
-    reg.set_params(n_jobs=10)
+    reg.set_params(n_jobs=-1)
 
     L_Arr_pred = reg.predict(NNdata)
 
