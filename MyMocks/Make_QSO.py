@@ -63,7 +63,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts_val.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -77,6 +77,7 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
             & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
             & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
         )
+        print(where)
         
         # Some sources are repeated, so we take the first occurence
         where = where[0][0]
