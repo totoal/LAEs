@@ -44,7 +44,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -63,7 +63,7 @@ def load_GAL_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Gal_jpas_mock_flam_test.cat'
+        'Fluxes_model_11/Gal_jpas_mock_flam_val.cat'
     )
 
     gal_flx = pd.read_csv(
@@ -85,12 +85,12 @@ def load_GAL_prior_mock():
     return gal_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000_test_0'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_val'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/test/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/val/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
