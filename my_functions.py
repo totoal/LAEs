@@ -190,7 +190,6 @@ def z_volume(z_min, z_max, area):
     theta = np.arccos(1 - area / (2 * np.pi))
     Omega = 2 * np.pi * (1 - np.cos(theta))
     vol = simpson(dV, z_x) * Omega
-    # print('Volume = {0:3e} Mpc3'.format(vol))
     return vol
 
 def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
@@ -730,7 +729,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
         reg = pickle.load(file)
     
-    reg.set_params(n_jobs=-1)
+    reg.set_params(n_jobs=-1, verbose=0)
 
     L_Arr_pred = reg.predict(NNdata)
 
