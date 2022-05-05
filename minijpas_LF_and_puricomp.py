@@ -418,9 +418,7 @@ def Zero_point_error(tile_id_Arr, catname):
 
     return zpt_err
 
-def load_minijpas_jnep(params):
-    mag_min, mag_max, nb_min, nb_max, ew0_cut = params
-
+def load_minijpas_jnep():
     pm_flx = np.array([]).reshape(60, 0)
     pm_err = np.array([]).reshape(60, 0)
     tile_id = np.array([])
@@ -524,7 +522,7 @@ def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-    N_minijpas = load_minijpas_jnep(params)
+    N_minijpas = load_minijpas_jnep()
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -549,12 +547,6 @@ def make_the_LF(params):
     z_Arr = np.zeros(N_sources)
     z_Arr[np.where(np.array(lya_lines) != -1)] =\
         z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
-
-    ##
-    # nb_min = 5
-    # nb_max = 15
-    nb_min = 16
-    nb_max = 23
 
     z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5)/ w_lya - 1
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5)/ w_lya - 1
@@ -604,7 +596,7 @@ def make_the_LF(params):
     is_minijpas_source = np.ones(N_sources).astype(bool)
     is_minijpas_source[N_minijpas:] = False
 
-    total_hist, b = np.histogram(L_Arr[nice_lya], bins=bins)
+    _, b = np.histogram(L_Arr[nice_lya], bins=bins)
 
     LF_bins = np.array([(b[i] + b[i + 1]) / 2 for i in range(len(b) - 1)])
 
@@ -718,7 +710,7 @@ def make_the_LF(params):
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
-    plt.savefig(f'{dirname}/LumFunc')
+    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight')
 
 if __name__ == '__main__':
     # Parameters of the LF:
