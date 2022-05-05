@@ -238,12 +238,13 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     if which_one == 'Purity':
         ax.plot(b_c, hg / (hg + hb + hb_gal), marker='s', label='Purity', zorder=99, c='k')
 
-    ax.set_xlabel('$\log L$', fontsize=15)
+    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=15)
+    ax.set_ylabel(which_one.lower(), fontsize=15)
 
     ax.set_xlim((43, 45.5))
     ax.set_ylim((0, 1))
-    ax.legend()
-    ax.set_title(f'{which_one}, EW0_cut = {ew0_cut}', fontsize=20)
+    ax.legend(fontsize=11)
+    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}')
 
     plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight')
 
@@ -699,12 +700,16 @@ def make_the_LF(params):
     )
 
     ax.set_yscale('log')
-    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=15)
+    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)', fontsize=15)
     ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)',
         fontsize=15)
     ax.set_ylim(1e-8, 1e-2)
     ax.set_xlim(42, 46)
     ax.legend(fontsize=12)
+
+    ax.set_title(
+        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}'
+    )
 
     folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
