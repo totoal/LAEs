@@ -124,7 +124,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec):
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
     lya_lines, lya_cont_lines, line_widths = identify_lines(
-        line, pm_flx, pm_err, first=True, return_line_width=True
+        line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
     lya_lines = np.array(lya_lines)
 
@@ -132,7 +132,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec):
     cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
         400, obs=True)
-    other_lines = identify_lines(line_other, pm_flx, pm_err)
+    other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
 
@@ -532,7 +532,7 @@ def make_the_LF(params):
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut, mask=mask)
     lya_lines, lya_cont_lines, line_widths = identify_lines(
-        line, pm_flx, pm_err, first=True, return_line_width=True
+        line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
     lya_lines = np.array(lya_lines)
 
@@ -540,7 +540,7 @@ def make_the_LF(params):
     cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
         ew_oth, obs=True, mask=mask)
-    other_lines = identify_lines(line_other, pm_flx, pm_err)
+    other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
 

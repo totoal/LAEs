@@ -261,7 +261,7 @@ def plot_JPAS_source(flx, err, set_ylim=True):
 
     return ax
 
-def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False,
+def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
     return_line_width=False):
     '''
     Returns a list of N lists with the index positions of the lines.
@@ -278,10 +278,11 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False,
 
     for src in range(N_src):
         fil = 0
-        this_src_lines = []
-        this_cont_lines = []
+        this_src_lines = [] # The list of lines
+        this_cont_lines = [] # The list of continuum indices of lines
+
         while fil < N_fil:
-            this_line = []
+            this_line = [] # The list of contiguous indices of this line
             while ~line_Arr[fil, src]:
                 fil += 1
                 if fil == N_fil - 1: break
@@ -294,20 +295,24 @@ def identify_lines(line_Arr, qso_flx, qso_err, nb_min=0, first=False,
 
             aux = -len(this_line) + nb_min + fil
             
-            if first:
+            if first: # If first=True, append continuum index to list
                 this_cont_lines.append(
                     np.average(
                         np.array(this_line),
-                        weights=qso_flx[np.array(this_line), src]**2
+                        weights=qso_flx[np.array(this_line), src] ** 2
                     )
                 )
+            # Append index of the max flux of this line to the list
             this_src_lines.append(
                 np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
             )
         
-        if first:
+        if first: # If first=True, 
             try:
-                idx = np.argmax(qso_flx[np.array(this_src_lines), src])
+                idx = np.argmax(
+                    qso_flx[np.array(this_src_lines), src]
+                    - cont_flx[np.array(this_src_lines), src]
+                )
 
                 line_list.append(this_src_lines[idx])
                 line_len_list.append(this_src_lines)
