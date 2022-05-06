@@ -293,8 +293,6 @@ def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
     my_MET, my_AGE, my_EXT, w_Arr, Grid_Dictionary, Noise_w_Arr, Noise_Arr,
     T_A, T_B, gSDSS_data):
 
-    t0 = time.time()
-
     if LINE == 'Lya':
         w_line = 1215.68
 
@@ -388,7 +386,7 @@ def z_volume(z_min, z_max, area):
     theta = np.arccos(1 - area / (2 * np.pi))
     Omega = 2 * np.pi * (1 - np.cos(theta))
     vol = simpson(dV, z_x) * Omega
-    print('Volume = {0:3e} Mpc3'.format(vol))
+    # print('Volume = {0:3e} Mpc3'.format(vol))
     return vol
 
 #### Function to calculate EW from line flux

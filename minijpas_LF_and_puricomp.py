@@ -5,7 +5,7 @@ np.seterr(all='ignore')
 
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.rcParams.update({'font.size': 12})
+matplotlib.rcParams.update({'font.size': 10})
 
 import pandas as pd
 
@@ -171,7 +171,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, zspec,
                                 L_lya, dirname):
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(4, 4))
 
     bins2 = np.linspace(43, 45.5, 10)
 
@@ -238,15 +238,16 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     if which_one == 'Purity':
         ax.plot(b_c, hg / (hg + hb + hb_gal), marker='s', label='Purity', zorder=99, c='k')
 
-    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=15)
-    ax.set_ylabel(which_one.lower(), fontsize=15)
+    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
+    ax.set_ylabel(which_one.lower())
 
     ax.set_xlim((43, 45.5))
     ax.set_ylim((0, 1))
-    ax.legend(fontsize=11)
+    ax.legend()
     ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}')
 
     plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight')
+    plt.close()
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, mag_cut, ew_cut, L_bins, L_lya, is_gal):
@@ -299,7 +300,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf):
-    mag_min, mag_max, nb_min, nb_max, ew0_cut = params
+    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
 
     # Vector of magnitudes in r band
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -310,7 +311,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     print(f'z interval: ({z_min:0.2f}, {z_max:0.2f})')
 
     # Make the directory if it doesn't exist
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}'
+    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
@@ -520,7 +521,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     return L_LF_err_percentiles
 
 def make_the_LF(params):
-    mag_min, mag_max, nb_min, nb_max, ew0_cut = params
+    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
     N_minijpas = load_minijpas_jnep()
@@ -538,7 +539,7 @@ def make_the_LF(params):
     # Other lines
     cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-        400, obs=True, mask=mask)
+        ew_oth, obs=True, mask=mask)
     other_lines = identify_lines(line_other, pm_flx, pm_err)
 
     N_sources = pm_flx.shape[1]
@@ -633,7 +634,7 @@ def make_the_LF(params):
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
     hist_median_jn = L_LF_err_percentiles[1]
 
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(7, 5))
 
     yerr_cor_plus = (hist_median + L_LF_err_plus ** 2) ** 0.5\
         / volume / bin_width
@@ -681,7 +682,6 @@ def make_the_LF(params):
         label='Spinoso2020 (2.2 < z < 3.25)'
         )
 
-    Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
     phistar1 = 10 ** -3.41
     Lstar1 = 10 ** 42.87
     alpha1 = -1.7
@@ -700,39 +700,39 @@ def make_the_LF(params):
     )
 
     ax.set_yscale('log')
-    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)', fontsize=15)
-    ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)',
-        fontsize=15)
+    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
+    ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
     ax.set_ylim(1e-8, 1e-2)
     ax.set_xlim(42, 46)
-    ax.legend(fontsize=12)
+    ax.legend()
 
     ax.set_title(
         f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}'
     )
 
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}'
+    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
     plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight')
+    plt.close()
 
 if __name__ == '__main__':
     # Parameters of the LF:
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 24, 5, 15, 20),
-        (17, 24, 5, 15, 40),
-        (17, 24, 15, 23, 20),
-        (17, 24, 15, 23, 40),
-        (17, 24, 5, 15, 20),
-        (17, 23, 5, 15, 20),
-        (17, 22, 5, 15, 20),
-        (17, 21, 5, 15, 20),
-        (17, 20, 5, 15, 20),
+        (17, 24, 5, 15, 20, 100),
+        (17, 24, 5, 15, 40, 100),
+        (17, 24, 15, 23, 20, 100),
+        (17, 24, 15, 23, 40, 100),
+        (17, 23, 5, 15, 20, 100),
+        (17, 22, 5, 15, 20, 100)
     ]
 
     for params in LF_parameters:
         make_corrections(params)
-        make_the_LF(params)
+        try:
+            make_the_LF(params)
+        except:
+            print(f'{params} LF could not be computed.')
