@@ -40,7 +40,7 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
 
     return intcomp
 
-def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
+def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins, give_puri_comp=False):
     '''
     Computes the weight (purity/completeness) of each source based on the selection in 
     mocks.
@@ -55,9 +55,20 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins):
     bs = binned_statistic_2d(
         L_Arr, r_Arr, None, 'count', bins=[L_bins, r_bins], expand_binnumbers=True
     )
+
+    if give_puri_comp:
+        puri_mat = puri2d
+        comp_mat = comp2d
+        
+        puri_mat[np.isnan(puri_mat) | np.isinf(puri_mat)] = 0.
+        comp_mat[np.isnan(comp_mat) | np.isinf(comp_mat)] = 0.
+
     xx, yy = bs.binnumber
 
-    return w_mat[xx - 1, yy - 1]
+    if not give_puri_comp:
+        return w_mat[xx - 1, yy - 1]
+    else:
+        return w_mat[xx - 1, yy - 1], puri_mat[xx - 1, yy - 1], comp_mat[xx - 1, yy - 1]
 
 def Lya_intrisic_completeness(L, z, starprob=None):
     '''
@@ -92,11 +103,11 @@ def Lya_intrisic_completeness(L, z, starprob=None):
     return completeness
 
 def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_id,
-    which_w=[0, 2]):
+    which_w=[0, 2], give_puri_comp=False):
     '''
     Combines the contribution of the 3 above functions.
     '''
-    args1 = (L_Arr, mag, puri2d, comp2d, L_bins, rbins)
+    args1 = (L_Arr, mag, puri2d, comp2d, L_bins, rbins, give_puri_comp)
     args2 = (L_Arr, z_Arr, starprob)
     args3 = (starprob, mag, tile_id)
 
@@ -106,7 +117,10 @@ def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_
 
     for i in which_w:
         if i == 0:
-            w1 = puricomp2d_weights(*args1)
+            if give_puri_comp:
+                w1, puri, comp = puricomp2d_weights(*args1)
+            else:
+                w1 = puricomp2d_weights(*args1)
         if i == 1:
             w2 = Lya_intrisic_completeness(*args2) ** -1
         if i == 2:
@@ -118,4 +132,7 @@ def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_
     for i in which_w:
         wt *= w_Arr[i]
 
-    return wt
+    if not give_puri_comp:
+        return wt
+    else:
+        return puri, comp * w2 * w3

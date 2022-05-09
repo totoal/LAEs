@@ -491,10 +491,19 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         )
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
-        w = weights_LF(
+        puri, comp = weights_LF(
             L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, L_bins, r_bins,
-            z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w
+            z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w, give_puri_comp=True
         )
+ 
+        # Decide if you include each source or not randomly based on the purity, then
+        # correct by completeness
+        w = np.random.rand(len(puri))
+        count_mask = (w <= puri) # Count that source if the random number < purity
+        w[count_mask] = 1.
+        w[count_mask] = 0.
+        w /= comp # Correct by complenteness
+
         hist = np.histogram(L_perturbed[nice_lya], bins=bins)[0]
         hist_poiss_err = np.round(
             hist[0] ** 0.5 * np.random.randn(len(bins) - 1), 0
@@ -722,12 +731,13 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 22, 5, 22, 30, 40)
+        (17, 24, 5, 15, 30, 200)
     ]
 
     for params in LF_parameters:
         make_corrections(params)
-        try:
-            make_the_LF(params)
-        except:
-            print(f'{params} LF could not be computed.')
+        make_the_LF(params)
+        # try:
+        #     make_the_LF(params)
+        # except:
+        #     print(f'{params} LF could not be computed.')
