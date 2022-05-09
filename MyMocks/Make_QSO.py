@@ -172,6 +172,8 @@ def main():
         else:
             z[src] = 0.
 
+        # The range of SDSS is 3561-10327 Angstroms. Beyond the range limits,
+        # the flux will be 0
         pm_SEDs[:, src] = JPAS_synth_phot(
             spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
         )

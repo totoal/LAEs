@@ -189,7 +189,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         this_z_cut = (z_min < z_Arr) & (z_Arr < z_max)
         totals_mask = this_zspec_cut & this_mag_cut
 
-        goodh = L_lya[nice_lya & nice_z & totals_mask]
+        goodh = L_lya[nice_lya & nice_z & this_z_cut & totals_mask]
         goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
         badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & nb_mask & this_mag_cut]
         badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
@@ -212,16 +212,17 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                 label=filter_tags[nb], zorder=99, alpha=0.5
             )
 
-    nb_min = nbs_to_consider[0]
-    nb_max = nbs_to_consider[-1]
-    nb_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
-    this_zspec_cut = (z_min < zspec) & (zspec < z_max)
+    nb_mask = np.zeros(len(lya_lines)).astype(bool)
+    this_zspec_cut = np.zeros(len(lya_lines)).astype(bool)
+    for nb in nbs_to_consider:
+        nb_mask = nb_mask | (lya_lines == nb)
+        z_min = (w_central[nb] - nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
+        z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
+        this_zspec_cut = this_zspec_cut | ((z_min < zspec) & (zspec < z_max))
 
     totals_mask = this_zspec_cut & this_mag_cut
 
-    goodh = L_lya[nice_lya & nice_z & totals_mask]
+    goodh = L_lya[nice_lya & nice_z & totals_mask & nb_mask]
     goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
     badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & this_mag_cut & nb_mask]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & this_mag_cut & nb_mask]
@@ -233,10 +234,10 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     hb_gal = hb_gal * gal_factor
     totals, _ = np.histogram(L_lya[totals_mask], bins=bins2)
 
-    if which_one == 'Completeness':
-        ax.plot(b_c, hg_comp / totals, marker='s', label='All', zorder=99, c='k')
-    if which_one == 'Purity':
-        ax.plot(b_c, hg / (hg + hb + hb_gal), marker='s', label='Purity', zorder=99, c='k')
+    # if which_one == 'Completeness':
+    #     ax.plot(b_c, hg_comp / totals, marker='s', label='All', zorder=99, c='k')
+    # if which_one == 'Purity':
+    #     ax.plot(b_c, hg / (hg + hb + hb_gal), marker='s', label='Purity', zorder=99, c='k')
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(which_one.lower())
@@ -244,7 +245,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.set_xlim((43, 45.5))
     ax.set_ylim((0, 1))
     ax.legend()
-    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}')
+    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}')
 
     plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight')
     plt.close()
@@ -311,7 +312,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     print(f'z interval: ({z_min:0.2f}, {z_max:0.2f})')
 
     # Make the directory if it doesn't exist
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+    folder_name = f'LF_r{mag_min}-{mag_max}_BEST_NBs_ew{ew0_cut}_ewoth{ew_oth}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
@@ -376,7 +377,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/puricomp2d_L_bins.npy', L_bins)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
-    nbs_to_consider = np.arange(nb_min, nb_max + 1)
+    # nbs_to_consider = np.arange(nb_min, nb_max + 1)
+    nbs_to_consider = np.array([5, 9, 11, 2, 4]) + 5
 
     for which_one in ['Purity', 'Completeness']:
         purity_or_completeness_plot(
@@ -546,14 +548,21 @@ def make_the_LF(params):
 
     mag_cut = (mag > mag_min) & (mag < mag_max)
 
+    #### Define the NBs to consider
+    nbs_to_consider = np.array([5, 9, 11, 2, 4]) + 5
+
     z_Arr = np.zeros(N_sources)
     z_Arr[np.where(np.array(lya_lines) != -1)] =\
         z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
 
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5)/ w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5)/ w_lya - 1
+    # z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5)/ w_lya - 1
+    # z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5)/ w_lya - 1
 
-    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
+    z_cut = np.zeros(z_Arr.shape).astype(bool)
+    for nb in nbs_to_consider:
+        z_min = (w_central[nb] - nb_fwhm_Arr[nb] * 0.5)/ w_lya - 1
+        z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5)/ w_lya - 1
+        z_cut = z_cut | ((z_min < z_Arr) & (z_Arr < z_max))
 
     mask = z_cut & mag_cut
 
@@ -604,9 +613,17 @@ def make_the_LF(params):
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
-    volume = z_volume(z_min, z_max, 0.895 + 0.24)
-    volume_mj = z_volume(z_min, z_max, 0.895)
-    volume_jn = z_volume(z_min, z_max, 0.24)
+    volume = 0
+    volume_mj = 0
+    volume_jn = 0
+    
+    for nb in nbs_to_consider:
+        z_min = (w_central[nb] - nb_fwhm_Arr[nb] * 0.5)/ w_lya - 1
+        z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5)/ w_lya - 1
+
+        volume += z_volume(z_min, z_max, 0.895 + 0.24)
+        volume_mj += z_volume(z_min, z_max, 0.895)
+        volume_jn += z_volume(z_min, z_max, 0.24)
 
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob, bins,
@@ -707,10 +724,10 @@ def make_the_LF(params):
     ax.legend()
 
     ax.set_title(
-        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}'
+        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}'
     )
 
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+    folder_name = f'LF_r{mag_min}-{mag_max}_BEST_NBs_ew{ew0_cut}_ewoth{ew_oth}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
@@ -722,7 +739,7 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 22, 5, 22, 30, 40)
+        (17, 24, 5, 23, 20, 400),
     ]
 
     for params in LF_parameters:

@@ -408,9 +408,9 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
             pm_flx[:-4] > cont_est
         )
         # # S/N > 5
-        # & (
-        #     pm_flx[:-4] / pm_err[:-4] > 5.
-        # )
+        & (
+            pm_flx[:-4] / pm_err[:-4] > 5.
+        )
         # Masks
         & (
             mask
@@ -458,7 +458,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm * 1.5)
                 | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
                 | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
                 | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
@@ -531,12 +531,12 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         lya_R_err[src] = np.sum(pm_err[l + 2 : l + 8, src] ** -2) ** -0.5
         lya_R2_err[src] = np.sum(pm_err[l + 12 : l + 12 + 5, src] ** -2) ** -0.5
 
-    nice_lya = (
-        nice_lya
-        & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
-        & np.invert(lya_R2 - lya_R > 3 * (lya_R_err ** 2 + lya_R2_err ** 2) ** 0.5)
+    # nice_lya = (
+    #     nice_lya
+    #     & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
+        # & np.invert(lya_R2 - lya_R > 3 * (lya_R_err ** 2 + lya_R2_err ** 2) ** 0.5)
         # & (lya_R / lya_R2 > 1.)
-    )
+    # )
 
     if give_bad_lines:
         return nice_lya & mask, good_lines_Arr
