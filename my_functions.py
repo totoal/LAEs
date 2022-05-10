@@ -86,10 +86,8 @@ def nb_fwhm(nb_ind, give_fwhm=True):
     if give_fwhm == True:
         return fwhm
 
-def estimate_continuum(
-    NB_flx, NB_err, N_nb=7, IGM_T_correct=True, only_right=False,
-    N_nb_min=0, N_nb_max=56
-):
+def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
+                       only_right=False, N_nb_min=0, N_nb_max=56):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
     '''
@@ -161,7 +159,10 @@ def estimate_continuum(
                 NB_err[nb_idx + 2 :]
             ))
 
-        cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_errs ** -2, axis=0)
+        # Conver errors to relative errors for the weights
+        NBs_rel_errs = NBs_errs / NBs_to_avg
+
+        cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_rel_errs ** -2, axis=0)
         cont_err[nb_idx] = np.sum(NBs_errs ** -2, axis=0) ** -0.5
 
     return cont_est, cont_err
@@ -408,9 +409,9 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
             pm_flx[:-4] > cont_est
         )
         # # S/N > 5
-        & (
-            pm_flx[:-4] / pm_err[:-4] > 5.
-        )
+        # & (
+        #     pm_flx[:-4] / pm_err[:-4] > 5.
+        # )
         # Masks
         & (
             mask

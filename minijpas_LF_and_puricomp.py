@@ -173,7 +173,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 L_lya, dirname):
     fig, ax = plt.subplots(figsize=(4, 4))
 
-    bins2 = np.linspace(43, 45.5, 10)
+    bins2 = np.linspace(43, 45.5, 7)
 
     b_c = [0.5 * (bins2[i] + bins2[i + 1]) for i in range(len(bins2) - 1)]
 
@@ -186,15 +186,14 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
 
         this_zspec_cut = (z_min < zspec) & (zspec < z_max)
-        this_z_cut = (z_min < z_Arr) & (z_Arr < z_max)
         totals_mask = this_zspec_cut & this_mag_cut
 
-        goodh = L_lya[nice_lya & nice_z & totals_mask]
+        goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
         goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
         badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & nb_mask & this_mag_cut]
         badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
-        hg, _ = np.histogram(goodh, bins=bins2)
+        hg_puri, _ = np.histogram(goodh_puri, bins=bins2)
         hg_comp, _ = np.histogram(goodh_comp, bins=bins2)
         hb, _ = np.histogram(badh, bins=bins2)
         hb_gal, _ = np.histogram(badh_gal, bins=bins2)
@@ -208,7 +207,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
             )
         if which_one == 'Purity':
             ax.plot(
-                b_c, hg / (hg + hb + hb_gal), marker='s',
+                b_c, hg_puri / (hg_puri + hb + hb_gal), marker='s',
                 label=filter_tags[nb], zorder=99, alpha=0.5
             )
 
@@ -221,12 +220,12 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
 
     totals_mask = this_zspec_cut & this_mag_cut
 
-    goodh = L_lya[nice_lya & nice_z & totals_mask]
+    goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
     goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
     badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & this_mag_cut & nb_mask]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & this_mag_cut & nb_mask]
 
-    hg, _ = np.histogram(goodh, bins=bins2)
+    hg_puri, _ = np.histogram(goodh_puri, bins=bins2)
     hg_comp, _ = np.histogram(goodh_comp, bins=bins2)
     hb, _ = np.histogram(badh, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
@@ -236,7 +235,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     if which_one == 'Completeness':
         ax.plot(b_c, hg_comp / totals, marker='s', label='All', zorder=99, c='k')
     if which_one == 'Purity':
-        ax.plot(b_c, hg / (hg + hb + hb_gal), marker='s', label='Purity', zorder=99, c='k')
+        ax.plot(b_c, hg_puri / (hg_puri + hb + hb_gal), marker='s', label='All', zorder=99, c='k')
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(which_one.lower())
@@ -244,13 +243,13 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.set_xlim((43, 45.5))
     ax.set_ylim((0, 1))
     ax.legend()
-    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}')
+    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
 
     plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight')
     plt.close()
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
-                         mag, zspec_cut, mag_cut, ew_cut, L_bins, L_lya, is_gal):
+                         mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya, is_gal):
     r_bins = np.linspace(mag_min, mag_max, 10 + 1)
 
     # Perturb L
@@ -266,20 +265,20 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z],
-            mag[nice_lya & nice_z],
+            L_perturbed[nice_lya & nice_z & zspec_cut],
+            mag[nice_lya & nice_z & zspec_cut],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal],
-            mag[nice_lya & ~is_gal],
+            L_perturbed[nice_lya & ~is_gal & z_cut],
+            mag[nice_lya & ~is_gal & z_cut],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_gal_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & is_gal],
-            mag[nice_lya & is_gal],
+            L_perturbed[nice_lya & is_gal & z_cut],
+            mag[nice_lya & is_gal & z_cut],
             bins=[L_bins, r_bins]
         )
 
@@ -294,9 +293,15 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     )
 
     puri2d = h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor)
+    puri2d_err = (
+        h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor) ** 2
+        + (h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor)**2) ** 2
+        * (h2d_sel + gal_factor**2 * h2d_sel_gal)
+    ) ** 0.5
     comp2d = h2d_nice / h2d_parent
+    comp2d_err = h2d_nice ** 0.5 / h2d_parent
 
-    return puri2d, comp2d, L_bins, r_bins
+    return puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf):
@@ -319,6 +324,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, zspec)
 
+    z_cut_nice = (z_min - 0.12 < z_Arr) & (z_Arr < z_max + 0.12)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
     ew_cut = EW_lya > ew0_cut
@@ -328,7 +334,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     nice_lya = nice_lya_select(
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr
     )
-    nice_lya = (nice_lya & z_cut & mag_cut)
+    nice_lya = (nice_lya & z_cut_nice & mag_cut)
 
     ### Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -366,13 +372,15 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     bins = np.log10(L_binning)
 
     # Compute puri/comp 2D
-    puri2d, comp2d, L_bins, r_bins = puricomp_corrections(
+    puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
-        nice_z, mag, zspec_cut, mag_cut, ew_cut, bins,
+        nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, bins,
         L_lya, is_gal
     )
     np.save('npy/puri2d.npy', puri2d)
     np.save('npy/comp2d.npy', comp2d)
+    np.save('npy/puri2d_err.npy', puri2d_err)
+    np.save('npy/comp2d_err.npy', comp2d_err)
     np.save('npy/puricomp2d_L_bins.npy', L_bins)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
@@ -477,7 +485,7 @@ def load_minijpas_jnep():
         spCl, zsp, N_minijpas
 
 def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
-                   bins, puri2d, comp2d, L_bins,
+                   bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins,
                    r_bins, tile_id):
     which_w = [0, 2]
     N_bins = len(bins) - 1
@@ -491,43 +499,65 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         )
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
+
         puri, comp = weights_LF(
-            L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, L_bins, r_bins,
-            z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w, give_puri_comp=True
+            L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, puri2d_err, comp2d_err,
+            L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w, True
         )
- 
-        # Decide if you include each source or not randomly based on the purity, then
-        # correct by completeness
         w = np.random.rand(len(puri))
-        count_mask = (w <= puri) # Count that source if the random number < purity
-        w[count_mask] = 1.
-        w[count_mask] = 0.
-        w /= comp # Correct by complenteness
+        include_mask = (w < puri)
+        w[include_mask] = 1. / comp[include_mask]
+        w[~include_mask] = 0.
+        w[np.isnan(w) | np.isinf(w)] = 0.
+        hist_i_mat[k], _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+        # w = weights_LF(
+        #     L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, puri2d_err, comp2d_err,
+        #     L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w
+        # )
+        # hist = np.histogram(L_perturbed[nice_lya], bins=bins)[0]
+        # hist_poiss_err = np.round(
+        #     hist[0] ** 0.5 * np.random.randn(len(bins) - 1), 0
+        # ).astype(int)
 
-        hist = np.histogram(L_perturbed[nice_lya], bins=bins)[0]
-        hist_poiss_err = np.round(
-            hist[0] ** 0.5 * np.random.randn(len(bins) - 1), 0
-        ).astype(int)
+        # hist_binnumber = binned_statistic(L_perturbed[nice_lya], None, 'count', bins=bins)[2]
 
-        hist_binnumber = binned_statistic(L_perturbed[nice_lya], None, 'count', bins=bins)[2]
-
-        L_Arr_to_hist = np.array([])
-        w_Arr_to_hist = np.array([])
-        for bin in range(N_bins):
-            where_bin = np.where(hist_binnumber == bin + 1)[0]
-            try:
-                idx = np.random.choice(
-                    where_bin, size=(hist_poiss_err[bin] + hist[bin]),
-                    replace=True
-                )
-                L_Arr_to_hist = np.hstack([L_Arr_to_hist, L_perturbed[nice_lya][idx]])
-                w_Arr_to_hist = np.hstack([w_Arr_to_hist, w[idx]])
-            except:
-                pass
-        hist_i_mat[k], _ = np.histogram(L_Arr_to_hist, bins=bins, weights=w_Arr_to_hist)
+        # L_Arr_to_hist = np.array([])
+        # w_Arr_to_hist = np.array([])
+        # for bin in range(N_bins):
+        #     where_bin = np.where(hist_binnumber == bin + 1)[0]
+        #     try:
+        #         idx = np.random.choice(
+        #             where_bin, size=(hist_poiss_err[bin] + hist[bin]),
+        #             replace=True
+        #         )
+        #         L_Arr_to_hist = np.hstack([L_Arr_to_hist, L_perturbed[nice_lya][idx]])
+        #         w_Arr_to_hist = np.hstack([w_Arr_to_hist, w[idx]])
+        #     except:
+        #         pass
+        # hist_i_mat[k], _ = np.histogram(L_Arr_to_hist, bins=bins, weights=w_Arr_to_hist)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
     return L_LF_err_percentiles
+
+def effective_volume(nb_min, nb_max, area):
+    '''
+    Due to NB overlap, specially when considering single filters, the volume probed by one
+    NB has to be corrected because some sources could be detected in that NB or in either
+    of the adjacent ones.
+    '''
+    z_min_overlap = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+    z_max_overlap = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
+
+    z_min_abs = (w_central[nb_min - 1] + nb_fwhm_Arr[nb_min - 1] * 0.5) / w_lya - 1
+    z_max_abs = (w_central[nb_max + 1] - nb_fwhm_Arr[nb_min + 1] * 0.5) / w_lya - 1
+
+    volume_abs = z_volume(z_min_abs, z_max_abs, area)
+    volume_overlap = (
+        z_volume(z_min_overlap, z_min_abs, area)
+        + z_volume(z_max_abs, z_max_overlap, area)
+    )
+
+    return volume_abs + volume_overlap * 0.5
 
 def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
@@ -540,7 +570,7 @@ def make_the_LF(params):
     # Lya search
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut, mask=mask)
-    lya_lines, lya_cont_lines, line_widths = identify_lines(
+    lya_lines, lya_cont_lines, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
     lya_lines = np.array(lya_lines)
@@ -559,12 +589,10 @@ def make_the_LF(params):
     z_Arr[np.where(np.array(lya_lines) != -1)] =\
         z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
 
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5)/ w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5)/ w_lya - 1
+    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
-    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
-
-    mask = z_cut & mag_cut
+    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut
 
     nice_lya = nice_lya_select(
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
@@ -600,6 +628,8 @@ def make_the_LF(params):
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
     puri2d = np.load('npy/puri2d.npy')
     comp2d = np.load('npy/comp2d.npy')
+    puri2d_err = np.load('npy/puri2d_err.npy')
+    comp2d_err = np.load('npy/comp2d_err.npy')
 
     bins = np.log10(L_binning)
 
@@ -613,13 +643,13 @@ def make_the_LF(params):
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
-    volume = z_volume(z_min, z_max, 0.895 + 0.24)
-    volume_mj = z_volume(z_min, z_max, 0.895)
-    volume_jn = z_volume(z_min, z_max, 0.24)
+    volume = effective_volume(nb_min, nb_max, 0.895 + 0.24)
+    volume_mj = effective_volume(nb_min, nb_max, 0.895)
+    volume_jn = effective_volume(nb_min, nb_max, 0.24)
 
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob, bins,
-        puri2d, comp2d, L_bins, r_bins, tile_id
+        puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id
     )
     L_LF_err_plus = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -628,7 +658,7 @@ def make_the_LF(params):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[is_minijpas_source], L_e_Arr[is_minijpas_source], nice_lya[is_minijpas_source],
         mag[is_minijpas_source], z_Arr[is_minijpas_source], starprob[is_minijpas_source],
-        bins, puri2d, comp2d, L_bins, r_bins, tile_id
+        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id
     )
     L_LF_err_plus_mj = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_mj = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -637,7 +667,7 @@ def make_the_LF(params):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, puri2d, comp2d, L_bins, r_bins, tile_id
+        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -716,7 +746,7 @@ def make_the_LF(params):
     ax.legend()
 
     ax.set_title(
-        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.1f}-{z_max:0.1f}'
+        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}'
     )
 
     folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
@@ -731,13 +761,19 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 24, 5, 15, 30, 200)
+        (17, 24, 5, 15, 30, 200),
+        (17, 24, 6, 6, 30, 200),
+        (17, 24, 7, 7, 30, 200),
+        (17, 24, 8, 8, 30, 200),
+        (17, 24, 9, 9, 30, 200),
+        (17, 24, 10, 10, 30, 200),
+        (17, 24, 11, 11, 30, 200),
+        (17, 24, 12, 12, 30, 200),
+        (17, 24, 13, 13, 30, 200),
+        (17, 24, 14, 14, 30, 200),
+        (17, 24, 15, 15, 30, 200)
     ]
 
     for params in LF_parameters:
         make_corrections(params)
         make_the_LF(params)
-        # try:
-        #     make_the_LF(params)
-        # except:
-        #     print(f'{params} LF could not be computed.')

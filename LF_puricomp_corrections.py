@@ -40,12 +40,18 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
 
     return intcomp
 
-def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins, r_bins, give_puri_comp=False):
+def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, puri2d_err, comp2d_err,
+                       L_bins, r_bins, give_puri_comp=False, randomize_puricomp=False):
     '''
     Computes the weight (purity/completeness) of each source based on the selection in 
     mocks.
     '''
-    w_mat = puri2d / comp2d
+    if not randomize_puricomp:
+        w_mat = puri2d / comp2d
+    else:
+        rand1 = np.random.normal(size=puri2d)
+        rand2 = np.random.normal(size=comp2d)
+        w_mat = (puri2d + puri2d_err * rand1) / (comp2d + comp2d_err * rand2)
     w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
 
     # Add a zeros row & column to w_mat for perturbed luminosities exceeding the binning
@@ -102,12 +108,13 @@ def Lya_intrisic_completeness(L, z, starprob=None):
 
     return completeness
 
-def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_id,
-    which_w=[0, 2], give_puri_comp=False):
+def weights_LF(L_Arr, mag, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, rbins,
+               z_Arr, starprob, tile_id,
+               which_w=[0, 2], give_puri_comp=False):
     '''
     Combines the contribution of the 3 above functions.
     '''
-    args1 = (L_Arr, mag, puri2d, comp2d, L_bins, rbins, give_puri_comp)
+    args1 = (L_Arr, mag, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, rbins, give_puri_comp)
     args2 = (L_Arr, z_Arr, starprob)
     args3 = (starprob, mag, tile_id)
 
@@ -135,4 +142,4 @@ def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins, z_Arr, starprob, tile_
     if not give_puri_comp:
         return wt
     else:
-        return puri, comp * w2 * w3
+        return puri, comp * w3

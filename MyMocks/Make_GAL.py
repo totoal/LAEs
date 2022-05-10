@@ -63,7 +63,7 @@ def load_GAL_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Gal_jpas_mock_flam_val.cat'
+        'Fluxes_model_11/Gal_jpas_mock_flam_train.cat'
     )
 
     gal_flx = pd.read_csv(
@@ -85,12 +85,12 @@ def load_GAL_prior_mock():
     return gal_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_val'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/val/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/GAL/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
