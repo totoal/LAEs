@@ -49,8 +49,8 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, puri2d_err, comp2d_err,
     if not randomize_puricomp:
         w_mat = puri2d / comp2d
     else:
-        rand1 = np.random.normal(size=puri2d)
-        rand2 = np.random.normal(size=comp2d)
+        rand1 = np.random.normal(size=puri2d.shape)
+        rand2 = np.random.normal(size=comp2d.shape)
         w_mat = (puri2d + puri2d_err * rand1) / (comp2d + comp2d_err * rand2)
     w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
 

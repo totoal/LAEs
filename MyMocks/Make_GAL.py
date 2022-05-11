@@ -44,7 +44,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)

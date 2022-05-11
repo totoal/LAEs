@@ -161,6 +161,7 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
 
         # Conver errors to relative errors for the weights
         NBs_rel_errs = NBs_errs / NBs_to_avg
+        NBs_rel_errs[NBs_rel_errs < 0] = 99.
 
         cont_est[nb_idx] = np.average(NBs_to_avg, weights=NBs_rel_errs ** -2, axis=0)
         cont_err[nb_idx] = np.sum(NBs_errs ** -2, axis=0) ** -0.5

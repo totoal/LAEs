@@ -170,7 +170,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
 def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, zspec,
-                                L_lya, dirname):
+                                L_lya, dirname, z_cut):
     fig, ax = plt.subplots(figsize=(4, 4))
 
     bins2 = np.linspace(43, 45.5, 7)
@@ -324,7 +324,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, zspec)
 
-    z_cut_nice = (z_min - 0.12 < z_Arr) & (z_Arr < z_max + 0.12)
+    z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
     ew_cut = EW_lya > ew0_cut
@@ -390,7 +390,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         purity_or_completeness_plot(
             which_one, mag, nbs_to_consider, lya_lines, z_Arr,
             nice_lya, nice_z, L_Arr, mag_max, mag_min, ew0_cut,
-            is_gal, is_sf, is_qso, zspec, L_lya, dirname
+            is_gal, is_sf, is_qso, zspec, L_lya, dirname, z_cut
         )
 
 def make_corrections(params):
@@ -506,35 +506,12 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         )
         w = np.random.rand(len(puri))
         include_mask = (w < puri)
-        w[include_mask] = 1. / comp[include_mask]
+        w[:] = 1.
         w[~include_mask] = 0.
+        w[include_mask] = 1. / comp[include_mask]
         w[np.isnan(w) | np.isinf(w)] = 0.
+
         hist_i_mat[k], _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
-        # w = weights_LF(
-        #     L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, puri2d_err, comp2d_err,
-        #     L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w
-        # )
-        # hist = np.histogram(L_perturbed[nice_lya], bins=bins)[0]
-        # hist_poiss_err = np.round(
-        #     hist[0] ** 0.5 * np.random.randn(len(bins) - 1), 0
-        # ).astype(int)
-
-        # hist_binnumber = binned_statistic(L_perturbed[nice_lya], None, 'count', bins=bins)[2]
-
-        # L_Arr_to_hist = np.array([])
-        # w_Arr_to_hist = np.array([])
-        # for bin in range(N_bins):
-        #     where_bin = np.where(hist_binnumber == bin + 1)[0]
-        #     try:
-        #         idx = np.random.choice(
-        #             where_bin, size=(hist_poiss_err[bin] + hist[bin]),
-        #             replace=True
-        #         )
-        #         L_Arr_to_hist = np.hstack([L_Arr_to_hist, L_perturbed[nice_lya][idx]])
-        #         w_Arr_to_hist = np.hstack([w_Arr_to_hist, w[idx]])
-        #     except:
-        #         pass
-        # hist_i_mat[k], _ = np.histogram(L_Arr_to_hist, bins=bins, weights=w_Arr_to_hist)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
     return L_LF_err_percentiles

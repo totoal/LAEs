@@ -47,7 +47,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -63,7 +63,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts_val.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -103,7 +103,7 @@ def load_QSO_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_val.cat'
+        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
     )
 
     qso_flx = pd.read_csv(
@@ -125,12 +125,12 @@ def load_QSO_prior_mock():
     return qso_flx, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_val'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/val/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
