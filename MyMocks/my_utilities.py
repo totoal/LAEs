@@ -408,11 +408,14 @@ def at_which_redshift(L_Arr, EW0_Arr, f_Arr):
 
     return fsolve(f, p0) 
 
-def JPAS_synth_phot(SEDs, w_Arr, tcurves):
+def JPAS_synth_phot(SEDs, w_Arr, tcurves, which_filters=[]):
     phot_len = len(tcurves['tag'])
-    pm = np.zeros(phot_len)
+    pm = np.zeros(phot_len)    
 
-    for fil in range(phot_len):
+    if len(which_filters) == 0:
+        which_filters = np.arange(phot_len)
+
+    for fil in which_filters:
         w = np.array(tcurves['w'][fil])
         t = np.array(tcurves['t'][fil])
 
@@ -422,7 +425,7 @@ def JPAS_synth_phot(SEDs, w_Arr, tcurves):
         t_int = np.trapz(w * t, w)
         
         pm[fil] = sed_int / t_int
-    return pm
+    return pm[which_filters]
 
 def mag_to_flux(m, w):
     c = 29979245800

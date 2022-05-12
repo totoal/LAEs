@@ -135,31 +135,52 @@ def schechter(L, phistar, Lstar, alpha):
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
 
-def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
-    '''
-    A double schechter.
-    '''
-    Phi2 = schechter(L, phistar1, Lstar1, alpha1)
-    Phi1 = schechter(L, phistar2, Lstar2, alpha2)
-
-    return Phi1 + Phi2
-
-def duplicate_sources():
+def duplicate_sources(area, z_Arr, L_Arr):
     z_min = 2
     z_max = 4.25
+    L_min = 42
+    L_max = 47
 
-    Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
+    volume = z_volume(z_min, z_max, area)
+
+    Lx = np.linspace(10 ** L_min, 10 ** L_max, 10000)
     phistar1 = 3.33e-6
     Lstar1 = 44.65
     alpha1 = -1.35
+    Phi = schechter(Lx, phistar1, 10 ** Lstar1, alpha1) * Lx * np.log(10)
 
-    phistar2 = -3.45
-    Lstar2 = 42.93
-    alpha2 = -1.93
+    LF_p_cum_x = np.linspace(L_min, L_max, 1000)
+    N_sources_LAE = int(
+        simpson(
+            np.interp(LF_p_cum_x, Lx, Phi), LF_p_cum_x
+        ) * volume
+    )
+    LF_p_cum = np.cumsum(np.interp(
+        LF_p_cum_x, Lx, Phi)
+    )
+    LF_p_cum /= np.max(LF_p_cum)
+    
+    # L_Arr is the L_lya distribution for our mock
+    my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
-    Phi_center = double_schechter(
-        Lx, phistar1, 10 ** Lstar1, alpha1, 10 ** phistar2, 10 ** Lstar2, alpha2
-    ) * Lx * np.log(10)
+    # z_Arr is the distribution of redshift. Uniform distribution
+    my_z_Arr = z_min + np.random.rand(N_sources_LAE) * (z_max - z_min)
+
+    # Index of the original mock closest source in redshift
+    idx_closest_z = np.zeros(N_sources_LAE).astype(int)
+    for src in range(N_sources_LAE):
+        idx_closest_z[src] = np.argmin(np.abs(z_Arr - my_z_Arr[src]))
+
+    # The amount of w that we have to correct
+    w_offset = w_lya * (my_z_Arr - z_Arr)
+
+    # The correction factor to achieve the desired L
+    L_factor = my_L_Arr / L_Arr
+
+    # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
+    # and finally multiplying its flux by L_factor
+    return idx_closest_z, w_offset, L_factor, my_z_Arr
+
 
 def main():
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_0'
@@ -184,10 +205,10 @@ def main():
     fiber = plate_mjd_fiber[2]
 
     correct = np.zeros(N_sources)
-    pm_SEDs = np.empty((60, N_sources))
 
     # Do the integrated photometry
-    print('Extracting band fluxes from the spectra...')
+    # print('Extracting band fluxes from the spectra...')
+    pm_r = np.empty(N_sources)
     for src in range(N_sources):
         print(f'{src} / {N_sources}', end='\r')
 
@@ -208,8 +229,8 @@ def main():
 
         # The range of SDSS is 3561-10327 Angstroms. Beyond the range limits,
         # the flux will be 0
-        pm_SEDs[:, src] = JPAS_synth_phot(
-            spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves
+        pm_r[src] = JPAS_synth_phot(
+            spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves, [-2]
         )
 
         # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
@@ -224,22 +245,15 @@ def main():
                 w_lya_obs - lya_band_hw, w_lya_obs + lya_band_hw, lya_band_res
             )]
         }
+        # Extract the photometry of Ly-alpha (L_Arr)
         if z[src] > 0:
             lya_band[src] = JPAS_synth_phot(
                 spec['flux'] * 1e-17, 10 ** spec['loglam'], lya_band_tcurves
             )
 
         # Adjust flux to match the prior mock
-        correct[src] = qso_r_flx[src] / pm_SEDs[-2, src]
-        pm_SEDs[:, src] *= correct[src]
+        correct[src] = qso_r_flx[src] / pm_r[src]
 
-    print('Adding errors...')
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
-
-    print('Extracting line features...')
-    _, _, _, _, f_cont, _ =\
-         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
-    
     ## Computing L using Lya_band
     f_cont *= correct
     lya_band *= correct
@@ -250,6 +264,55 @@ def main():
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
+    area = 400 # deg2
+    idx_closest_z, w_offset, L_factor, new_z = duplicate_sources(area, z, L)
+
+    new_N_sources = len(w_offset)
+
+    pm_SEDs = np.empty((60, new_N_sources))
+
+    # Do the integrated photometry
+    print('Extracting band fluxes from the spectra...')
+    for new_src in range(new_N_sources):
+        src = idx_closest_z[new_src]
+
+        print(f'{new_src} / {new_N_sources}', end='\r')
+
+        spec_name = fits_dir + f'spec-{plate[src]}-{mjd[src]}-{fiber[src]}.fits'
+
+        spec = Table.read(spec_name, hdu=1, format='fits')
+        # Correct spec
+        spec_w = 10 ** spec['loglam'] + w_offset[new_src]
+        spec_f = spec['flux'] * 1e-17 * L_factor[new_src]
+
+        spzline = Table.read(spec_name, hdu=3, format='fits')
+
+        # Select the source's z as the z from any line not being Lya.
+        # Lya z is biased because is taken from the position of the peak of the line,
+        # and in general Lya is assymmetrical.
+        z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
+        z_Arr = np.atleast_1d(z_Arr[z_Arr != 0.])
+        if len(z_Arr) > 0:
+            z[src] = z_Arr[-1]
+        else:
+            z[src] = 0.
+
+        # The range of SDSS is 3561-10327 Angstroms. Beyond the range limits,
+        # the flux will be 0
+        pm_SEDs[:, src] = JPAS_synth_phot(spec_f, spec_w, tcurves)
+
+    new_L = L[idx_closest_z] * L_factor
+    new_F_line = F_line[idx_closest_z] * L_factor
+    new_F_line_err = F_line_err[idx_closest_z] * L_factor
+    new_EW0 = EW0[idx_closest_z] * (1 + z) / (1 + new_z)
+
+    print('Adding errors...')
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+
+    print('Extracting line features...')
+    _, _, _, _, f_cont, _ =\
+         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+
     hdr = (
         tcurves['tag']
         + [s + '_e' for s in tcurves['tag']]
@@ -259,8 +322,9 @@ def main():
     pd.DataFrame(
         data=np.hstack(
             (
-                pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), EW0.reshape(-1, 1),
-                L.reshape(-1, 1), F_line.reshape(-1, 1), F_line_err.reshape(-1, 1)
+                pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), new_EW0.reshape(-1, 1),
+                new_L.reshape(-1, 1), new_F_line.reshape(-1, 1),
+                new_F_line_err.reshape(-1, 1)
             )
         )
     ).to_csv(filename + f'/data.csv', header=hdr)
