@@ -460,13 +460,13 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
-                | (np.abs(w_obs_l - w_obs_MgII) < fwhm)
-                | (w_obs_l > w_obs_MgII + fwhm)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 2)
+                | (w_obs_l > w_obs_MgII + fwhm * 2)
             )
 
             if ~(   

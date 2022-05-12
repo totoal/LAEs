@@ -58,6 +58,13 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, puri2d_err, comp2d_err,
     w_mat = np.vstack([w_mat, np.zeros(w_mat.shape[1])])
     w_mat = np.hstack([w_mat, np.zeros(w_mat.shape[0]).reshape(-1, 1)])
 
+    # If L_Arr is empty, return empty weights lists
+    if len(L_Arr) == 0:
+        if not give_puri_comp:
+            return np.array([])
+        else:
+            return np.array([]), np.array([]), np.array([])
+
     bs = binned_statistic_2d(
         L_Arr, r_Arr, None, 'count', bins=[L_bins, r_bins], expand_binnumbers=True
     )

@@ -170,10 +170,10 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
 def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, zspec,
-                                L_lya, dirname, z_cut):
+                                L_lya, dirname, ew_cut):
     fig, ax = plt.subplots(figsize=(4, 4))
 
-    bins2 = np.linspace(43, 45.5, 7)
+    bins2 = np.linspace(42, 45.5, 15)
 
     b_c = [0.5 * (bins2[i] + bins2[i + 1]) for i in range(len(bins2) - 1)]
 
@@ -186,7 +186,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
 
         this_zspec_cut = (z_min < zspec) & (zspec < z_max)
-        totals_mask = this_zspec_cut & this_mag_cut
+        totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
         goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
         goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
@@ -218,7 +218,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
     this_zspec_cut = (z_min < zspec) & (zspec < z_max)
 
-    totals_mask = this_zspec_cut & this_mag_cut
+    totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
     goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
     goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
@@ -240,7 +240,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(which_one.lower())
 
-    ax.set_xlim((43, 45.5))
+    ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
     ax.legend()
     ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
@@ -390,7 +390,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         purity_or_completeness_plot(
             which_one, mag, nbs_to_consider, lya_lines, z_Arr,
             nice_lya, nice_z, L_Arr, mag_max, mag_min, ew0_cut,
-            is_gal, is_sf, is_qso, zspec, L_lya, dirname, z_cut
+            is_gal, is_sf, is_qso, zspec, L_lya, dirname, ew_cut
         )
 
 def make_corrections(params):
@@ -504,6 +504,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
             L_perturbed[nice_lya], mag[nice_lya], puri2d, comp2d, puri2d_err, comp2d_err,
             L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id, which_w, True
         )
+
         w = np.random.rand(len(puri))
         include_mask = (w < puri)
         w[:] = 1.
@@ -613,6 +614,9 @@ def make_the_LF(params):
     N_sources = pm_flx.shape[1]
     is_minijpas_source = np.ones(N_sources).astype(bool)
     is_minijpas_source[N_minijpas:] = False
+
+    print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
+    print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
 
     _, b = np.histogram(L_Arr[nice_lya], bins=bins)
 
@@ -738,17 +742,17 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 24, 5, 15, 30, 200),
-        (17, 24, 6, 6, 30, 200),
-        (17, 24, 7, 7, 30, 200),
-        (17, 24, 8, 8, 30, 200),
-        (17, 24, 9, 9, 30, 200),
-        (17, 24, 10, 10, 30, 200),
-        (17, 24, 11, 11, 30, 200),
-        (17, 24, 12, 12, 30, 200),
-        (17, 24, 13, 13, 30, 200),
-        (17, 24, 14, 14, 30, 200),
-        (17, 24, 15, 15, 30, 200)
+        (17, 24, 5, 15, 30, 400),
+        (17, 24, 6, 6, 30, 400),
+        (17, 24, 7, 7, 30, 400),
+        (17, 24, 8, 8, 30, 400),
+        (17, 24, 9, 9, 30, 400),
+        (17, 24, 10, 10, 30, 400),
+        (17, 24, 11, 11, 30, 400),
+        (17, 24, 12, 12, 30, 400),
+        (17, 24, 13, 13, 30, 400),
+        (17, 24, 14, 14, 30, 400),
+        (17, 24, 15, 15, 30, 400)
     ]
 
     for params in LF_parameters:
