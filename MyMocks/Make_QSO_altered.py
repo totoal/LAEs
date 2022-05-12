@@ -254,6 +254,11 @@ def main():
         # Adjust flux to match the prior mock
         correct[src] = qso_r_flx[src] / pm_r[src]
 
+    print('Extracting line features...')
+    _, _, _, _, f_cont, _ =\
+         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+
+
     ## Computing L using Lya_band
     f_cont *= correct
     lya_band *= correct
@@ -308,10 +313,6 @@ def main():
 
     print('Adding errors...')
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
-
-    print('Extracting line features...')
-    _, _, _, _, f_cont, _ =\
-         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
 
     hdr = (
         tcurves['tag']
