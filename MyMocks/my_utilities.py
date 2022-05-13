@@ -419,7 +419,7 @@ def JPAS_synth_phot(SEDs, w_Arr, tcurves, which_filters=[]):
         w = np.array(tcurves['w'][fil])
         t = np.array(tcurves['t'][fil])
 
-        sed_interp = np.interp(w, w_Arr, SEDs, left=0., right=0.)
+        sed_interp = np.interp(w, w_Arr, SEDs, left=-99., right=-99.)
 
         sed_int = np.trapz(w * t * sed_interp, w)
         t_int = np.trapz(w * t, w)

@@ -1,8 +1,3 @@
-'''
-This version of Make_QSO.py is made to produce an alternate version of the mock, with
-an altered output LF. The objective is to get more sources with L_lya > 44.
-Changes with respect to the original file are marked with # ALTERED
-'''
 import os
 from time import perf_counter
 
@@ -17,7 +12,7 @@ from my_utilities import *
 
 w_lya = 1215.67
 
-def add_errors(pm_SEDs):
+def add_errors(pm_SEDs, apply_err=True):
     err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 
     # Load limit mags
@@ -52,7 +47,8 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    if apply_err:
+        pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -68,7 +64,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts_val.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -172,14 +168,14 @@ def duplicate_sources(area, z_Arr, L_Arr):
         idx_closest_z[src] = np.argmin(np.abs(z_Arr - my_z_Arr[src]))
 
     # The amount of w that we have to correct
-    w_offset = w_lya * (my_z_Arr - z_Arr)
+    w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest_z])
 
     # The correction factor to achieve the desired L
     L_factor = my_L_Arr / L_Arr
 
     # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
-    return idx_closest_z, w_offset, L_factor, my_z_Arr
+    return idx_closest_z, w_factor, L_factor, my_z_Arr
 
 
 def main():
@@ -258,7 +254,6 @@ def main():
     _, _, _, _, f_cont, _ =\
          SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
 
-
     ## Computing L using Lya_band
     f_cont *= correct
     lya_band *= correct
@@ -270,9 +265,9 @@ def main():
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
     area = 400 # deg2
-    idx_closest_z, w_offset, L_factor, new_z = duplicate_sources(area, z, L)
+    idx_closest_z, w_factor, L_factor, new_z = duplicate_sources(area, z, L)
 
-    new_N_sources = len(w_offset)
+    new_N_sources = len(w_factor)
 
     pm_SEDs = np.empty((60, new_N_sources))
 
@@ -287,20 +282,8 @@ def main():
 
         spec = Table.read(spec_name, hdu=1, format='fits')
         # Correct spec
-        spec_w = 10 ** spec['loglam'] + w_offset[new_src]
+        spec_w = 10 ** spec['loglam'] * w_factor[new_src]
         spec_f = spec['flux'] * 1e-17 * L_factor[new_src]
-
-        spzline = Table.read(spec_name, hdu=3, format='fits')
-
-        # Select the source's z as the z from any line not being Lya.
-        # Lya z is biased because is taken from the position of the peak of the line,
-        # and in general Lya is assymmetrical.
-        z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
-        z_Arr = np.atleast_1d(z_Arr[z_Arr != 0.])
-        if len(z_Arr) > 0:
-            z[src] = z_Arr[-1]
-        else:
-            z[src] = 0.
 
         # The range of SDSS is 3561-10327 Angstroms. Beyond the range limits,
         # the flux will be 0
@@ -312,7 +295,13 @@ def main():
     new_EW0 = EW0[idx_closest_z] * (1 + z) / (1 + new_z)
 
     print('Adding errors...')
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+    where_out_of_range = (pm_SEDs < -1e-5)
+
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False)
+
+    # Add infinite errors to bands out of the range of SDSS
+    pm_SEDs[where_out_of_range] = 1e-99
+    pm_SEDs_err = 99.
 
     hdr = (
         tcurves['tag']
@@ -323,7 +312,7 @@ def main():
     pd.DataFrame(
         data=np.hstack(
             (
-                pm_SEDs.T, pm_SEDs_err.T, z.reshape(-1, 1), new_EW0.reshape(-1, 1),
+                pm_SEDs.T, pm_SEDs_err.T, new_z.reshape(-1, 1), new_EW0.reshape(-1, 1),
                 new_L.reshape(-1, 1), new_F_line.reshape(-1, 1),
                 new_F_line_err.reshape(-1, 1)
             )
