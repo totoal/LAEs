@@ -3,10 +3,13 @@ from time import perf_counter
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
+from certifi import where
 
 import pandas as pd
 
 import numpy as np
+
+import threading
 
 from my_utilities import *
 
@@ -78,7 +81,6 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
             & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
             & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
         )
-        print(where)
         
         # Some sources are repeated, so we take the first occurence
         where = where[0][0]
@@ -134,7 +136,7 @@ def schechter(L, phistar, Lstar, alpha):
 def duplicate_sources(area, z_Arr, L_Arr):
     z_min = 2
     z_max = 4.25
-    L_min = 42
+    L_min = 43
     L_max = 47
 
     volume = z_volume(z_min, z_max, area)
@@ -151,6 +153,7 @@ def duplicate_sources(area, z_Arr, L_Arr):
             np.interp(LF_p_cum_x, Lx, Phi), LF_p_cum_x
         ) * volume
     )
+    print(f'N_new_sources = {N_sources_LAE}')
     LF_p_cum = np.cumsum(np.interp(
         LF_p_cum_x, Lx, Phi)
     )
@@ -171,12 +174,13 @@ def duplicate_sources(area, z_Arr, L_Arr):
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest_z])
 
     # The correction factor to achieve the desired L
-    L_factor = my_L_Arr / L_Arr
+    L_factor = my_L_Arr / L_Arr[idx_closest_z]
+
+    print(w_factor)
 
     # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
     return idx_closest_z, w_factor, L_factor, my_z_Arr
-
 
 def main():
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_0'
@@ -301,7 +305,7 @@ def main():
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs[where_out_of_range] = 1e-99
-    pm_SEDs_err = 99.
+    pm_SEDs_err[where_out_of_range] = 99.
 
     hdr = (
         tcurves['tag']
@@ -309,12 +313,17 @@ def main():
         + ['z', 'EW0', 'L_lya', 'F_line', 'F_line_err']
     )
 
+    ## Let's remove the sources with very low r magnitudes
+    low_r_mask = (pm_SEDs[-2] > 6e-19)
+    print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
+
     pd.DataFrame(
         data=np.hstack(
             (
-                pm_SEDs.T, pm_SEDs_err.T, new_z.reshape(-1, 1), new_EW0.reshape(-1, 1),
-                new_L.reshape(-1, 1), new_F_line.reshape(-1, 1),
-                new_F_line_err.reshape(-1, 1)
+                pm_SEDs.T[low_r_mask], pm_SEDs_err.T[low_r_mask],
+                new_z[low_r_mask].reshape(-1, 1), new_EW0[low_r_mask].reshape(-1, 1),
+                new_L[low_r_mask].reshape(-1, 1), new_F_line[low_r_mask].reshape(-1, 1),
+                new_F_line_err[low_r_mask].reshape(-1, 1)
             )
         )
     ).to_csv(filename + f'/data.csv', header=hdr)

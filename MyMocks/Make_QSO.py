@@ -203,11 +203,12 @@ def main():
 
     where_out_of_range = (pm_SEDs < -1e-5)
 
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
-
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs[where_out_of_range] = 1e-99
-    pm_SEDs_err = 99.
+
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+
+    pm_SEDs_err[where_out_of_range] = 99.
 
     print('Extracting line features...')
     _, _, _, _, f_cont, _ =\

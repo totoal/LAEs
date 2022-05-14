@@ -1,3 +1,4 @@
+from calendar import weekheader
 import os
 from time import perf_counter
 
@@ -140,13 +141,15 @@ def main():
         pm_SEDs[:, src] *= correct[src]
 
     print('Adding errors...')
-    where_out_of_range = (pm_SEDs < -1e-5)
 
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+    where_out_of_range = (pm_SEDs < -1e-5)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs[where_out_of_range] = 1e-99
-    pm_SEDs_err = 99.
+
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+
+    pm_SEDs_err[where_out_of_range] = 99.
 
     hdr = (
         tcurves['tag']

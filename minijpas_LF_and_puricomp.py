@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.rcParams.update({'font.size': 10})
 
+import seaborn as sns
+
 import pandas as pd
 
 from my_functions import *
@@ -245,7 +247,61 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.legend()
     ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
 
-    plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight')
+    plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight', facecolor='white')
+    plt.close()
+
+def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname):
+    fig = plt.figure(figsize=(7, 6))
+
+    width = 1
+    height = 1
+    spacing = 0.1
+    cbar_width = 0.3
+
+    ### ADD AXES
+    ax0 = fig.add_axes([0, 0, width, height])
+    ax1 = fig.add_axes([width + spacing, 0, width, height])
+    axc = fig.add_axes([width * 2 + spacing * 2, 0, cbar_width, height])
+
+    ### PLOT STUFF
+    cmap = 'Spectral'
+    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc, cmap=cmap)
+    sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=1, cbar=False, cmap=cmap)
+
+    ### TICKS
+    xticks = range(len(L_bins))
+    yticks = range(len(r_bins))
+    xtick_labels = ['{0:0.1f}'.format(n) for n in L_bins]
+    ytick_labels = ['{0:0.1f}'.format(n) for n in r_bins]
+
+
+    ax0.set_yticks(yticks)
+    ax0.set_yticklabels(ytick_labels, rotation='horizontal')
+    ax0.set_xticks(xticks)
+    ax0.set_xticklabels(xtick_labels, rotation='vertical')
+    ax0.yaxis.set_ticks_position('both')
+    ax0.xaxis.set_ticks_position('both')
+    ax0.tick_params(axis='y', direction='in', labelsize=14)
+    ax0.tick_params(axis='x', direction='in', labelsize=14)
+
+    ax1.set_yticks(yticks)
+    ax1.set_yticklabels(ytick_labels, rotation='horizontal')
+    ax1.set_xticks(xticks)
+    ax1.set_xticklabels(xtick_labels, rotation='vertical')
+    ax1.yaxis.set_ticks_position('both')
+    ax1.xaxis.set_ticks_position('both')
+    ax1.tick_params(axis='y', direction='in', labelsize=14)
+    ax1.tick_params(axis='x', direction='in', labelsize=14)
+
+    ### SPINES
+    ax0.spines[:].set_visible(True)
+    ax1.spines[:].set_visible(True)
+
+    ### TITLES
+    ax0.set_title('Purity', fontsize=25)
+    ax1.set_title('Completeness', fontsize=25)
+
+    plt.savefig(f'{dirname}/PuriComp2D', bbox_inches='tight', facecolor='white')
     plt.close()
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
@@ -377,6 +433,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, bins,
         L_lya, is_gal
     )
+
+    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname)
+
     np.save('npy/puri2d.npy', puri2d)
     np.save('npy/comp2d.npy', comp2d)
     np.save('npy/puri2d_err.npy', puri2d_err)
@@ -390,7 +449,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         purity_or_completeness_plot(
             which_one, mag, nbs_to_consider, lya_lines, z_Arr,
             nice_lya, nice_z, L_Arr, mag_max, mag_min, ew0_cut,
-            is_gal, is_sf, is_qso, zspec, L_lya, dirname, ew_cut
+            is_gal, is_sf, is_qso, zspec, L_lya, dirname, ew_cut,
         )
 
 def make_corrections(params):
@@ -734,7 +793,7 @@ def make_the_LF(params):
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
-    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight')
+    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white')
     plt.close()
 
 if __name__ == '__main__':
