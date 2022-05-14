@@ -1,4 +1,7 @@
+#!/home/alberto/miniconda3/bin/python3
+
 import os
+import sys
 from time import perf_counter
 
 from astropy.cosmology import Planck18 as cosmo
@@ -133,12 +136,7 @@ def schechter(L, phistar, Lstar, alpha):
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
 
-def duplicate_sources(area, z_Arr, L_Arr):
-    z_min = 2
-    z_max = 4.25
-    L_min = 43
-    L_max = 47
-
+def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     volume = z_volume(z_min, z_max, area)
 
     Lx = np.linspace(10 ** L_min, 10 ** L_max, 10000)
@@ -182,7 +180,7 @@ def duplicate_sources(area, z_Arr, L_Arr):
     # and finally multiplying its flux by L_factor
     return idx_closest_z, w_factor, L_factor, my_z_Arr
 
-def main():
+def main(part, area, z_min, z_max, L_min, L_max):
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_0'
 
     if not os.path.exists(filename):
@@ -268,8 +266,9 @@ def main():
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
-    area = 400 # deg2
-    idx_closest_z, w_factor, L_factor, new_z = duplicate_sources(area, z, L)
+    idx_closest_z, w_factor, L_factor, new_z = duplicate_sources(
+        area, z, L, z_min, z_max, L_min, L_max
+    )
 
     new_N_sources = len(w_factor)
 
@@ -299,13 +298,16 @@ def main():
     new_EW0 = EW0[idx_closest_z] * (1 + z) / (1 + new_z)
 
     print('Adding errors...')
-    where_out_of_range = (pm_SEDs < -1e-5)
 
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False)
+    where_out_of_range = (pm_SEDs < -1e-5)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs[where_out_of_range] = 1e-99
+
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+
     pm_SEDs_err[where_out_of_range] = 99.
+
 
     hdr = (
         tcurves['tag']
@@ -326,9 +328,17 @@ def main():
                 new_F_line_err[low_r_mask].reshape(-1, 1)
             )
         )
-    ).to_csv(filename + f'/data.csv', header=hdr)
+    ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
 if __name__ == '__main__':
     t0 = perf_counter()
-    main()
+    part = sys.argv[1]
+
+    z_min = 2
+    z_max = 4.25
+    L_min = 42
+    L_max = 46
+    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes then
+
+    main(part, area, z_min, z_max, L_min, L_max)
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))
