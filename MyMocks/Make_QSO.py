@@ -47,7 +47,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -194,6 +194,8 @@ def main():
             lya_band[src] = JPAS_synth_phot(
                 spec['flux'] * 1e-17, 10 ** spec['loglam'], lya_band_tcurves
             )
+        if lya_band[src] > 1:
+            lya_band[src] = 1e-99
 
         # Adjust flux to match the prior mock
         correct[src] = qso_r_flx[src] / pm_SEDs[-2, src]
@@ -201,13 +203,12 @@ def main():
 
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs < -1e-5)
+    where_out_of_range = (pm_SEDs > 1e-5)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs[where_out_of_range] = 1e-99
-
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
+    pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
 
     print('Extracting line features...')

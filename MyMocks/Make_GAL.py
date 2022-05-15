@@ -45,7 +45,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -142,13 +142,12 @@ def main():
 
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs < -1e-5)
+    where_out_of_range = (pm_SEDs > 1e-5)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs[where_out_of_range] = 1e-99
-
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
 
+    pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
 
     hdr = (
