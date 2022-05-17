@@ -174,8 +174,6 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # The correction factor to achieve the desired L
     L_factor = my_L_Arr / L_Arr[idx_closest_z]
 
-    print(w_factor)
-
     # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
     return idx_closest_z, w_factor, L_factor, my_z_Arr
@@ -338,7 +336,7 @@ if __name__ == '__main__':
     z_max = 4.25
     L_min = 42
     L_max = 46
-    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes then
+    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
 
     main(part, area, z_min, z_max, L_min, L_max)
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))

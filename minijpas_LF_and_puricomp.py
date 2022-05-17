@@ -48,6 +48,7 @@ def load_mocks():
 
     qso_flx += qso_err * np.random.normal(size=qso_err.shape)
 
+
     EW_qso = data_qso['EW0'].to_numpy()
     qso_zspec = data_qso['z'].to_numpy()
 
@@ -256,7 +257,7 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname):
     width = 1
     height = 1
     spacing = 0.1
-    cbar_width = 0.3
+    cbar_width = 0.08
 
     ### ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])

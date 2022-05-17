@@ -45,7 +45,7 @@ def add_errors(pm_SEDs):
     pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     # Perturb according to the error
-    pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     # Now recompute the error
     # mags = flux_to_mag(pm_SEDs, w_central)
@@ -68,8 +68,11 @@ def load_GAL_prior_mock():
     )
 
     gal_flx = pd.read_csv(
-        filename, sep=' ', usecols=[28] # 28 is rSDSS
-    ).to_numpy().flatten()
+        filename, sep=' ', usecols=[13, 29, 44] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
+    ).to_numpy()#.flatten()
+    gal_r_err = pd.read_csv(
+        filename, sep=' ', usecols=[29 + 60] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
+    ).to_numpy()#.flatten()
 
     format_string4 = lambda x: '{:04d}'.format(int(x))
     format_string5 = lambda x: '{:05d}'.format(int(x))
@@ -83,7 +86,7 @@ def load_GAL_prior_mock():
         converters=convert_dict
     ).to_numpy().T
 
-    return gal_flx, plate_mjd_fiber
+    return gal_flx, gal_r_err, plate_mjd_fiber
 
 def main():
     filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000_0'
@@ -96,7 +99,7 @@ def main():
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
     # Loading the Carolina's GAL mock
-    gal_r_flx, plate_mjd_fiber = load_GAL_prior_mock()
+    gal_r_flx, gal_err_r_flx, plate_mjd_fiber = load_GAL_prior_mock()
     N_sources = len(gal_r_flx)
 
     # Declare some arrays
@@ -137,12 +140,16 @@ def main():
         )
 
         # Adjust flux to match the prior mock
-        correct[src] = gal_r_flx[src] / pm_SEDs[-2, src]
-        pm_SEDs[:, src] *= correct[src]
+        if gal_r_flx[src, 1] > 0:
+            correct[src] = gal_r_flx[src, 1] / pm_SEDs[-2, src]
+        elif gal_r_flx[src, 2] > 0:
+            correct[src] = gal_r_flx[src, 2] / pm_SEDs[-1, src]
+        else:
+            correct[src] = gal_err_r_flx[src] / pm_SEDs[-2, src]
 
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs > 1e-5)
+    where_out_of_range = (pm_SEDs > 1e-14)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)

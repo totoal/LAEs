@@ -13,12 +13,12 @@ from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
 
+c = 29979245800
+
 def mag_to_flux(m, w):
-    c = 29979245800
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
 def flux_to_mag(f, w):
-    c = 29979245800
     return -2.5 * np.log10(f * w**2/c * 1e-8) - 48.60
 
 def load_filter_tags():
@@ -467,7 +467,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 2)
                 | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 2)
                 | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 2)
-                | (w_obs_l > w_obs_MgII + fwhm * 2)
+                | (w_obs_l > w_obs_MgII + fwhm)
             )
 
             if ~(   
@@ -500,39 +500,39 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             good_lines_Arr[src] = good_lines
 
 
-    lya_L = np.zeros(N_sources)
-    lya_R = np.zeros(N_sources)
-    lya_R2 = np.zeros(N_sources)
-    lya_L_err = np.zeros(N_sources) * 99
-    lya_R_err = np.zeros(N_sources) * 99
-    lya_R2_err = np.zeros(N_sources) * 99
+    # lya_L = np.zeros(N_sources)
+    # lya_R = np.zeros(N_sources)
+    # lya_R2 = np.zeros(N_sources)
+    # lya_L_err = np.zeros(N_sources) * 99
+    # lya_R_err = np.zeros(N_sources) * 99
+    # lya_R2_err = np.zeros(N_sources) * 99
 
-    for src in range(N_sources): 
-        if z_Arr[src] == -1:
-                continue
-        l = lya_lines[src]
-        if l > 1:
-            if l > 6:
-                lya_L[src] = np.average(
-                    pm_flx[l - 7 : l - 1, src],
-                    weights=pm_err[l - 7 : l - 1, src] ** -2
-                )
-                lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
-            else:
-                lya_L[src] = np.average(
-                    pm_flx[:l - 1, src],
-                    weights=pm_err[:l - 1, src] ** -2
-                )
-                lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
+    # for src in range(N_sources): 
+    #     if z_Arr[src] == -1:
+    #             continue
+    #     l = lya_lines[src]
+    #     if l > 1:
+    #         if l > 6:
+    #             lya_L[src] = np.average(
+    #                 pm_flx[l - 7 : l - 1, src],
+    #                 weights=pm_err[l - 7 : l - 1, src] ** -2
+    #             )
+    #             lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
+    #         else:
+    #             lya_L[src] = np.average(
+    #                 pm_flx[:l - 1, src],
+    #                 weights=pm_err[:l - 1, src] ** -2
+    #             )
+    #             lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
 
-        lya_R[src] = np.average(
-            pm_flx[l + 2 : l + 8, src],
-            weights=pm_err[l + 2 : l + 8, src] ** -2
-        )
-        lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 5, src])
+    #     lya_R[src] = np.average(
+    #         pm_flx[l + 2 : l + 8, src],
+    #         weights=pm_err[l + 2 : l + 8, src] ** -2
+    #     )
+    #     lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 5, src])
 
-        lya_R_err[src] = np.sum(pm_err[l + 2 : l + 8, src] ** -2) ** -0.5
-        lya_R2_err[src] = np.sum(pm_err[l + 12 : l + 12 + 5, src] ** -2) ** -0.5
+    #     lya_R_err[src] = np.sum(pm_err[l + 2 : l + 8, src] ** -2) ** -0.5
+    #     lya_R2_err[src] = np.sum(pm_err[l + 12 : l + 12 + 5, src] ** -2) ** -0.5
 
     # nice_lya = (
     #     nice_lya
@@ -697,9 +697,9 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     w_central = central_wavelength()
     NNdata = np.hstack(
         (
-            pm_flx[:55].T,
+            pm_flx[2:55].T,
             pm_flx[-4:].T,
-            pm_err[:55].T / pm_flx[:55].T,
+            pm_err[2:55].T / pm_flx[2:55].T,
             pm_err[-4:].T / pm_flx[-4:].T,
             L_Arr.reshape(-1, 1),
             z_Arr.reshape(-1, 1)
@@ -711,15 +711,13 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     # Take the relative fluxes to the selected one
     NB_lya_position = NB_z(NNdata[:, -1].reshape(-1,))
     for i, nb in enumerate(NB_lya_position):
-        NNdata[i, :55] = (
-            flux_to_mag(NNdata[i, :55], w_central[:55])
-            - flux_to_mag(NNdata[i, :55][nb], w_central[nb])
+        NNdata[i, :53] = (
+            flux_to_mag(NNdata[i, :53], w_central[:53])
+            - flux_to_mag(NNdata[i, :53][nb - 2], w_central[nb - 2])
         )
-        NNdata[i, 55 : 55 + 4] = flux_to_mag(NNdata[i, 55 : 55 + 4], w_central[-4:])
+        NNdata[i, 53 : 53 + 4] = flux_to_mag(NNdata[i, 53 : 53 + 4], w_central[-4:])
     
-    # NNdata[:, :55 + 4] = np.log10(NNdata[:, :55 + 4])
     NNdata[np.isnan(NNdata)] = 99.
-    # NNdata[NNdata > 99.] = 99.
 
     # MinMaxScaler
     with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
