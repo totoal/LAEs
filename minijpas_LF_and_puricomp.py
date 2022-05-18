@@ -34,7 +34,7 @@ def load_mocks():
     ## Load my QSO catalog
 
     filename = '/home/alberto/almacen/Source_cats/QSO_100000_0/'
-    files = glob.glob(filename +'data*')
+    files = glob.glob(filename + 'data*')
     files.sort()
     fi = []
 
@@ -48,9 +48,23 @@ def load_mocks():
 
     qso_flx += qso_err * np.random.normal(size=qso_err.shape)
 
+    # Remove bad sources
+    good_src = []
+    for src in range(qso_err.shape[1]):
+        if np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1):
+            continue
+        else:
+            good_src.append(src)
+    good_src = np.array(good_src)
 
-    EW_qso = data_qso['EW0'].to_numpy()
-    qso_zspec = data_qso['z'].to_numpy()
+    qso_flx[qso_err > 1] = 0.
+
+    qso_flx = qso_flx[:, good_src]
+    qso_err = qso_err[:, good_src]
+
+    EW_qso = data_qso['EW0'].to_numpy()[good_src]
+    qso_zspec = data_qso['z'].to_numpy()[good_src]
+    qso_L = data_qso['L_lya'].to_numpy()[good_src]
 
     ## Load my GAL catalog
 
@@ -69,8 +83,23 @@ def load_mocks():
 
     gal_flx += gal_err * np.random.normal(size=gal_err.shape)
 
-    EW_gal = np.zeros(data_gal['z'].to_numpy().shape)
-    gal_zspec = data_gal['z'].to_numpy()
+    # Remove bad sources
+    good_src = []
+    for src in range(qso_err.shape[1]):
+        if np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1):
+            continue
+        else:
+            good_src.append(src)
+    good_src = np.array(good_src)
+
+    gal_flx[gal_err > 1] = 0.
+
+    gal_flx = gal_flx[:, good_src]
+    gal_err = gal_err[:, good_src]
+
+    EW_gal = np.zeros(data_gal['z'].to_numpy().shape)[good_src]
+    gal_zspec = data_gal['z'].to_numpy()[good_src]
+    gal_L = np.zeros(EW_gal.shape)
 
     ## Load SF catalog
 
@@ -106,8 +135,6 @@ def load_mocks():
     sf_dL = cosmo.luminosity_distance(sf_zspec).to(u.cm).value
 
     sf_L = data['L_lya'].to_numpy()
-    qso_L = data_qso['L_lya'].to_numpy()
-    gal_L = np.zeros(EW_gal.shape)
 
     sf_flambda = 10 ** sf_L / (4*np.pi * sf_dL **2)
     qso_flambda = data_qso['F_line']

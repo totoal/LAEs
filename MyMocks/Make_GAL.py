@@ -147,9 +147,12 @@ def main():
         else:
             correct[src] = gal_err_r_flx[src] / pm_SEDs[-2, src]
 
+        correct[~np.isfinite(correct)] = 0.
+        pm_SEDs[:, src] *= correct[src]
+
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs > 1e-14)
+    where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)

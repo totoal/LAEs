@@ -63,7 +63,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -102,7 +102,7 @@ def load_QSO_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
+        'Fluxes_model_11/Qso_jpas_mock_flam_test.cat'
     )
 
     qso_flx = pd.read_csv(
@@ -127,12 +127,12 @@ def load_QSO_prior_mock():
     return qso_flx, qso_r_err, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_0'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/test/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
@@ -207,12 +207,12 @@ def main():
         else:
             correct[src] = qso_err_r_flx[src] / pm_SEDs[-2, src]
 
-        # print(qso_r_flx[src], pm_SEDs[-2, src], correct[src])
+        correct[~np.isfinite(correct)] = 0.
         pm_SEDs[:, src] *= correct[src]
         
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs > 1e-14)
+    where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
@@ -221,8 +221,7 @@ def main():
     pm_SEDs_err[where_out_of_range] = 99.
 
     print('Extracting line features...')
-    _, _, _, _, f_cont, _ =\
-         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+    _, _, _, _, f_cont, _ = SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
     
     ## Computing L using Lya_band
     f_cont *= correct
@@ -233,6 +232,8 @@ def main():
     EW0 = F_line / f_cont / (1 + z)
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
+
+    L[~np.isfinite(L)] = 0
 
     hdr = (
         tcurves['tag']
