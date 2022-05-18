@@ -717,7 +717,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
         )
         NNdata[i, 53 : 53 + 4] = flux_to_mag(NNdata[i, 53 : 53 + 4], w_central[-4:])
     
-    NNdata[np.isnan(NNdata)] = 99.
+    NNdata[~np.isfinite(NNdata)] = 0
 
     # MinMaxScaler
     with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:

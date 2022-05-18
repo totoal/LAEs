@@ -33,7 +33,7 @@ z_nb_Arr = w_central[:-4] / w_lya - 1
 def load_mocks():
     ## Load my QSO catalog
 
-    filename = '/home/alberto/almacen/Source_cats/QSO_100000_0/'
+    filename = '/home/alberto/almacen/Source_cats/QSO_test_0/'
     files = glob.glob(filename + 'data*')
     files.sort()
     fi = []
@@ -48,23 +48,34 @@ def load_mocks():
 
     qso_flx += qso_err * np.random.normal(size=qso_err.shape)
 
+    qso_L = data_qso['L_lya'].to_numpy()
+    EW_qso = data_qso['EW0'].to_numpy()
+    qso_zspec = data_qso['z'].to_numpy()
+
     # Remove bad sources
     good_src = []
     for src in range(qso_err.shape[1]):
-        if np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1):
+        bad_src = (
+            np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1)
+            | np.all(qso_flx[:, src] == 0)
+            | ((qso_L[src] > 0) & ((EW_qso[src] == 0) | (~np.isfinite(EW_qso[src]))))
+            | (qso_zspec[src] > 2) & ~np.isfinite(EW_qso[src])
+        )
+        if bad_src:
             continue
         else:
             good_src.append(src)
     good_src = np.array(good_src)
 
     qso_flx[qso_err > 1] = 0.
+    EW_qso[~np.isfinite(EW_qso)] = 0.
 
     qso_flx = qso_flx[:, good_src]
     qso_err = qso_err[:, good_src]
 
-    EW_qso = data_qso['EW0'].to_numpy()[good_src]
-    qso_zspec = data_qso['z'].to_numpy()[good_src]
-    qso_L = data_qso['L_lya'].to_numpy()[good_src]
+    EW_qso = EW_qso[good_src]
+    qso_zspec = qso_zspec[good_src]
+    qso_L = qso_L[good_src]
 
     ## Load my GAL catalog
 
@@ -85,8 +96,12 @@ def load_mocks():
 
     # Remove bad sources
     good_src = []
-    for src in range(qso_err.shape[1]):
-        if np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1):
+    for src in range(gal_err.shape[1]):
+        bad_src = (
+            np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
+            & np.all(gal_flx[:, src] == 0)
+        )
+        if bad_src:
             continue
         else:
             good_src.append(src)
@@ -434,7 +449,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ML_predict_mask = (mag > 23) & (L_Arr > 0)
     L_Arr[ML_predict_mask] = ML_predict_L(
         pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-24'
     )
 
     ## Compute and save L corrections and errors

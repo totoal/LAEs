@@ -63,7 +63,7 @@ def add_errors(pm_SEDs):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -102,7 +102,7 @@ def load_QSO_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_test.cat'
+        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
     )
 
     qso_flx = pd.read_csv(
@@ -127,12 +127,12 @@ def load_QSO_prior_mock():
     return qso_flx, qso_r_err, plate_mjd_fiber
 
 def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_test_0'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_100000_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/test/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
@@ -168,6 +168,7 @@ def main():
         # Lya z is biased because is taken from the position of the peak of the line,
         # and in general Lya is assymmetrical.
         z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
+        L_lya = np.atleast_1d(spzline['LINEAREA'][spzline['LINENAME'] == 'Ly_alpha'])[0]
         z_Arr = np.atleast_1d(z_Arr[z_Arr != 0.])
         if len(z_Arr) > 0:
             z[src] = z_Arr[-1]
@@ -196,7 +197,7 @@ def main():
             lya_band[src] = JPAS_synth_phot(
                 spec['flux'] * 1e-17, 10 ** spec['loglam'], lya_band_tcurves
             )
-        if lya_band[src] > 1:
+        if ~np.isfinite(lya_band[src]):
             lya_band[src] = 0
 
         # Adjust flux to match the prior mock
@@ -207,7 +208,13 @@ def main():
         else:
             correct[src] = qso_err_r_flx[src] / pm_SEDs[-2, src]
 
-        correct[~np.isfinite(correct)] = 0.
+        bad_src = (
+            ~np.isfinite(correct[src])
+            | ((L_lya > 0) & (lya_band[src] == 0))
+        )
+        if bad_src:
+            correct[src] = 0
+
         pm_SEDs[:, src] *= correct[src]
         
     print('Adding errors...')
@@ -222,6 +229,7 @@ def main():
 
     print('Extracting line features...')
     _, _, _, _, f_cont, _ = SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+    print(np.where(np.isnan(f_cont)))
     
     ## Computing L using Lya_band
     f_cont *= correct
