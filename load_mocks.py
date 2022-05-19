@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from astropy.cosmology import Planck18 as cosmo
 
-def load_QSO_mock(name):
+def load_QSO_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -17,7 +17,8 @@ def load_QSO_mock(name):
     qso_flx = data_qso.to_numpy()[:, 1 : 60 + 1].T
     qso_err = data_qso.to_numpy()[:, 60 + 1 : 120 + 1].T
 
-    qso_flx += qso_err * np.random.normal(size=qso_err.shape)
+    if add_errs:
+        qso_flx += qso_err * np.random.normal(size=qso_err.shape)
 
     qso_L = data_qso['L_lya'].to_numpy()
     EW_qso = data_qso['EW0'].to_numpy()
@@ -51,7 +52,7 @@ def load_QSO_mock(name):
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L
 
 
-def load_GAL_mock(name):
+def load_GAL_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename +'data*')
     files.sort()
@@ -65,7 +66,8 @@ def load_GAL_mock(name):
     gal_flx = data_gal.to_numpy()[:, 1 : 60 + 1].T
     gal_err = data_gal.to_numpy()[:, 60 + 1 : 120 + 1].T
 
-    gal_flx += gal_err * np.random.normal(size=gal_err.shape)
+    if add_errs:
+        gal_flx += gal_err * np.random.normal(size=gal_err.shape)
 
     # Remove bad sources
     good_src = []
@@ -91,7 +93,7 @@ def load_GAL_mock(name):
 
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L
 
-def load_SF_mock(name):
+def load_SF_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename +'data*')
     files.sort()
@@ -107,7 +109,8 @@ def load_SF_mock(name):
     sf_flx = data.to_numpy()[:, 1 : 60 + 1].T
     sf_err = data.to_numpy()[:, 60 + 1 : 120 + 1].T
 
-    sf_flx += sf_err * np.random.normal(size=sf_err.shape)
+    if add_errs:
+        sf_flx += sf_err * np.random.normal(size=sf_err.shape)
 
     EW_sf = data['EW0'].to_numpy()
     sf_zspec = data['z'].to_numpy()

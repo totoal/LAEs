@@ -13,14 +13,11 @@ import pandas as pd
 
 from my_functions import *
 from LF_puricomp_corrections import weights_LF
+from load_mocks import ensemble_mock
 
-import glob
 import os
 
 from scipy.stats import binned_statistic
-
-from astropy.cosmology import Planck18 as cosmo
-import astropy.units as u
 
 # Useful definitions
 w_central = central_wavelength()
@@ -31,138 +28,14 @@ gal_factor = 12.57
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks():
-    ## Load my QSO catalog
+    name_qso = 'QSO_100000_0'
+    name_gal = 'GAL_100000_0'
+    name_sf = 'LAE_10deg_z2-4.25_0'
 
-    filename = '/home/alberto/almacen/Source_cats/QSO_test_0/'
-    files = glob.glob(filename + 'data*')
-    files.sort()
-    fi = []
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal =\
+        ensemble_mock(name_qso, name_gal, name_sf)
 
-    for name in files:
-        fi.append(pd.read_csv(name))
-
-    data_qso = pd.concat(fi, axis=0, ignore_index=True)
-
-    qso_flx = data_qso.to_numpy()[:, 1 : 60 + 1].T
-    qso_err = data_qso.to_numpy()[:, 60 + 1 : 120 + 1].T
-
-    qso_flx += qso_err * np.random.normal(size=qso_err.shape)
-
-    qso_L = data_qso['L_lya'].to_numpy()
-    EW_qso = data_qso['EW0'].to_numpy()
-    qso_zspec = data_qso['z'].to_numpy()
-
-    # Remove bad sources
-    good_src = []
-    for src in range(qso_err.shape[1]):
-        bad_src = (
-            np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1)
-            | np.all(qso_flx[:, src] == 0)
-            | ((qso_L[src] > 0) & ((EW_qso[src] == 0) | (~np.isfinite(EW_qso[src]))))
-            | (qso_zspec[src] > 2) & ~np.isfinite(EW_qso[src])
-        )
-        if bad_src:
-            continue
-        else:
-            good_src.append(src)
-    good_src = np.array(good_src)
-
-    qso_flx[qso_err > 1] = 0.
-    EW_qso[~np.isfinite(EW_qso)] = 0.
-
-    qso_flx = qso_flx[:, good_src]
-    qso_err = qso_err[:, good_src]
-
-    EW_qso = EW_qso[good_src]
-    qso_zspec = qso_zspec[good_src]
-    qso_L = qso_L[good_src]
-
-    ## Load my GAL catalog
-
-    filename = '/home/alberto/almacen/Source_cats/GAL_100000_0/'
-    files = glob.glob(filename +'data*')
-    files.sort()
-    fi = []
-
-    for name in files:
-        fi.append(pd.read_csv(name))
-
-    data_gal = pd.concat(fi, axis=0, ignore_index=True)
-
-    gal_flx = data_gal.to_numpy()[:, 1 : 60 + 1].T
-    gal_err = data_gal.to_numpy()[:, 60 + 1 : 120 + 1].T
-
-    gal_flx += gal_err * np.random.normal(size=gal_err.shape)
-
-    # Remove bad sources
-    good_src = []
-    for src in range(gal_err.shape[1]):
-        bad_src = (
-            np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
-            & np.all(gal_flx[:, src] == 0)
-        )
-        if bad_src:
-            continue
-        else:
-            good_src.append(src)
-    good_src = np.array(good_src)
-
-    gal_flx[gal_err > 1] = 0.
-
-    gal_flx = gal_flx[:, good_src]
-    gal_err = gal_err[:, good_src]
-
-    EW_gal = np.zeros(data_gal['z'].to_numpy().shape)[good_src]
-    gal_zspec = data_gal['z'].to_numpy()[good_src]
-    gal_L = np.zeros(EW_gal.shape)
-
-    ## Load SF catalog
-
-    filename = '/home/alberto/almacen/Source_cats/LAE_10deg_z2-4.25_0/'
-    files = glob.glob(filename +'data*')
-    files.sort()
-    fi = []
-
-    for i, name in enumerate(files):
-        if i == 10:
-            break
-        fi.append(pd.read_csv(name))
-
-    data = pd.concat(fi, axis=0, ignore_index=True)
-
-    sf_flx = data.to_numpy()[:, 1 : 60 + 1].T
-    sf_err = data.to_numpy()[:, 60 + 1 : 120 + 1].T
-
-    sf_flx += sf_err * np.random.normal(size=sf_err.shape)
-
-    EW_sf = data['EW0'].to_numpy()
-    sf_zspec = data['z'].to_numpy()
-
-    pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
-    pm_err = np.hstack((qso_err, sf_err, gal_err))
-    zspec = np.concatenate((qso_zspec, sf_zspec, gal_zspec))
-    EW_lya = np.concatenate((EW_qso, EW_sf, EW_gal))
-
-    N_sf = sf_flx.shape[1]
-    N_qso = qso_flx.shape[1]
-    N_gal = gal_flx.shape[1]
-
-    sf_dL = cosmo.luminosity_distance(sf_zspec).to(u.cm).value
-
-    sf_L = data['L_lya'].to_numpy()
-
-    sf_flambda = 10 ** sf_L / (4*np.pi * sf_dL **2)
-    qso_flambda = data_qso['F_line']
-    gal_flambda = np.zeros(EW_gal.shape)
-
-    L_lya = np.concatenate((qso_L, sf_L, gal_L))
-    fline = np.concatenate((qso_flambda, sf_flambda, gal_flambda))
-
-    is_qso = np.concatenate((np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
-    is_sf = np.concatenate((np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
-    is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
-
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, fline, is_qso, is_sf, is_gal
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal
 
 def search_lines(pm_flx, pm_err, ew0_cut, zspec):
     # Lya search
@@ -496,8 +369,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         )
 
 def make_corrections(params):
-    pm_flx, pm_err, zspec, EW_lya, L_lya,\
-        _, is_qso, is_sf, is_gal = load_mocks()
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal = load_mocks()
     all_corrections(
         params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         is_qso, is_sf
