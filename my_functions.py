@@ -698,9 +698,9 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     NNdata = np.hstack(
         (
             pm_flx[2:55].T,
-            pm_flx[-4:].T,
+            pm_flx[-3:].T,
             pm_err[2:55].T / pm_flx[2:55].T,
-            pm_err[-4:].T / pm_flx[-4:].T,
+            pm_err[-3:].T / pm_flx[-3:].T,
             L_Arr.reshape(-1, 1),
             z_Arr.reshape(-1, 1)
         )
@@ -715,7 +715,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
             flux_to_mag(NNdata[i, :53], w_central[:53])
             - flux_to_mag(NNdata[i, :53][nb - 2], w_central[nb - 2])
         )
-        NNdata[i, 53 : 53 + 4] = flux_to_mag(NNdata[i, 53 : 53 + 4], w_central[-4:])
+        NNdata[i, 53 : 53 + 3] = flux_to_mag(NNdata[i, 53 : 53 + 3], w_central[-3:])
     
     NNdata[~np.isfinite(NNdata)] = 0
 

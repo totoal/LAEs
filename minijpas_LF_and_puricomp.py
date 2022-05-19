@@ -322,7 +322,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ML_predict_mask = (mag > 23) & (L_Arr > 0)
     L_Arr[ML_predict_mask] = ML_predict_L(
         pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-24'
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
     )
 
     ## Compute and save L corrections and errors
