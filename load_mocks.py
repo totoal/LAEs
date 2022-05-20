@@ -1,7 +1,6 @@
 import glob
 import pandas as pd
 import numpy as np
-from astropy.cosmology import Planck18 as cosmo
 
 def load_QSO_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
@@ -51,7 +50,6 @@ def load_QSO_mock(name, add_errs=True):
 
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L
 
-
 def load_GAL_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename +'data*')
@@ -99,9 +97,7 @@ def load_SF_mock(name, add_errs=True):
     files.sort()
     fi = []
 
-    for i, name in enumerate(files):
-        if i == 10:
-            break
+    for name in files:
         fi.append(pd.read_csv(name))
 
     data = pd.concat(fi, axis=0, ignore_index=True)

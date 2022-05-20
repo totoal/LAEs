@@ -106,7 +106,7 @@ def load_QSO_prior_mock():
     )
 
     qso_flx = pd.read_csv(
-        filename, sep=' ', usecols=[13, 29, 44] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
+        filename, sep=' ', usecols=[13, 29, 44] # 29 is rSDSS, 13 is gSDSS, 44 is iSDSS
     ).to_numpy()#.flatten()
     qso_r_err = pd.read_csv(
         filename, sep=' ', usecols=[29 + 60] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
@@ -203,6 +203,8 @@ def main():
         # Adjust flux to match the prior mock
         if qso_r_flx[src, 1] > 0:
             correct[src] = qso_r_flx[src, 1] / pm_SEDs[-2, src]
+        elif qso_r_flx[src, 0] > 0:
+            correct[src] = qso_r_flx[src, 0] / pm_SEDs[-3, src]
         elif qso_r_flx[src, 2] > 0:
             correct[src] = qso_r_flx[src, 2] / pm_SEDs[-1, src]
         else:

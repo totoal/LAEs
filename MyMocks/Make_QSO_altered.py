@@ -12,8 +12,6 @@ import pandas as pd
 
 import numpy as np
 
-import threading
-
 from my_utilities import *
 
 w_lya = 1215.67
@@ -55,17 +53,6 @@ def add_errors(pm_SEDs, apply_err=True):
     # Perturb according to the error
     if apply_err:
         pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
-
-    # Now recompute the error
-    # mags = flux_to_mag(pm_SEDs, w_central)
-    # mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
-    # mag_err = expfit(mags)
-    # where_himag = np.where(mags > detec_lim)
-
-    # mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-    # mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-    # pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
     return pm_SEDs, pm_SEDs_err
 
@@ -113,8 +100,11 @@ def load_QSO_prior_mock():
     )
 
     qso_flx = pd.read_csv(
-        filename, sep=' ', usecols=[28] # 28 is rSDSS
-    ).to_numpy().flatten()
+        filename, sep=' ', usecols=[13, 29, 44] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
+    ).to_numpy()#.flatten()
+    qso_r_err = pd.read_csv(
+        filename, sep=' ', usecols=[29 + 60] # 28 is rSDSS, 12 is gSDSS, 43 is iSDSS
+    ).to_numpy()#.flatten()
 
     format_string4 = lambda x: '{:04d}'.format(int(x))
     format_string5 = lambda x: '{:05d}'.format(int(x))
@@ -128,7 +118,7 @@ def load_QSO_prior_mock():
         converters=convert_dict
     ).to_numpy().T
 
-    return qso_flx, plate_mjd_fiber
+    return qso_flx, qso_r_err, plate_mjd_fiber
 
 def schechter(L, phistar, Lstar, alpha):
     '''
@@ -172,7 +162,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest_z])
 
     # The correction factor to achieve the desired L
-    L_factor = my_L_Arr / L_Arr[idx_closest_z]
+    L_factor = 10 **(my_L_Arr - L_Arr[idx_closest_z])
 
     # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
@@ -189,7 +179,7 @@ def main(part, area, z_min, z_max, L_min, L_max):
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
     # Loading the Carolina's QSO mock
-    qso_r_flx, plate_mjd_fiber = load_QSO_prior_mock()
+    qso_r_flx, qso_err_r_flx, plate_mjd_fiber = load_QSO_prior_mock()
     N_sources = len(qso_r_flx)
 
     # Declare some arrays
@@ -204,7 +194,7 @@ def main(part, area, z_min, z_max, L_min, L_max):
 
     # Do the integrated photometry
     # print('Extracting band fluxes from the spectra...')
-    pm_r = np.empty(N_sources)
+    pm_calib_bands = np.empty((N_sources, 3))
     for src in range(N_sources):
         print(f'{src} / {N_sources}', end='\r')
 
@@ -217,6 +207,7 @@ def main(part, area, z_min, z_max, L_min, L_max):
         # Lya z is biased because is taken from the position of the peak of the line,
         # and in general Lya is assymmetrical.
         z_Arr = spzline['LINEZ'][spzline['LINENAME'] != 'Ly_alpha']
+        L_lya = np.atleast_1d(spzline['LINEAREA'][spzline['LINENAME'] == 'Ly_alpha'])[0]
         z_Arr = np.atleast_1d(z_Arr[z_Arr != 0.])
         if len(z_Arr) > 0:
             z[src] = z_Arr[-1]
@@ -225,8 +216,8 @@ def main(part, area, z_min, z_max, L_min, L_max):
 
         # The range of SDSS is 3561-10327 Angstroms. Beyond the range limits,
         # the flux will be 0
-        pm_r[src] = JPAS_synth_phot(
-            spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves, [-2]
+        pm_calib_bands[src] = JPAS_synth_phot(
+            spec['flux'] * 1e-17, 10 ** spec['loglam'], tcurves, [-3, -2, -1]
         )
 
         # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
@@ -246,11 +237,25 @@ def main(part, area, z_min, z_max, L_min, L_max):
             lya_band[src] = JPAS_synth_phot(
                 spec['flux'] * 1e-17, 10 ** spec['loglam'], lya_band_tcurves
             )
-        if lya_band[src] > 1:
-            lya_band[src] = 1e-99
+        if ~np.isfinite(lya_band[src]):
+            lya_band[src] = 0
 
         # Adjust flux to match the prior mock
-        correct[src] = qso_r_flx[src] / pm_r[src]
+        if qso_r_flx[src, 1] > 0:
+            correct[src] = qso_r_flx[src, 1] / pm_calib_bands[src, 1]
+        elif qso_r_flx[src, 0] > 0:
+            correct[src] = qso_r_flx[src, 0] / pm_calib_bands[src, 0]
+        elif qso_r_flx[src, 2] > 0:
+            correct[src] = qso_r_flx[src, 2] / pm_calib_bands[src, 2]
+        else:
+            correct[src] = qso_err_r_flx[src] / pm_calib_bands[src, 1]
+
+        bad_src = (
+            ~np.isfinite(correct[src])
+            | ((L_lya > 0) & (lya_band[src] == 0))
+        )
+        if bad_src:
+            correct[src] = 0
 
     print('Extracting line features...')
     _, _, _, _, f_cont, _ =\
@@ -292,14 +297,14 @@ def main(part, area, z_min, z_max, L_min, L_max):
         # the flux will be 0
         pm_SEDs[:, src] = JPAS_synth_phot(spec_f, spec_w, tcurves)
 
-    new_L = L[idx_closest_z] * L_factor
+    new_L = L[idx_closest_z] + np.log10(L_factor)
     new_F_line = F_line[idx_closest_z] * L_factor
     new_F_line_err = F_line_err[idx_closest_z] * L_factor
     new_EW0 = EW0[idx_closest_z] * (1 + z) / (1 + new_z)
 
     print('Adding errors...')
 
-    where_out_of_range = (pm_SEDs > 1e-5)
+    where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
