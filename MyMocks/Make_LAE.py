@@ -21,7 +21,7 @@ def main(part):
 
     ####    Mock parameters.
     z_lya = [2, 4.25]
-    obs_area = 10 # deg**2
+    obs_area = 12.5 # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -110,7 +110,7 @@ def main(part):
     ####################################################################
 
     filename =\
-        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}'
+        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)

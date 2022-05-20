@@ -57,7 +57,7 @@ def add_errors(pm_SEDs, apply_err=True):
     return pm_SEDs, pm_SEDs_err
 
 def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -96,7 +96,7 @@ def load_QSO_prior_mock():
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
+        'Fluxes_model_11/Qso_jpas_mock_flam_test.cat'
     )
 
     qso_flx = pd.read_csv(
@@ -169,12 +169,12 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     return idx_closest_z, w_factor, L_factor, my_z_Arr
 
 def main(part, area, z_min, z_max, L_min, L_max):
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_0'
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_test_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
+    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/test/'
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 

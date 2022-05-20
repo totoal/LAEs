@@ -106,7 +106,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         this_zspec_cut = (z_min < zspec) & (zspec < z_max)
         totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-        goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
+        goodh_puri = L_Arr[nice_lya & nice_z & ew_cut & this_mag_cut & nb_mask]
         goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
         badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & nb_mask & this_mag_cut]
         badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
@@ -138,7 +138,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
 
     totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-    goodh_puri = L_Arr[nice_lya & nice_z & totals_mask]
+    goodh_puri = L_Arr[nice_lya & nice_z & ew_cut & this_mag_cut & nb_mask]
     goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
     badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & this_mag_cut & nb_mask]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & this_mag_cut & nb_mask]
@@ -716,7 +716,7 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
     
     LF_parameters = [
-        (17, 23, 5, 15, 30, 400),
+        (17, 23, 6, 15, 30, 400),
         (17, 23, 6, 6, 30, 400),
         (17, 23, 7, 7, 30, 400),
         (17, 23, 8, 8, 30, 400),
