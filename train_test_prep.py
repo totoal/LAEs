@@ -162,7 +162,7 @@ def make_set(train_or_test, mag_min, mag_max, nb_Arr):
         qso_flx, qso_err, _, _, qso_L =\
             load_QSO_mock('QSO_double_test_0', add_errs=False)
         sf_flx, sf_err, _, _, sf_L =\
-            load_SF_mock('LAE_10deg_z2-4.25_test_0', add_errs=False)
+            load_SF_mock('LAE_12.5deg_z2-4.25_test_0', add_errs=False)
     elif train_or_test == 'train':
         qso_flx, qso_err, EW_qso, qso_zspec, qso_L =\
             load_QSO_mock('QSO_double_train_0', add_errs=False)
