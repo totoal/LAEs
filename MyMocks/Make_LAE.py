@@ -110,7 +110,7 @@ def main(part):
     ####################################################################
 
     filename =\
-        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_test_0'
+        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_train_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
