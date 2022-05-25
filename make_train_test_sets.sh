@@ -3,11 +3,11 @@
 declare -i N=5
 declare -i N_max=23
 
-for i in {1..2}; do
+for i in {1..99}; do
   echo -e "\nROUND $i\n"
-  for j in {1..14}; do
+  for j in {1..5}; do
     /home/alberto/cosmos/LAEs/train_test_prep.py $N&
-    echo "nb = $N"
+    # echo "nb = $N"
     if [ "$N" -eq "$N_max" ]; then
       break
     fi

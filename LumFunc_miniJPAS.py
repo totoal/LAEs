@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from my_functions import z_volume

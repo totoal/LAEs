@@ -6,7 +6,8 @@ from time import perf_counter
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
-from certifi import where
+
+import matplotlib.pyplot as plt
 
 import pandas as pd
 
@@ -129,7 +130,8 @@ def schechter(L, phistar, Lstar, alpha):
 def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     volume = z_volume(z_min, z_max, area)
 
-    Lx = np.linspace(10 ** L_min, 10 ** L_max, 10000)
+    Lx = np.logspace(L_min, L_max, 10000)
+    log_Lx = np.log10(Lx)
     phistar1 = 3.33e-6
     Lstar1 = 44.65
     alpha1 = -1.35
@@ -138,12 +140,12 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     LF_p_cum_x = np.linspace(L_min, L_max, 1000)
     N_sources_LAE = int(
         simpson(
-            np.interp(LF_p_cum_x, Lx, Phi), LF_p_cum_x
+            np.interp(LF_p_cum_x, log_Lx, Phi), LF_p_cum_x
         ) * volume
     )
     print(f'N_new_sources = {N_sources_LAE}')
     LF_p_cum = np.cumsum(np.interp(
-        LF_p_cum_x, Lx, Phi)
+        LF_p_cum_x, log_Lx, Phi)
     )
     LF_p_cum /= np.max(LF_p_cum)
     
@@ -342,7 +344,6 @@ if __name__ == '__main__':
     L_min = 42
     L_max = 46
     area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
-    # area = 1
 
     main(part, area, z_min, z_max, L_min, L_max)
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))

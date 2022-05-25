@@ -1,6 +1,7 @@
 #!/home/alberto/miniconda3/bin/python3
 
-import sys
+# import sys
+import time
 
 import numpy as np
 
@@ -47,7 +48,7 @@ def nice_lya_search(flx, err, L_lya, mag_min, mag_max, nb_Arr):
 
     mask_nice_lya = np.zeros(len(lya_lines)).astype(bool)
     for nb in nb_Arr:
-        mask_nice_Arr = mask_nice_Arr | (lya_lines == nb)
+        mask_nice_lya = mask_nice_lya | (lya_lines == nb)
 
     nice_lya = nice_lya_select(
         lya_lines, other_lines, flx, err, cont_est_lya, z_Arr,
@@ -110,27 +111,31 @@ def sample_sources(flx, err, L_lya, mag_min, mag_max,
 
 def ensemble_dataset(qso_flx, qso_err, sf_flx, sf_err, qso_L, sf_L,
                      N_samples, mag_min, mag_max, nb_Arr):
-    N_sources = qso_flx.shape[1]
-    random_perm = np.random.permutation(np.arange(N_sources))
+    N_sources_qso = qso_flx.shape[1]
+    N_sources_sf = sf_flx.shape[1]
+    random_perm_qso = np.random.permutation(np.arange(N_sources_qso))
+    random_perm_sf = np.random.permutation(np.arange(N_sources_sf))
 
     dataset = np.array([]).reshape(0, 114)
     L_labels = np.array([])
 
     n_folds = 3
-    N_sources_k = N_sources // n_folds
+    N_sources_k_qso = N_sources_qso // n_folds
+    N_sources_k_sf = N_sources_sf // n_folds
     N_samples_k = N_samples // n_folds
     for k in range(n_folds):
-        # print(f'Fold #{k + 1}')
-        fold_idx = random_perm[k * N_sources_k : (k + 1) * N_sources_k]
+        print(f'Fold #{k + 1}')
+        fold_idx_qso = random_perm_qso[k * N_sources_k_qso : (k + 1) * N_sources_k_qso]
+        fold_idx_sf = random_perm_sf[k * N_sources_k_sf : (k + 1) * N_sources_k_sf]
 
         sf_flx_data, sf_err_data, sf_z_data, sf_L_data, sf_L_Lya_data =\
             sample_sources(
-                sf_flx[:, fold_idx], sf_err[:, fold_idx], sf_L[fold_idx],
+                sf_flx[:, fold_idx_sf], sf_err[:, fold_idx_sf], sf_L[fold_idx_sf],
                 mag_min, mag_max, nb_Arr, N_samples_k // 2
             )
         qso_flx_data, qso_err_data, qso_z_data, qso_L_data, qso_L_Lya_data =\
             sample_sources(
-                qso_flx[:, fold_idx], qso_err[:, fold_idx], qso_L[fold_idx],
+                qso_flx[:, fold_idx_qso], qso_err[:, fold_idx_qso], qso_L[fold_idx_qso],
                 mag_min, mag_max, nb_Arr, N_samples_k // 2
             )
 
@@ -158,21 +163,36 @@ def ensemble_dataset(qso_flx, qso_err, sf_flx, sf_err, qso_L, sf_L,
     return dataset, L_labels
 
 def make_set(train_or_test, mag_min, mag_max, nb_Arr):
-    print(train_or_test)
-    print(train_or_test == 'train')
     if train_or_test == 'test':
         qso_flx, qso_err, _, _, qso_L =\
             load_QSO_mock('QSO_double_test_0', add_errs=False)
         sf_flx, sf_err, _, _, sf_L =\
             load_SF_mock('LAE_12.5deg_z2-4.25_test_0', add_errs=False)
     elif train_or_test == 'train':
-        qso_flx, qso_err, EW_qso, qso_zspec, qso_L =\
+        qso_flx, qso_err, _, _, qso_L =\
             load_QSO_mock('QSO_double_train_0', add_errs=False)
-        sf_flx, sf_err, EW_sf, sf_zspec, sf_L =\
+        sf_flx, sf_err, _, _, sf_L =\
             load_SF_mock('LAE_12.5deg_z2-4.25_train_0', add_errs=False)
     else:
         raise ValueError('Set name must be "train" or "test"')
 
+    # Remove sources out of mag range
+    mag_qso = flux_to_mag(qso_flx[-2], w_central[-2])
+    mag_sf = flux_to_mag(sf_flx[-2], w_central[-2])
+    mag_qso[np.isnan(mag_qso)] = 99.
+    mag_sf[np.isnan(mag_sf)] = 99.
+
+    mask_mag_qso = (mag_qso > mag_min) & (mag_qso < mag_max)
+    mask_mag_sf = (mag_sf > mag_min) & (mag_sf < mag_max)
+
+    qso_flx = qso_flx[:, mask_mag_qso]
+    qso_err = qso_err[:, mask_mag_qso]
+    qso_L = qso_L[mask_mag_qso]
+    sf_flx = sf_flx[:, mask_mag_sf]
+    sf_err = sf_err[:, mask_mag_sf]
+    sf_L = sf_L[mask_mag_sf]
+
+    # Ensemble the dataset
     dataset, L_labels = ensemble_dataset(qso_flx, qso_err, sf_flx, sf_err,
                                          qso_L, sf_L, 20_000, mag_min, mag_max,
                                          nb_Arr)
@@ -184,11 +204,16 @@ def make_set(train_or_test, mag_min, mag_max, nb_Arr):
     pd.DataFrame(L_labels).to_csv(L_labels_filename)
 
 if __name__ == '__main__':
-    nb = np.atleast_1d(sys.argv[1])
+    # nb = np.atleast_1d(sys.argv[1])
     mag_min_Arr = [15, 23]
     mag_max_Arr = [23, 23.5]
 
-    for train_or_test in ['train', 'test']:
-        for mag_min, mag_max in zip(mag_min_Arr, mag_max_Arr):
-            print(f'Generating: mag{mag_min}-{mag_max}_{train_or_test}_nb{nb[0]}')
-            make_set(train_or_test, mag_min, mag_max, nb)
+    t0 = time.time()
+    for nb in range(5, 24):
+        nb = np.atleast_1d(nb)
+        for train_or_test in ['train', 'test']:
+            for mag_min, mag_max in zip(mag_min_Arr, mag_max_Arr):
+                print(f'Generating: mag{mag_min}-{mag_max}_{train_or_test}_nb{nb[0]}')
+                make_set(train_or_test, mag_min, mag_max, nb)
+
+                print('Done in: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
