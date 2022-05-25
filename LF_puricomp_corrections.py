@@ -13,12 +13,18 @@ import astropy.units as u
 def completeness_curve(m50, k, mag):
     return 1. - 1. / (np.exp(-k * (mag - m50)) + 1)
 
-def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
+def r_intrinsic_completeness(star_prob, r_Arr, tile_id, survey_name):
     '''
     Computes the completeness for each source based on its r-band flux according to the
     completeness curves of minijpas. Bonoli et al. 2021
     '''
-    TileImage = pd.read_csv('csv/minijpas.TileImage.csv', header=1)
+    if survey_name == 'minijpas':
+        TileImage = pd.read_csv('csv/minijpas.TileImage.csv', header=1)
+    elif survey_name == 'jnep':
+        TileImage = pd.read_csv('csv/jnep.TileImage.csv', header=1)
+    else:
+        raise ValueError('Survey name not known')
+
     where = np.zeros(r_Arr.shape).astype(int)
 
     for src in range(len(r_Arr)):
@@ -37,6 +43,8 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id):
     intcomp = np.empty(r_Arr.shape)
     intcomp[isstar] = completeness_curve(m50s[isstar], ks[isstar], r_Arr[isstar])
     intcomp[~isstar] = completeness_curve(m50g[~isstar], kg[~isstar], r_Arr[~isstar])
+
+    print(intcomp)
 
     return intcomp
 
@@ -116,14 +124,15 @@ def Lya_intrisic_completeness(L, z, starprob=None):
     return completeness
 
 def weights_LF(L_Arr, mag, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, rbins,
-               z_Arr, starprob, tile_id,
+               z_Arr, starprob, tile_id, survey_name,
                which_w=[0, 2], give_puri_comp=False):
     '''
     Combines the contribution of the 3 above functions.
     '''
-    args1 = (L_Arr, mag, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, rbins, give_puri_comp)
+    args1 = (L_Arr, mag, puri2d, comp2d, puri2d_err,
+             comp2d_err, L_bins, rbins, give_puri_comp)
     args2 = (L_Arr, z_Arr, starprob)
-    args3 = (starprob, mag, tile_id)
+    args3 = (starprob, mag, tile_id, survey_name)
 
     w1 = 0
     w2 = 0
