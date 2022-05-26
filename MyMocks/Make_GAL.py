@@ -1,4 +1,3 @@
-from calendar import weekheader
 import os
 from time import perf_counter
 

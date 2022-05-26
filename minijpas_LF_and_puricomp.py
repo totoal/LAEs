@@ -458,6 +458,44 @@ def load_minijpas_jnep():
     return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob,\
         spCl, zsp, N_minijpas
 
+def effective_volume(nb_min, nb_max, survey_name):
+    '''
+    Due to NB overlap, specially when considering single filters, the volume probed by one
+    NB has to be corrected because some sources could be detected in that NB or in either
+    of the adjacent ones.
+    
+    ## Tile_IDs ##
+    AEGIS001: 2241
+    AEGIS002: 2243
+    AEGIS003: 2406
+    AEGIS004: 2470
+    '''
+    
+    if survey_name == 'jnep':
+        area = 0.24
+    elif survey_name == 'minijpas':
+        area = 0.895
+    elif survey_name == 'both':
+        area = 0.24 + 0.895
+    else:
+        raise ValueError('Survey name not known')
+
+    z_min_overlap = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+    z_max_overlap = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
+
+    z_min_abs = (w_central[nb_min - 1] + nb_fwhm_Arr[nb_min - 1] * 0.5) / w_lya - 1
+    z_max_abs = (w_central[nb_max + 1] - nb_fwhm_Arr[nb_min + 1] * 0.5) / w_lya - 1
+
+    # volume_abs is a single scalar value in case of 'jnep' and an array of
+    # 4 values for each pointing in case of 'minijpas
+    volume_abs = z_volume(z_min_abs, z_max_abs, area)
+    volume_overlap = (
+        z_volume(z_min_overlap, z_min_abs, area)
+        + z_volume(z_max_abs, z_max_overlap, area)
+    )
+
+    return volume_abs + volume_overlap * 0.5
+
 def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
 
@@ -539,7 +577,11 @@ def make_the_LF(params):
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
 
-    _, b = np.histogram(L_Arr[nice_lya], bins=bins)
+    volume = effective_volume(nb_min, nb_max, 'both')
+    volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
+    volume_jn = effective_volume(nb_min, nb_max, 'jnep')
+
+    b = bins
 
     LF_bins = np.array([(b[i] + b[i + 1]) / 2 for i in range(len(b) - 1)])
 
@@ -547,8 +589,7 @@ def make_the_LF(params):
 
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob, bins,
-        puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id, 'both',
-        nb_min, nb_max
+        puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'both', tile_id
     )
     L_LF_err_plus = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -557,8 +598,8 @@ def make_the_LF(params):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[is_minijpas_source], L_e_Arr[is_minijpas_source], nice_lya[is_minijpas_source],
         mag[is_minijpas_source], z_Arr[is_minijpas_source], starprob[is_minijpas_source],
-        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id, 'minijpas',
-        nb_min, nb_max
+        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'minijpas',
+        tile_id[is_minijpas_source]
     )
     L_LF_err_plus_mj = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_mj = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -567,8 +608,8 @@ def make_the_LF(params):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, tile_id, 'jnep',
-        nb_min, nb_max
+        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'jnep',
+        tile_id[~is_minijpas_source]
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -576,25 +617,25 @@ def make_the_LF(params):
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
-    yerr_cor_plus = (hist_median + L_LF_err_plus ** 2) ** 0.5 / bin_width
-    yerr_cor_minus = (hist_median + L_LF_err_minus ** 2) ** 0.5 / bin_width
+    yerr_cor_plus = (hist_median + L_LF_err_plus ** 2) ** 0.5 / bin_width / volume
+    yerr_cor_minus = (hist_median + L_LF_err_minus ** 2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
-    ax.errorbar(LF_bins, hist_median / bin_width,
+    ax.errorbar(LF_bins, hist_median / bin_width / volume,
         yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='s', linestyle='', color='k', capsize=4,
         label='miniJPAS + J-NEP', zorder=99)
 
-    yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn ** 2) ** 0.5 / bin_width
-    yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn ** 2) ** 0.5 / bin_width
+    yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn ** 2) ** 0.5 / bin_width / volume_jn
+    yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn ** 2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
-    ax.errorbar(LF_bins + 0.024, hist_median_jn / bin_width,
+    ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
         yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='J-NEP')
 
-    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width
-    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width
+    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_jn
+    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
-    ax.errorbar(LF_bins + 0.012, hist_median_mj / bin_width,
+    ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
         yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='miniJPAS')
 

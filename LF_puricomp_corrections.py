@@ -22,6 +22,13 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id, survey_name):
         TileImage = pd.read_csv('csv/minijpas.TileImage.csv', header=1)
     elif survey_name == 'jnep':
         TileImage = pd.read_csv('csv/jnep.TileImage.csv', header=1)
+    elif survey_name == 'both':
+        TileImage = pd.concat(
+            [
+                pd.read_csv('csv/minijpas.TileImage.csv', header=1),
+                pd.read_csv('csv/jnep.TileImage.csv', header=1)
+            ]
+        ).reset_index()
     else:
         raise ValueError('Survey name not known')
 
@@ -43,8 +50,6 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id, survey_name):
     intcomp = np.empty(r_Arr.shape)
     intcomp[isstar] = completeness_curve(m50s[isstar], ks[isstar], r_Arr[isstar])
     intcomp[~isstar] = completeness_curve(m50g[~isstar], kg[~isstar], r_Arr[~isstar])
-
-    print(intcomp)
 
     return intcomp
 

@@ -1,13 +1,12 @@
 #!/home/alberto/miniconda3/bin/python3
 
+from multiprocessing.sharedctypes import Value
 import os
 import sys
 from time import perf_counter
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
-
-import matplotlib.pyplot as plt
 
 import pandas as pd
 
@@ -17,39 +16,112 @@ from my_utilities import *
 
 w_lya = 1215.67
 
-def add_errors(pm_SEDs, apply_err=True):
-    err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
+def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
+    if survey_name == 'jnep':
+        err_fit_params_jnep = np.load('../npy/err_fit_params_jnep.npy')
+    elif survey_name == 'minijpas':
+        err_fit_params_001 = np.load('../npy/err_fit_params_minijpas_AEGIS001.npy')
+        err_fit_params_002 = np.load('../npy/err_fit_params_minijpas_AEGIS002.npy')
+        err_fit_params_003 = np.load('../npy/err_fit_params_minijpas_AEGIS003.npy')
+        err_fit_params_004 = np.load('../npy/err_fit_params_minijpas_AEGIS004.npy')
+    else:
+        raise ValueError('Survey name not known')
 
-    # Load limit mags
-    detec_lim = np.vstack(
-        (
-            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
-            pd.read_csv('csv/5sigma_depths_BB.csv', header=None)
+    if survey_name == 'minijpas':
+        detec_lim_001 = pd.read_csv('csv/depth3arc5s_minijpas_2241.csv',
+                                    sep=',', header=0, usecols=[1])
+        detec_lim_002 = pd.read_csv('csv/depth3arc5s_minijpas_2243.csv',
+                                    sep=',', header=0, usecols=[1])
+        detec_lim_003 = pd.read_csv('csv/depth3arc5s_minijpas_2406.csv',
+                                    sep=',', header=0, usecols=[1])
+        detec_lim_004 = pd.read_csv('csv/depth3arc5s_minijpas_2470.csv',
+                                    sep=',', header=0, usecols=[1])
+        detec_lim = np.hstack(
+            (
+                detec_lim_001.reshape(-1, 1),
+                detec_lim_002.reshape(-1, 1),
+                detec_lim_003.reshape(-1, 1),
+                detec_lim_004.reshape(-1, 1)
+            )
         )
-    )[:, 1].reshape(-1, 1)
+    if survey_name == 'jnep':
+        detec_lim = pd.read_csv('csv/depth3arc5s_jnep.csv', sep=',', header=0, usecols=[1])
 
-    # Add errors
-    a = err_fit_params[:, 0].reshape(-1, 1)
-    b = err_fit_params[:, 1].reshape(-1, 1)
-    c = err_fit_params[:, 2].reshape(-1, 1)
-    expfit = lambda x: a * np.exp(b * x + c)
+    if survey_name == 'jnep':
+        a = err_fit_params_jnep[:, 0].reshape(-1, 1)
+        b = err_fit_params_jnep[:, 1].reshape(-1, 1)
+        c = err_fit_params_jnep[:, 2].reshape(-1, 1)
+        expfit = lambda x: a * np.exp(b * x + c)
 
-    w_central = central_wavelength().reshape(-1, 1)
+        w_central = central_wavelength().reshape(-1, 1)
 
-    mags = flux_to_mag(pm_SEDs, w_central)
-    mags[np.isnan(mags) | np.isinf(mags)] = 99.
+        mags = flux_to_mag(pm_SEDs, w_central)
+        mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
-    # Zero point error
-    zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2243, 'minijpas')
+        # Zero point error
+        zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2520, 'jnep')
 
-    mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
-    where_himag = np.where(mags > detec_lim)
+        mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
+        where_himag = np.where(mags > detec_lim)
 
-    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
+        mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
 
-    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
+        mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+        pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    elif survey_name == 'minijpas':
+        # Split sources in 4 groups (tiles) randomly
+        N_sources = pm_SEDs.shape[1]
+        rand_perm = np.random.permutation(np.arange(N_sources))
+        N_src_i = N_sources // 4
+
+        tile_id_Arr = [2241, 2243, 2406, 2470]
+
+        for i in range(4):
+            if i < 3:
+                idx = rand_perm[i * N_src_i : (i + 1) * N_src_i]
+            if i == 3:
+                idx = rand_perm[i * N_src_i:]
+            
+            detec_lim_i = detec_lim[:, i]
+
+            if i == 0:
+                a = err_fit_params_001[:, 0].reshape(-1, 1)
+                b = err_fit_params_001[:, 1].reshape(-1, 1)
+                c = err_fit_params_001[:, 2].reshape(-1, 1)
+            if i == 1:
+                a = err_fit_params_002[:, 0].reshape(-1, 1)
+                b = err_fit_params_002[:, 1].reshape(-1, 1)
+                c = err_fit_params_002[:, 2].reshape(-1, 1)
+            if i == 2:
+                a = err_fit_params_003[:, 0].reshape(-1, 1)
+                b = err_fit_params_003[:, 1].reshape(-1, 1)
+                c = err_fit_params_003[:, 2].reshape(-1, 1)
+            if i == 3:
+                a = err_fit_params_004[:, 0].reshape(-1, 1)
+                b = err_fit_params_004[:, 1].reshape(-1, 1)
+                c = err_fit_params_004[:, 2].reshape(-1, 1)
+            expfit = lambda x: a * np.exp(b * x + c)
+            
+            w_central = central_wavelength().reshape(-1, 1)
+
+            mags = flux_to_mag(pm_SEDs[:, idx], w_central)
+            mags[np.isnan(mags) | np.isinf(mags)] = 99.
+
+            # Zero point error
+            tile_id = tile_id_Arr[i]
+            zpt_err = Zero_point_error(np.ones(mags.shape[1]) * tile_id, 'minijpas')
+
+            mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
+            where_himag = np.where(mags > detec_lim_i)
+
+            mag_err[where_himag] = expfit(detec_lim_i)[where_himag[0]].reshape(-1,)
+
+            mags[where_himag] = detec_lim_i[where_himag[0]].reshape(-1,)
+
+            pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    else:
+        raise ValueError('Survey nanem not known')
 
     # Perturb according to the error
     if apply_err:
@@ -57,8 +129,11 @@ def add_errors(pm_SEDs, apply_err=True):
 
     return pm_SEDs, pm_SEDs_err
 
-def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
-    Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
+def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z, train_or_test):
+    if train_or_test == 'train':
+        Lya_fts = pd.read_csv('../csv/Lya_fts.csv')
+    elif train_or_test == 'test':
+        Lya_fts = pd.read_csv('../csv/Lya_fts_test.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -93,11 +168,11 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z):
 
     return EW0, L, Flambda, Flambda_err, f_cont, f_cont_err
 
-def load_QSO_prior_mock():
+def load_QSO_prior_mock(train_or_test):
     filename = (
         '/home/alberto/cosmos/JPAS_mocks_sep2021/'
         'JPAS_mocks_classification_19nov_model11/'
-        'Fluxes_model_11/Qso_jpas_mock_flam_train.cat'
+        f'Fluxes_model_11/Qso_jpas_mock_flam_{train_or_test}.cat'
     )
 
     qso_flx = pd.read_csv(
@@ -170,29 +245,27 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # and finally multiplying its flux by L_factor
     return idx_closest_z, w_factor, L_factor, my_z_Arr
 
-def main(part, area, z_min, z_max, L_min, L_max):
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_train_0'
+def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx):
+    '''
+    Computes correct Arr and saves it to a .csv if it dont exist
+    '''
 
-    if not os.path.exists(filename):
-        os.mkdir(filename)
+    correct_dir = 'csv/QSO_mock_correct_files/'
+    try:
+        correct = np.load(f'{correct_dir}correct_arr')
+        z = np.save(f'{correct_dir}z_arr')
+        lya_band = np.save(f'{correct_dir}lya_band_arr')
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
+        return correct, z, lya_band
+    except:
+        pass
 
-    tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
-
-    # Loading the Carolina's QSO mock
-    qso_r_flx, qso_err_r_flx, plate_mjd_fiber = load_QSO_prior_mock()
-    N_sources = len(qso_r_flx)
+    N_sources = len(fiber)
+    correct = np.zeros(N_sources)
 
     # Declare some arrays
     z = np.empty(N_sources)
     lya_band = np.zeros(N_sources)
-
-    plate = plate_mjd_fiber[0]
-    mjd = plate_mjd_fiber[1]
-    fiber = plate_mjd_fiber[2]
-
-    correct = np.zeros(N_sources)
 
     # Do the integrated photometry
     # print('Extracting band fluxes from the spectra...')
@@ -259,6 +332,39 @@ def main(part, area, z_min, z_max, L_min, L_max):
         if bad_src:
             correct[src] = 0
 
+    os.makedirs(correct_dir, exist_ok=True)
+    np.save(f'{correct_dir}correct_arr', correct)
+    np.save(f'{correct_dir}z_arr', z)
+    np.save(f'{correct_dir}lya_band_arr', lya_band)
+        
+    return correct, z, lya_band
+
+def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
+
+    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_{train_or_test}_0'
+
+    if not os.path.exists(filename):
+        os.mkdir(filename)
+
+    if train_or_test == 'train':
+        fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/'
+    elif train_or_test == 'test':
+        fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/QSO/test/'
+
+    tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
+
+    # Loading the Carolina's QSO mock
+    qso_r_flx, qso_err_r_flx, plate_mjd_fiber = load_QSO_prior_mock(train_or_test)
+
+    plate = plate_mjd_fiber[0]
+    mjd = plate_mjd_fiber[1]
+    fiber = plate_mjd_fiber[2]
+
+
+    correct, z, lya_band= flux_correct(fits_dir, plate, mjd, fiber,
+                                       tcurves, qso_r_flx, qso_err_r_flx)
+    lya_band_hw = 75
+
     print('Extracting line features...')
     _, _, _, _, f_cont, _ =\
          SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
@@ -309,7 +415,7 @@ def main(part, area, z_min, z_max, L_min, L_max):
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apple_err=False, survey_name=survey_name)
 
     pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
@@ -344,6 +450,11 @@ if __name__ == '__main__':
     L_min = 42
     L_max = 46
     area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+    # survey_name = 'minijpas'
+    # train_or_test = 'train'
 
-    main(part, area, z_min, z_max, L_min, L_max)
+    for survey_name in ['minijpas', 'jnep']:
+        for train_or_test in ['train', 'test']:
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
+
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))
