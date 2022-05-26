@@ -1,6 +1,5 @@
 #!/home/alberto/miniconda3/bin/python3
 
-from multiprocessing.sharedctypes import Value
 import os
 import sys
 from time import perf_counter
@@ -28,24 +27,26 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
         raise ValueError('Survey name not known')
 
     if survey_name == 'minijpas':
-        detec_lim_001 = pd.read_csv('csv/depth3arc5s_minijpas_2241.csv',
-                                    sep=',', header=0, usecols=[1])
-        detec_lim_002 = pd.read_csv('csv/depth3arc5s_minijpas_2243.csv',
-                                    sep=',', header=0, usecols=[1])
-        detec_lim_003 = pd.read_csv('csv/depth3arc5s_minijpas_2406.csv',
-                                    sep=',', header=0, usecols=[1])
-        detec_lim_004 = pd.read_csv('csv/depth3arc5s_minijpas_2470.csv',
-                                    sep=',', header=0, usecols=[1])
+        detec_lim_001 = pd.read_csv('../csv/depth3arc5s_minijpas_2241.csv',
+                                    sep=',', header=0, usecols=[1]).to_numpy()
+        detec_lim_002 = pd.read_csv('../csv/depth3arc5s_minijpas_2243.csv',
+                                    sep=',', header=0, usecols=[1]).to_numpy()
+        detec_lim_003 = pd.read_csv('../csv/depth3arc5s_minijpas_2406.csv',
+                                    sep=',', header=0, usecols=[1]).to_numpy()
+        detec_lim_004 = pd.read_csv('../csv/depth3arc5s_minijpas_2470.csv',
+                                    sep=',', header=0, usecols=[1]).to_numpy()
         detec_lim = np.hstack(
             (
-                detec_lim_001.reshape(-1, 1),
-                detec_lim_002.reshape(-1, 1),
-                detec_lim_003.reshape(-1, 1),
-                detec_lim_004.reshape(-1, 1)
+                detec_lim_001,
+                detec_lim_002,
+                detec_lim_003,
+                detec_lim_004
             )
         )
+        detec_lim.shape
     if survey_name == 'jnep':
-        detec_lim = pd.read_csv('csv/depth3arc5s_jnep.csv', sep=',', header=0, usecols=[1])
+        detec_lim = pd.read_csv('../csv/depth3arc5s_jnep_2520.csv',
+                                sep=',', header=0, usecols=[1])
 
     if survey_name == 'jnep':
         a = err_fit_params_jnep[:, 0].reshape(-1, 1)
@@ -70,6 +71,8 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
 
         pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
     elif survey_name == 'minijpas':
+        pm_SEDs_err = np.array([]).reshape(60, 0)
+
         # Split sources in 4 groups (tiles) randomly
         N_sources = pm_SEDs.shape[1]
         rand_perm = np.random.permutation(np.arange(N_sources))
@@ -83,7 +86,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
             if i == 3:
                 idx = rand_perm[i * N_src_i:]
             
-            detec_lim_i = detec_lim[:, i]
+            detec_lim_i = detec_lim[:, i].reshape(-1, 1)
 
             if i == 0:
                 a = err_fit_params_001[:, 0].reshape(-1, 1)
@@ -119,9 +122,11 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
 
             mags[where_himag] = detec_lim_i[where_himag[0]].reshape(-1,)
 
-            pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+            pm_SEDs_err_i = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+
+            pm_SEDs_err = np.hstack((pm_SEDs_err, pm_SEDs_err_i))
     else:
-        raise ValueError('Survey nanem not known')
+        raise ValueError('Survey name not known')
 
     # Perturb according to the error
     if apply_err:
@@ -245,16 +250,17 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # and finally multiplying its flux by L_factor
     return idx_closest_z, w_factor, L_factor, my_z_Arr
 
-def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx):
+def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx, t_or_t):
     '''
     Computes correct Arr and saves it to a .csv if it dont exist
     '''
 
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
-        correct = np.load(f'{correct_dir}correct_arr')
-        z = np.save(f'{correct_dir}z_arr')
-        lya_band = np.save(f'{correct_dir}lya_band_arr')
+        correct = np.load(f'{correct_dir}correct_arr_{t_or_t}.npy')
+        z = np.load(f'{correct_dir}z_arr_{t_or_t}.npy')
+        lya_band = np.load(f'{correct_dir}lya_band_arr_{t_or_t}.npy')
+        print('Correct arr loaded')
 
         return correct, z, lya_band
     except:
@@ -270,6 +276,7 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx)
     # Do the integrated photometry
     # print('Extracting band fluxes from the spectra...')
     pm_calib_bands = np.empty((N_sources, 3))
+    print('Making correct Arr')
     for src in range(N_sources):
         print(f'{src} / {N_sources}', end='\r')
 
@@ -333,15 +340,15 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx)
             correct[src] = 0
 
     os.makedirs(correct_dir, exist_ok=True)
-    np.save(f'{correct_dir}correct_arr', correct)
-    np.save(f'{correct_dir}z_arr', z)
-    np.save(f'{correct_dir}lya_band_arr', lya_band)
+    np.save(f'{correct_dir}correct_arr_{t_or_t}', correct)
+    np.save(f'{correct_dir}z_arr_{t_or_t}', z)
+    np.save(f'{correct_dir}lya_band_arr_{t_or_t}', lya_band)
         
     return correct, z, lya_band
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
-
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/QSO_double_{train_or_test}_0'
+    dirname = '/home/alberto/cosmos/LAEs/MyMocks'
+    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -362,12 +369,13 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
 
 
     correct, z, lya_band= flux_correct(fits_dir, plate, mjd, fiber,
-                                       tcurves, qso_r_flx, qso_err_r_flx)
+                                       tcurves, qso_r_flx, qso_err_r_flx,
+                                       train_or_test)
     lya_band_hw = 75
 
     print('Extracting line features...')
     _, _, _, _, f_cont, _ =\
-         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z)
+         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z, train_or_test)
 
     ## Computing L using Lya_band
     f_cont *= correct
@@ -415,7 +423,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apple_err=False, survey_name=survey_name)
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False, survey_name=survey_name)
 
     pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
