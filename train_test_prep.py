@@ -1,6 +1,5 @@
 #!/home/alberto/miniconda3/bin/python3
 
-# import sys
 import time
 
 import numpy as np
@@ -204,7 +203,6 @@ def make_set(train_or_test, mag_min, mag_max, nb_Arr):
     pd.DataFrame(L_labels).to_csv(L_labels_filename)
 
 if __name__ == '__main__':
-    # nb = np.atleast_1d(sys.argv[1])
     mag_min_Arr = [15, 23]
     mag_max_Arr = [23, 23.5]
 

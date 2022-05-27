@@ -13,7 +13,7 @@ from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
 
-c = 29979245800
+c = 29979245800 # cm / s
 
 def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8

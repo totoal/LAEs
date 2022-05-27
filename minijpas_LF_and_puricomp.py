@@ -632,8 +632,8 @@ def make_the_LF(params):
         yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='J-NEP')
 
-    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_jn
-    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_jn
+    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_mj
+    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_mj
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
         yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
@@ -698,6 +698,7 @@ if __name__ == '__main__':
     
     LF_parameters = [
         (17, 23, 6, 15, 30, 400),
+        (17, 23, 15, 23, 30, 400),
         (17, 23, 6, 6, 30, 400),
         (17, 23, 7, 7, 30, 400),
         (17, 23, 8, 8, 30, 400),

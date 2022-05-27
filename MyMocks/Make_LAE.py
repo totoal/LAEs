@@ -1,6 +1,7 @@
 #!/home/alberto/miniconda3/bin/python3
 
 import numpy as np
+from Make_QSO_altered import add_errors
 
 from my_utilities import *
 
@@ -13,7 +14,7 @@ from time import time
 import os
 import sys
 
-def main(part):
+def main(part, survey_name, t_or_t):
     t0 = time()
 
     ####    Line wavelengths
@@ -109,17 +110,18 @@ def main(part):
 
     ####################################################################
 
+    dirname = '/home/alberto/almacen/Source_cats'
     filename =\
-        f'/home/alberto/cosmos/LAEs/MyMocks/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_train_0'
+        f'{dirname}/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_{t_or_t}_{survey_name}_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    SED_file = open(filename + f'/SEDs{part}.csv', 'w')
-    SED_no_line_file = open(filename + f'/SEDs_no_line{part}.csv', 'w')
+    # SED_file = open(filename + f'/SEDs{part}.csv', 'w')
+    # SED_no_line_file = open(filename + f'/SEDs_no_line{part}.csv', 'w')
 
-    SED_writer = csv.writer(SED_file)
-    SED_no_line_writer = csv.writer(SED_no_line_file)
+    # SED_writer = csv.writer(SED_file)
+    # SED_no_line_writer = csv.writer(SED_no_line_file)
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
     # define a different tcurves only with r and i
@@ -131,8 +133,6 @@ def main(part):
     w_Arr_reduced = np.interp(
         np.linspace(0, len(w_Arr), 1000), np.arange(len(w_Arr)), w_Arr
     )
-
-    err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
 
     z_out_Arr = []
     EW_out_Arr = []
@@ -190,59 +190,13 @@ def main(part):
         pm_SEDs[:, j] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
         pm_SEDs_no_line[:, j] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
 
-        SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
-        SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
+        # SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
+        # SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
 
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
 
-    # Load limit mags
-    detec_lim = np.vstack(
-        (
-            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
-            pd.read_csv('csv/5sigma_depths_BB.csv', header=None)
-        )
-    )[:, 1].reshape(-1, 1)
-
-    # Add errors
-    a = err_fit_params[:, 0].reshape(-1, 1)
-    b = err_fit_params[:, 1].reshape(-1, 1)
-    c = err_fit_params[:, 2].reshape(-1, 1)
-    expfit = lambda x: a * np.exp(b * x + c)
-
-    w_central = central_wavelength().reshape(-1, 1)
-
-    mags = flux_to_mag(pm_SEDs, w_central)
-    mags[np.isnan(mags) | np.isinf(mags)] = 99.
-
-    # Zero point error
-    zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2243, 'minijpas')
-
-    mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
-    where_himag = np.where(mags > detec_lim)
-
-    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-
-    where_himag = np.where(mags > detec_lim)
-
-    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
-
-    # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
-
-    # Now recompute the error
-    # mags = flux_to_mag(pm_SEDs, w_central)
-    # mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
-    # mag_err = expfit(mags)
-    # where_himag = np.where(mags > detec_lim)
-
-    # mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-    # mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-    # pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False, survey_name=survey_name)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
@@ -254,12 +208,13 @@ def main(part):
         np.array(EW_out_Arr).reshape(-1, 1), L_Arr[good][good2].reshape(-1, 1)))
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
-    SED_file.close()
-    SED_no_line_file.close()
+    # SED_file.close()
+    # SED_no_line_file.close()
 
-    print()
     m, s = divmod(int(time() - t0), 60)
     print('Elapsed: {}m {}s'.format(m, s))
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    for survey_name in ['minijpas', 'jnep']:
+        for t_or_t in ['train', 'test']:
+            main(sys.argv[1], survey_name, t_or_t)

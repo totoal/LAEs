@@ -6,58 +6,9 @@ import pandas as pd
 import numpy as np
 
 from my_utilities import *
+from Make_QSO_altered import add_errors
 
 w_lya = 1215.67
-
-def add_errors(pm_SEDs):
-    err_fit_params = np.load('../npy/err_fit_params_minijpas.npy')
-
-    # Load limit mags
-    detec_lim = np.vstack(
-        (
-            pd.read_csv('csv/5sigma_depths_NB.csv', header=None),
-            pd.read_csv('csv/5sigma_depths_BB.csv', header=None)
-        )
-    )[:, 1].reshape(-1, 1)
-
-    # Add errors
-    a = err_fit_params[:, 0].reshape(-1, 1)
-    b = err_fit_params[:, 1].reshape(-1, 1)
-    c = err_fit_params[:, 2].reshape(-1, 1)
-    expfit = lambda x: a * np.exp(b * x + c)
-
-    w_central = central_wavelength().reshape(-1, 1)
-
-    mags = flux_to_mag(pm_SEDs, w_central)
-    mags[np.isnan(mags) | np.isinf(mags)] = 99.
-
-    # Zero point error
-    zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2243, 'minijpas')
-
-    mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
-    where_himag = np.where(mags > detec_lim)
-
-    mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-
-    mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-    pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
-
-    # Perturb according to the error
-    # pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
-
-    # Now recompute the error
-    # mags = flux_to_mag(pm_SEDs, w_central)
-    # mags[np.isnan(mags) | np.isinf(mags) | (mags > 26)] = 99.
-    # mag_err = expfit(mags)
-    # where_himag = np.where(mags > detec_lim)
-
-    # mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-    # mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-    # pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
-
-    return pm_SEDs, pm_SEDs_err
 
 def load_GAL_prior_mock():
     filename = (
@@ -87,8 +38,8 @@ def load_GAL_prior_mock():
 
     return gal_flx, gal_r_err, plate_mjd_fiber
 
-def main():
-    filename = f'/home/alberto/cosmos/LAEs/MyMocks/GAL_100000_0'
+def main(survey_name):
+    filename = f'/home/alberto/almacen/Source_cats/GAL_100000_{survey_name}_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -154,7 +105,7 @@ def main():
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs)
+    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, False, survey_name)
 
     pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
@@ -175,5 +126,6 @@ def main():
 
 if __name__ == '__main__':
     t0 = perf_counter()
-    main()
+    for survey_name in ['minijpas', 'jnep']:
+        main(survey_name)
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))

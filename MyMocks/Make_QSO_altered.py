@@ -2,7 +2,7 @@
 
 import os
 import sys
-from time import perf_counter
+import time
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
@@ -46,7 +46,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
         detec_lim.shape
     if survey_name == 'jnep':
         detec_lim = pd.read_csv('../csv/depth3arc5s_jnep_2520.csv',
-                                sep=',', header=0, usecols=[1])
+                                sep=',', header=0, usecols=[1]).to_numpy()
 
     if survey_name == 'jnep':
         a = err_fit_params_jnep[:, 0].reshape(-1, 1)
@@ -347,7 +347,7 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
     return correct, z, lya_band
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
-    dirname = '/home/alberto/cosmos/LAEs/MyMocks'
+    dirname = '/home/alberto/almacen/Source_cats'
     filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_0'
 
     if not os.path.exists(filename):
@@ -450,7 +450,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
 if __name__ == '__main__':
-    t0 = perf_counter()
+    t0 = time.time()
     part = sys.argv[1]
 
     z_min = 2
@@ -465,4 +465,4 @@ if __name__ == '__main__':
         for train_or_test in ['train', 'test']:
             main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(perf_counter() - t0, 60)))
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
