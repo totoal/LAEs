@@ -159,6 +159,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='')
     is_qso = np.concatenate((np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
     is_sf = np.concatenate((np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
     is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
-    is_LAE = is_qso | is_sf ; is_LAE[:N_bad_qso] = False
+    is_LAE = (is_qso & (zspec > 2)) | is_sf
+    where_hiL = (is_qso & (L_lya > 44))
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_bad_loL
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
