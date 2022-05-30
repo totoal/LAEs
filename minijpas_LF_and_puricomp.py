@@ -322,8 +322,8 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
         
         h2d_sel_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut & is_qso & is_LAE, ~where_hiL],
-            mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE, ~where_hiL],
+            L_perturbed[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & ~where_hiL],
+            mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & ~where_hiL],
             bins=[L_bins, r_bins]
         )
 
