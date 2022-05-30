@@ -89,8 +89,8 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
 
 def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
-                                mag_min, ew0_cut, is_gal, is_sf, is_qso, zspec,
-                                L_lya, dirname, ew_cut):
+                                mag_min, ew0_cut, is_gal, is_sf, is_qso, is_LAE,
+                                zspec, L_lya, dirname, ew_cut):
     fig, ax = plt.subplots(figsize=(4, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
@@ -108,16 +108,25 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         this_zspec_cut = (z_min < zspec) & (zspec < z_max)
         totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-        goodh_puri = L_Arr[nice_lya & nice_z & ew_cut & this_mag_cut & nb_mask]
-        goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
-        badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & nb_mask & this_mag_cut]
+        goodh_puri_sf = L_Arr[nice_lya & nice_z & is_sf & ew_cut & this_mag_cut & nb_mask]
+        goodh_puri_qso = L_Arr[nice_lya & nice_z & is_qso & ew_cut & this_mag_cut & nb_mask]
+        goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
+        goodh_comp_qso = L_lya[nice_lya & nice_z & is_qso & totals_mask]
+        badh_to_corr = L_Arr[nice_lya & ~nice_z & (is_qso & is_LAE) & nb_mask & this_mag_cut]
+        badh_normal = L_Arr[nice_lya & ~nice_z & (is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
         badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
-        hg_puri, _ = np.histogram(goodh_puri, bins=bins2)
-        hg_comp, _ = np.histogram(goodh_comp, bins=bins2)
-        hb, _ = np.histogram(badh, bins=bins2)
+        hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
+        hg_puri_qso, _ = np.histogram(goodh_puri_qso, bins=bins2)
+        hg_comp_sf, _ = np.histogram(goodh_comp_sf, bins=bins2)
+        hg_comp_qso, _ = np.histogram(goodh_comp_qso, bins=bins2)
+        hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
+        hb_normal, _ = np.histogram(badh_normal, bins=bins2)
         hb_gal, _ = np.histogram(badh_gal, bins=bins2)
-        hb_gal = hb_gal * gal_factor
+        
+        hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
+        hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
+        hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
         totals, _ = np.histogram(L_lya[totals_mask], bins=bins2)
 
         if which_one == 'Completeness':
@@ -127,7 +136,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
             )
         if which_one == 'Purity':
             ax.plot(
-                b_c, hg_puri / (hg_puri + hb + hb_gal), marker='s',
+                b_c, hg_puri / (hg_puri + hb), marker='s',
                 label=filter_tags[nb], zorder=99, alpha=0.5
             )
 
@@ -140,22 +149,37 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
 
     totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-    goodh_puri = L_Arr[nice_lya & nice_z & ew_cut & this_mag_cut & nb_mask]
-    goodh_comp = L_lya[nice_lya & nice_z & totals_mask]
-    badh = L_Arr[nice_lya & ~nice_z & (is_qso | is_sf) & this_mag_cut & nb_mask]
-    badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & this_mag_cut & nb_mask]
+    goodh_puri_sf = L_Arr[nice_lya & nice_z & is_sf & ew_cut & this_mag_cut & nb_mask]
+    goodh_puri_qso = L_Arr[nice_lya & nice_z & is_qso & ew_cut & this_mag_cut & nb_mask]
+    goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
+    goodh_comp_qso = L_lya[nice_lya & nice_z & is_qso & totals_mask]
+    badh_to_corr = L_Arr[nice_lya & ~nice_z & (is_qso & is_LAE) & nb_mask & this_mag_cut]
+    badh_normal = L_Arr[nice_lya & ~nice_z & (is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
+    badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
-    hg_puri, _ = np.histogram(goodh_puri, bins=bins2)
-    hg_comp, _ = np.histogram(goodh_comp, bins=bins2)
-    hb, _ = np.histogram(badh, bins=bins2)
+    hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
+    hg_puri_qso, _ = np.histogram(goodh_puri_qso, bins=bins2)
+    hg_comp_sf, _ = np.histogram(goodh_comp_sf, bins=bins2)
+    hg_comp_qso, _ = np.histogram(goodh_comp_qso, bins=bins2)
+    hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
+    hb_normal, _ = np.histogram(badh_normal, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
-    hb_gal = hb_gal * gal_factor
+    
+    hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
+    hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
+    hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
     totals, _ = np.histogram(L_lya[totals_mask], bins=bins2)
 
     if which_one == 'Completeness':
-        ax.plot(b_c, hg_comp / totals, marker='s', label='All', zorder=99, c='k')
+        ax.plot(
+            b_c, hg_comp / totals, marker='s',
+            label=filter_tags[nb], zorder=99, alpha=0.5
+        )
     if which_one == 'Purity':
-        ax.plot(b_c, hg_puri / (hg_puri + hb + hb_gal), marker='s', label='All', zorder=99, c='k')
+        ax.plot(
+            b_c, hg_puri / (hg_puri + hb), marker='s',
+            label=filter_tags[nb], zorder=99, alpha=0.5
+        )
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(which_one.lower())
@@ -384,7 +408,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         purity_or_completeness_plot(
             which_one, mag, nbs_to_consider, lya_lines, z_Arr,
             nice_lya, nice_z, L_Arr, mag_max, mag_min, ew0_cut,
-            is_gal, is_sf, is_qso, zspec, L_lya, dirname, ew_cut,
+            is_gal, is_sf, is_qso, is_LAE, zspec, L_lya, dirname, ew_cut,
         )
 
 def make_corrections(params):
