@@ -114,10 +114,13 @@ def load_SF_mock(name, add_errs=True):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
-def ensemble_mock(name_qso, name_gal, name_sf):
+def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
+
+    # If name_qso_bad given, load two catalogs of qso and give the relative
+    # number: one with z < 2, another with z > 2
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))

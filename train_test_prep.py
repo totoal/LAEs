@@ -164,14 +164,14 @@ def ensemble_dataset(qso_flx, qso_err, sf_flx, sf_err, qso_L, sf_L,
 def make_set(train_or_test, mag_min, mag_max, nb_Arr):
     if train_or_test == 'test':
         qso_flx, qso_err, _, _, qso_L =\
-            load_QSO_mock('QSO_double_test_0', add_errs=False)
+            load_QSO_mock('QSO_double_test_minijpas_0', add_errs=False)
         sf_flx, sf_err, _, _, sf_L =\
-            load_SF_mock('LAE_12.5deg_z2-4.25_test_0', add_errs=False)
+            load_SF_mock('LAE_12.5deg_z2-4.25_test_minijpas_0', add_errs=False)
     elif train_or_test == 'train':
         qso_flx, qso_err, _, _, qso_L =\
-            load_QSO_mock('QSO_double_train_0', add_errs=False)
+            load_QSO_mock('QSO_double_train_minijpas_0', add_errs=False)
         sf_flx, sf_err, _, _, sf_L =\
-            load_SF_mock('LAE_12.5deg_z2-4.25_train_0', add_errs=False)
+            load_SF_mock('LAE_12.5deg_z2-4.25_train_minijpas_0', add_errs=False)
     else:
         raise ValueError('Set name must be "train" or "test"')
 
