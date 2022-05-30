@@ -455,9 +455,9 @@ if __name__ == '__main__':
 
     z_min = 2
     z_max = 4.25
-    L_min = 42
+    L_min = 44.5
     L_max = 46
-    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+    area = 2000 / (12 * 2) # We have to do 2 runs of 12 parallel processes
     # survey_name = 'minijpas'
     # train_or_test = 'train'
 

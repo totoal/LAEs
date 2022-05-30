@@ -25,7 +25,7 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 gal_factor = 12.57
-good_qso_factor = 2
+good_qso_factor = 0.5
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks(train_or_test, survey_name):
@@ -127,7 +127,9 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
         hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
         hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
-        totals, _ = np.histogram(L_lya[totals_mask], bins=bins2)
+        totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
+        totals_qso, _ = np.histogram(L_lya[totals_mask & is_qso], bins=bins2)
+        totals = totals_sf + totals_qso * good_qso_factor
 
         if which_one == 'Completeness':
             ax.plot(
@@ -168,17 +170,21 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
     hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
     hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
-    totals, _ = np.histogram(L_lya[totals_mask], bins=bins2)
+    totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
+    totals_qso, _ = np.histogram(L_lya[totals_mask & is_qso], bins=bins2)
+    totals = totals_sf + totals_qso * good_qso_factor
 
     if which_one == 'Completeness':
         ax.plot(
             b_c, hg_comp / totals, marker='s',
-            label=filter_tags[nb], zorder=99, alpha=0.5
+            label='All', zorder=99, alpha=0.5,
+            c='k'
         )
     if which_one == 'Purity':
         ax.plot(
             b_c, hg_puri / (hg_puri + hb), marker='s',
-            label=filter_tags[nb], zorder=99, alpha=0.5
+            label='All', zorder=99, alpha=0.5,
+            c='k'
         )
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
