@@ -116,7 +116,7 @@ def load_SF_mock(name, add_errs=True):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
-def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
+def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL=''):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
@@ -134,6 +134,16 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
         EW_qso = np.hstack((EW_qso_bad[where_bad_qso], EW_qso))
         qso_zspec = np.hstack((qso_zspec_bad[where_bad_qso], qso_zspec))
         qso_L = np.hstack((qso_L_bad[where_bad_qso], qso_L))
+    if len(name_qso_hiL) > 0:
+        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL =\
+            load_QSO_mock(name_qso_hiL)
+        
+        where_bad_loL = (qso_L <= 44)
+        qso_flx = np.hstack((qso_flx[:, where_bad_loL], qso_flx_hiL))
+        qso_err = np.hstack((qso_err[:, where_bad_loL], qso_err_hiL))
+        EW_qso = np.hstack((EW_qso[where_bad_loL], EW_qso_hiL))
+        qso_zspec = np.hstack((qso_zspec[where_bad_loL], qso_zspec_hiL))
+        qso_L = np.hstack((qso_L[where_bad_loL], qso_L_hiL))
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))
@@ -151,4 +161,4 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
     is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
     is_LAE = is_qso | is_sf ; is_LAE[:N_bad_qso] = False
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_bad_loL

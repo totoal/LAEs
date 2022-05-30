@@ -177,14 +177,12 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     if which_one == 'Completeness':
         ax.plot(
             b_c, hg_comp / totals, marker='s',
-            label='All', zorder=99, alpha=0.5,
-            c='k'
+            label='All', zorder=99, c='k'
         )
     if which_one == 'Purity':
         ax.plot(
             b_c, hg_puri / (hg_puri + hb), marker='s',
-            label='All', zorder=99, alpha=0.5,
-            c='k'
+            label='All', zorder=99, c='k'
         )
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
