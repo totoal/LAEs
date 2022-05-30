@@ -1,6 +1,10 @@
 import glob
+from certifi import where
 import pandas as pd
 import numpy as np
+from pyparsing import counted_array
+
+from LAEs.my_functions import count_true
 
 def load_QSO_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
@@ -114,10 +118,24 @@ def load_SF_mock(name, add_errs=True):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
-def ensemble_mock(name_qso, name_gal, name_sf):
+def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
+
+    # If name_qso_bad given, load two catalogs of qso and give the relative
+    # number: one with z < 2, another with z > 2
+    if len(name_qso_bad) > 0:
+        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad =\
+            load_QSO_mock(name_qso_bad)
+
+        where_bad_qso = (qso_zspec_bad < 2)
+        N_bad_qso = count_true(where_bad_qso)
+        qso_flx = np.hstack((qso_flx_bad[:, where_bad_qso], qso_flx))
+        qso_err = np.hstack((qso_err_bad[:, where_bad_qso], qso_err))
+        EW_qso = np.hstack((EW_qso_bad[where_bad_qso], EW_qso))
+        qso_zspec = np.hstack((qso_zspec_bad[where_bad_qso], qso_zspec))
+        qso_L = np.hstack((qso_L_bad[where_bad_qso], qso_L))
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))
@@ -133,5 +151,6 @@ def ensemble_mock(name_qso, name_gal, name_sf):
     is_qso = np.concatenate((np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
     is_sf = np.concatenate((np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
     is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
+    is_LAE = is_qso | is_sf ; is_LAE[:N_bad_qso] = False
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE
