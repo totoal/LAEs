@@ -1,10 +1,8 @@
 import glob
-from certifi import where
 import pandas as pd
 import numpy as np
-from pyparsing import counted_array
 
-from LAEs.my_functions import count_true
+from my_functions import count_true
 
 def load_QSO_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'

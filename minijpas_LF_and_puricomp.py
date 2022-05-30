@@ -25,17 +25,19 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 gal_factor = 12.57
+good_qso_factor = 2
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
-def load_mocks():
+def load_mocks(train_or_test, survey_name):
     name_qso = 'QSO_100000_0'
-    name_gal = 'GAL_100000_0'
-    name_sf = 'LAE_10deg_z2-4.25_0'
+    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_0'
+    name_gal = f'GAL_100000_{survey_name}_0'
+    name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal =\
-        ensemble_mock(name_qso, name_gal, name_sf)
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE =\
+        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad)
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE
 
 def search_lines(pm_flx, pm_err, ew0_cut, zspec):
     # Lya search
@@ -221,13 +223,16 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname):
     plt.close()
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
-                         mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya, is_gal):
+                         mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
+                         is_gal, is_sf, is_qso, is_LAE):
     r_bins = np.linspace(mag_min, mag_max, 10 + 1)
 
     # Perturb L
     N_iter = 1000
-    h2d_nice_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
-    h2d_sel_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
+    h2d_nice_qso_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
+    h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
+    h2d_sel_normal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
+    h2d_sel_to_corr_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
 
     for k in range(N_iter):
@@ -236,15 +241,27 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
-        h2d_nice_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & zspec_cut],
-            mag[nice_lya & nice_z & zspec_cut],
+        h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & nice_z & zspec_cut & is_sf],
+            mag[nice_lya & nice_z & zspec_cut & is_sf],
             bins=[L_bins, r_bins]
         )
 
-        h2d_sel_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut],
-            mag[nice_lya & ~is_gal & z_cut],
+        h2d_nice_qso_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & nice_z & zspec_cut & is_qso],
+            mag[nice_lya & nice_z & zspec_cut & is_qso],
+            bins=[L_bins, r_bins]
+        )
+
+        h2d_sel_normal_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & ~is_gal & z_cut & (is_sf | (is_qso & ~is_LAE))],
+            mag[nice_lya & ~is_gal & z_cut & (is_sf | (is_qso & ~is_LAE))],
+            bins=[L_bins, r_bins]
+        )
+        
+        h2d_sel_to_corr_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & ~is_gal & z_cut & is_qso & is_LAE],
+            mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE],
             bins=[L_bins, r_bins]
         )
 
@@ -255,28 +272,32 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
 
     # Take the median
-    h2d_nice = np.median(h2d_nice_i, axis=2)
-    h2d_sel = np.median(h2d_sel_i, axis=2)
+    h2d_nice_qso = np.median(h2d_nice_qso_i, axis=2)
+    h2d_nice_sf = np.median(h2d_nice_sf_i, axis=2)
+    h2d_sel_normal = np.median(h2d_sel_normal_i, axis=2)
+    h2d_sel_to_corr = np.median(h2d_sel_to_corr_i, axis=2)
     h2d_sel_gal = np.median(h2d_sel_gal_i, axis=2)
-    h2d_parent, _, _ = np.histogram2d(
-        L_lya[zspec_cut & mag_cut & ew_cut],
-        mag[zspec_cut & mag_cut & ew_cut],
+    h2d_parent_sf, _, _ = np.histogram2d(
+        L_lya[zspec_cut & mag_cut & ew_cut & is_sf],
+        mag[zspec_cut & mag_cut & ew_cut & is_sf],
         bins=[L_bins, r_bins]
     )
+    h2d_parent_qso, _, _ = np.histogram2d(
+        L_lya[zspec_cut & mag_cut & ew_cut & is_qso],
+        mag[zspec_cut & mag_cut & ew_cut & is_qso],
+        bins=[L_bins, r_bins]
+    )
+    h2d_parent = h2d_parent_sf + h2d_parent_qso * good_qso_factor
+    h2d_nice = h2d_nice_qso * good_qso_factor + h2d_nice_sf
+    h2d_sel = h2d_sel_normal + h2d_sel_to_corr * good_qso_factor + h2d_sel_gal * gal_factor
 
-    puri2d = h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor)
-    puri2d_err = (
-        h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor) ** 2
-        + (h2d_nice / (h2d_sel + h2d_sel_gal * gal_factor)**2) ** 2
-        * (h2d_sel + gal_factor**2 * h2d_sel_gal)
-    ) ** 0.5
+    puri2d = h2d_nice / h2d_sel
     comp2d = h2d_nice / h2d_parent
-    comp2d_err = h2d_nice ** 0.5 / h2d_parent
 
-    return puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins
+    return puri2d, comp2d, L_bins, r_bins
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-                    is_qso, is_sf):
+                    is_qso, is_sf, is_LAE):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
 
     # Vector of magnitudes in r band
@@ -344,18 +365,16 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     bins = np.log10(L_binning)
 
     # Compute puri/comp 2D
-    puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins = puricomp_corrections(
+    puri2d, comp2d, L_bins, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, bins,
-        L_lya, is_gal
+        L_lya, is_gal, is_sf, is_qso, is_LAE
     )
 
     plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname)
 
     np.save('npy/puri2d.npy', puri2d)
     np.save('npy/comp2d.npy', comp2d)
-    np.save('npy/puri2d_err.npy', puri2d_err)
-    np.save('npy/comp2d_err.npy', comp2d_err)
     np.save('npy/puricomp2d_L_bins.npy', L_bins)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
@@ -369,10 +388,11 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         )
 
 def make_corrections(params):
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal = load_mocks()
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE =\
+        load_mocks('test', 'minijpas')
     all_corrections(
         params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-        is_qso, is_sf
+        is_qso, is_sf, is_LAE
     )
 
 def Zero_point_error(tile_id_Arr, catname):
