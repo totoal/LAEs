@@ -2,6 +2,8 @@ import glob
 import pandas as pd
 import numpy as np
 
+from my_functions import count_true
+
 def load_QSO_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
@@ -114,13 +116,41 @@ def load_SF_mock(name, add_errs=True):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
+<<<<<<< HEAD
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
+=======
+def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL=''):
+>>>>>>> double_mock
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
+<<<<<<< HEAD
+=======
+    if len(name_qso_bad) > 0:
+        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad =\
+            load_QSO_mock(name_qso_bad)
+
+        where_bad_qso = (qso_zspec_bad < 2)
+        N_bad_qso = count_true(where_bad_qso)
+        qso_flx = np.hstack((qso_flx_bad[:, where_bad_qso], qso_flx))
+        qso_err = np.hstack((qso_err_bad[:, where_bad_qso], qso_err))
+        EW_qso = np.hstack((EW_qso_bad[where_bad_qso], EW_qso))
+        qso_zspec = np.hstack((qso_zspec_bad[where_bad_qso], qso_zspec))
+        qso_L = np.hstack((qso_L_bad[where_bad_qso], qso_L))
+    if len(name_qso_hiL) > 0:
+        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL =\
+            load_QSO_mock(name_qso_hiL)
+        
+        where_bad_loL = (qso_L <= 44)
+        qso_flx = np.hstack((qso_flx[:, where_bad_loL], qso_flx_hiL))
+        qso_err = np.hstack((qso_err[:, where_bad_loL], qso_err_hiL))
+        EW_qso = np.hstack((EW_qso[where_bad_loL], EW_qso_hiL))
+        qso_zspec = np.hstack((qso_zspec[where_bad_loL], qso_zspec_hiL))
+        qso_L = np.hstack((qso_L[where_bad_loL], qso_L_hiL))
+>>>>>>> double_mock
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))
@@ -136,5 +166,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
     is_qso = np.concatenate((np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
     is_sf = np.concatenate((np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
     is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
+    is_LAE = (is_qso & (zspec > 2)) | is_sf
+    where_hiL = (is_qso & (L_lya > 44))
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
