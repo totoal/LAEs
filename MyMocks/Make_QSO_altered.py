@@ -364,7 +364,7 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     dirname = '/home/alberto/almacen/Source_cats'
-    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_highL_0'
+    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -471,9 +471,9 @@ if __name__ == '__main__':
 
     z_min = 2
     z_max = 4.25
-    L_min = 44
-    L_max = 46
-    area = 2000 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+    L_min = 42
+    L_max = 44
+    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['train']:

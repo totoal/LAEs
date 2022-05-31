@@ -92,7 +92,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
 def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, is_LAE,
-                                zspec, L_lya, dirname, ew_cut, where_hiL):
+                                zspec, L_lya, dirname, ew_cut, where_hiL, survey_name):
     fig, ax = plt.subplots(figsize=(4, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
@@ -219,10 +219,11 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.legend()
     ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
 
-    plt.savefig(f'{dirname}/{which_one}', bbox_inches='tight', facecolor='white')
+    plt.savefig(f'{dirname}/{which_one}_{survey_name}',
+                bbox_inches='tight', facecolor='white')
     plt.close()
 
-def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname):
+def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     fig = plt.figure(figsize=(7, 6))
 
     width = 1
@@ -273,7 +274,7 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname):
     ax0.set_title('Purity', fontsize=25)
     ax1.set_title('Completeness', fontsize=25)
 
-    plt.savefig(f'{dirname}/PuriComp2D', bbox_inches='tight', facecolor='white')
+    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}', bbox_inches='tight', facecolor='white')
     plt.close()
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
@@ -385,7 +386,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     return puri2d, comp2d, L_bins, r_bins
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-                    is_qso, is_sf, is_LAE, where_hiL):
+                    is_qso, is_sf, is_LAE, where_hiL, survey_name):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
 
     # Vector of magnitudes in r band
@@ -459,10 +460,10 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL
     )
 
-    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname)
+    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
 
-    np.save('npy/puri2d.npy', puri2d)
-    np.save('npy/comp2d.npy', comp2d)
+    np.save(f'npy/puri2d_{survey_name}.npy', puri2d)
+    np.save(f'npy/comp2d_{survey_name}.npy', comp2d)
     np.save('npy/puricomp2d_L_bins.npy', L_bins)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
@@ -473,16 +474,17 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             which_one, mag, nbs_to_consider, lya_lines, z_Arr,
             nice_lya, nice_z, L_Arr, mag_max, mag_min, ew0_cut,
             is_gal, is_sf, is_qso, is_LAE, zspec, L_lya, dirname, ew_cut,
-            where_hiL
+            where_hiL, survey_name
         )
 
 def make_corrections(params):
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-        load_mocks('test', 'minijpas')
-    all_corrections(
-        params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-        is_qso, is_sf, is_LAE, where_hiL
-    )
+    for survey_name in ['minijpas', 'jnep']:
+        pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
+            load_mocks('test', survey_name)
+        all_corrections(
+            params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
+            is_qso, is_sf, is_LAE, where_hiL, survey_name
+        )
 
 def Zero_point_error(tile_id_Arr, catname):
     ## Load Zero Point magnitudes
