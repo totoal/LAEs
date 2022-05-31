@@ -259,10 +259,6 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
 
-    print(my_z_Arr)
-    print(z_Arr[idx_closest])
-    print(w_factor)
-
     # The correction factor to achieve the desired L
     L_factor = 10 **(my_L_Arr - L_Arr[idx_closest])
 
@@ -478,11 +474,9 @@ if __name__ == '__main__':
     L_min = 44
     L_max = 46
     area = 2000 / (12 * 2) # We have to do 2 runs of 12 parallel processes
-    # survey_name = 'minijpas'
-    # train_or_test = 'train'
 
     for survey_name in ['minijpas', 'jnep']:
-        for train_or_test in ['train', 'test']:
+        for train_or_test in ['train']:
             main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
