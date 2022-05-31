@@ -116,19 +116,13 @@ def load_SF_mock(name, add_errs=True):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
-<<<<<<< HEAD
-def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad=''):
-=======
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL=''):
->>>>>>> double_mock
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
-<<<<<<< HEAD
-=======
     if len(name_qso_bad) > 0:
         qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad =\
             load_QSO_mock(name_qso_bad)
@@ -150,7 +144,6 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='')
         EW_qso = np.hstack((EW_qso[where_bad_loL], EW_qso_hiL))
         qso_zspec = np.hstack((qso_zspec[where_bad_loL], qso_zspec_hiL))
         qso_L = np.hstack((qso_L[where_bad_loL], qso_L_hiL))
->>>>>>> double_mock
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))
