@@ -674,10 +674,10 @@ def make_the_LF(params):
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
-    puri2d = np.load('npy/puri2d.npy')
-    comp2d = np.load('npy/comp2d.npy')
-    puri2d_err = np.load('npy/puri2d_err.npy')
-    comp2d_err = np.load('npy/comp2d_err.npy')
+    puri2d_minijpas = np.load('npy/puri2d_minijpas.npy')
+    comp2d_minijpas = np.load('npy/comp2d_minijpas.npy')
+    puri2d_jnep = np.load('npy/puri2d_jnep.npy')
+    comp2d_jnep = np.load('npy/comp2d_jnep.npy')
 
     bins = np.log10(L_binning)
 
@@ -699,17 +699,9 @@ def make_the_LF(params):
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
     L_LF_err_percentiles = LF_perturb_err(
-        L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob, bins,
-        puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'both', tile_id
-    )
-    L_LF_err_plus = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
-    L_LF_err_minus = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
-    hist_median = L_LF_err_percentiles[1]
-
-    L_LF_err_percentiles = LF_perturb_err(
         L_Arr[is_minijpas_source], L_e_Arr[is_minijpas_source], nice_lya[is_minijpas_source],
         mag[is_minijpas_source], z_Arr[is_minijpas_source], starprob[is_minijpas_source],
-        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'minijpas',
+        bins, puri2d_minijpas, comp2d_minijpas, L_bins, r_bins, 'minijpas',
         tile_id[is_minijpas_source]
     )
     L_LF_err_plus_mj = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
@@ -719,12 +711,16 @@ def make_the_LF(params):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, puri2d, comp2d, puri2d_err, comp2d_err, L_bins, r_bins, 'jnep',
+        bins, puri2d_jnep, comp2d_jnep, L_bins, r_bins, 'jnep',
         tile_id[~is_minijpas_source]
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
     hist_median_jn = L_LF_err_percentiles[1]
+
+    hist_median = hist_median_jn + hist_median_mj
+    L_LF_err_plus = L_LF_err_plus_jn + L_LF_err_plus_mj
+    L_LF_err_minus = L_LF_err_minus_jn + L_LF_err_minus_mj
 
     fig, ax = plt.subplots(figsize=(7, 5))
 
