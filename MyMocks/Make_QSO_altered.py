@@ -224,16 +224,23 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
         ) * volume
     )
     print(f'N_new_sources = {N_sources_LAE}')
-    LF_p_cum = np.cumsum(np.interp(
-        LF_p_cum_x, log_Lx, Phi)
-    )
+    LF_p_cum = np.cumsum(np.interp(LF_p_cum_x, log_Lx, Phi))
     LF_p_cum /= np.max(LF_p_cum)
     
     # L_Arr is the L_lya distribution for our mock
     my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
-    # z_Arr is the distribution of redshift. Uniform distribution
-    my_z_Arr = z_min + np.random.rand(N_sources_LAE) * (z_max - z_min)
+    # g-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
+    # We use the total values over all the magnitude bins
+    # The original counts are for an area of 10000 deg2
+    PD_z_Arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5, 5.5])
+    PD_counts_Arr = np.array([1216538, 3276523, 2289589, 359429, 16003, 640])
+
+    PD_z_cum_x = np.linspace(z_min, z_max, 1000)
+    PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
+    PD_counts_cum /= PD_counts_cum.max()
+
+    my_z_Arr = np.interp(np.random.rand(N_sources_LAE), PD_counts_cum, PD_z_cum_x)
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
@@ -251,6 +258,8 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
+
+    print(w_factor)
 
     # The correction factor to achieve the desired L
     L_factor = 10 **(my_L_Arr - L_Arr[idx_closest])
