@@ -26,7 +26,7 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 gal_factor = 12.57
 good_qso_factor = 0.5
-hiL_factor = 0.2
+hiL_factor = 0.1
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks(train_or_test, survey_name):
