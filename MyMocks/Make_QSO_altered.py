@@ -236,19 +236,28 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     my_z_Arr = z_min + np.random.rand(N_sources_LAE) * (z_max - z_min)
 
     # Index of the original mock closest source in redshift
-    idx_closest_z = np.zeros(N_sources_LAE).astype(int)
+    idx_closest = np.zeros(N_sources_LAE).astype(int)
     for src in range(N_sources_LAE):
-        idx_closest_z[src] = np.argmin(np.abs(z_Arr - my_z_Arr[src]))
+        # Select sources with a redshift closer than 0.02
+        closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.02)[0]
+        # If less than 10 objects found with that z_diff, then select the 10 closer
+        if len(closest_z_Arr < 10):
+            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
+
+        # Then, within the closest in z, we choose the 5 closest in L
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+
+        idx_closest[src] = np.random.choice(closest_L_Arr, 1)
 
     # The amount of w that we have to correct
-    w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest_z])
+    w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
 
     # The correction factor to achieve the desired L
-    L_factor = 10 **(my_L_Arr - L_Arr[idx_closest_z])
+    L_factor = 10 **(my_L_Arr - L_Arr[idx_closest])
 
-    # So, I need the source idx_closest_z, then correct its wavelength by adding w_offset
+    # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
-    return idx_closest_z, w_factor, L_factor, my_z_Arr
+    return idx_closest, w_factor, L_factor, my_z_Arr
 
 def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx, t_or_t):
     '''
@@ -387,7 +396,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
-    idx_closest_z, w_factor, L_factor, new_z = duplicate_sources(
+    idx_closest, w_factor, L_factor, new_z = duplicate_sources(
         area, z, L, z_min, z_max, L_min, L_max
     )
 
@@ -398,7 +407,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     # Do the integrated photometry
     print('Extracting band fluxes from the spectra...')
     for new_src in range(new_N_sources):
-        src = idx_closest_z[new_src]
+        src = idx_closest[new_src]
 
         print(f'{new_src} / {new_N_sources}', end='\r')
 
@@ -413,10 +422,10 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
         # the flux will be 0
         pm_SEDs[:, new_src] = JPAS_synth_phot(spec_f, spec_w, tcurves)
 
-    new_L = L[idx_closest_z] + np.log10(L_factor)
-    new_F_line = F_line[idx_closest_z] * L_factor
-    new_F_line_err = F_line_err[idx_closest_z] * L_factor
-    new_EW0 = EW0[idx_closest_z] * (1 + z[idx_closest_z]) / (1 + new_z)
+    new_L = L[idx_closest] + np.log10(L_factor)
+    new_F_line = F_line[idx_closest] * L_factor
+    new_F_line_err = F_line_err[idx_closest] * L_factor
+    new_EW0 = EW0[idx_closest] * (1 + z[idx_closest]) / (1 + new_z)
 
     print('Adding errors...')
 
