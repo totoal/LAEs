@@ -270,7 +270,6 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
     '''
     Computes correct Arr and saves it to a .csv if it dont exist
     '''
-
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
         correct = np.load(f'{correct_dir}correct_arr_{t_or_t}.npy')
@@ -280,6 +279,7 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
 
         return correct, z, lya_band
     except:
+        print('Ccomputing correct arr...')
         pass
 
     N_sources = len(fiber)
