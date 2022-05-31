@@ -254,11 +254,13 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
         # Then, within the closest in z, we choose the 5 closest in L
         closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
 
-        idx_closest[src] = np.random.choice(closest_L_Arr, 1)
+        idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
 
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
 
+    print(my_z_Arr)
+    print(z_Arr[idx_closest])
     print(w_factor)
 
     # The correction factor to achieve the desired L
