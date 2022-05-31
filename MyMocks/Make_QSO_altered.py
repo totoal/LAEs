@@ -260,7 +260,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
 
     # The correction factor to achieve the desired L
-    L_factor = 10 **(my_L_Arr - L_Arr[idx_closest])
+    L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
