@@ -480,7 +480,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 def make_corrections(params):
     for survey_name in ['minijpas', 'jnep']:
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-            load_mocks('test', survey_name)
+            load_mocks('train', survey_name)
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name
