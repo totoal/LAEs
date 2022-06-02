@@ -476,7 +476,7 @@ if __name__ == '__main__':
     area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
 
     for survey_name in ['minijpas', 'jnep']:
-        for train_or_test in ['train']:
+        for train_or_test in ['test']:
             main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
