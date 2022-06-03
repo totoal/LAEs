@@ -412,7 +412,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         src = idx_closest[new_src]
 
         if new_src % 500 == 0:
-            print(f'Part {part}: {new_src} / {new_N_sources}', end='\r')
+            print(f'Part {part}: {new_src} / {new_N_sources}')
 
         spec_name = fits_dir + f'spec-{plate[src]}-{mjd[src]}-{fiber[src]}.fits'
 
