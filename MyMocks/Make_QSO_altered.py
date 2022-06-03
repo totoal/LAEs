@@ -218,21 +218,17 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     Phi = schechter(Lx, phistar1, 10 ** Lstar1, alpha1) * Lx * np.log(10)
 
     LF_p_cum_x = np.linspace(L_min, L_max, 1000)
-    # !!!!!!!!!!!!!!!!!!!!!!! UNIFORM
-    N_sources_LAE = 30_000
-    # N_sources_LAE = int(
-    #     simpson(
-    #         np.interp(LF_p_cum_x, log_Lx, Phi), LF_p_cum_x
-    #     ) * volume
-    # )
+    N_sources_LAE = int(
+        simpson(
+            np.interp(LF_p_cum_x, log_Lx, Phi), LF_p_cum_x
+        ) * volume
+    )
     print(f'N_new_sources = {N_sources_LAE}')
     LF_p_cum = np.cumsum(np.interp(LF_p_cum_x, log_Lx, Phi))
     LF_p_cum /= np.max(LF_p_cum)
     
     # L_Arr is the L_lya distribution for our mock
-    # !!!!!!!!!!!!!!!!!!!!!!!! UNIFORM
-    # my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
-    my_L_Arr = 42 + np.random.rand(N_sources_LAE) * (45.5 - 42)
+    my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
     # g-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
     # We use the total values over all the magnitude bins
@@ -244,9 +240,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
     PD_counts_cum /= PD_counts_cum.max()
 
-    # !!!!!!!!!!!!!!!!!!!!!!!!!!!!! UNIFORM
-    # my_z_Arr = np.interp(np.random.rand(N_sources_LAE), PD_counts_cum, PD_z_cum_x)
-    my_z_Arr = 2 + np.random.rand(N_sources_LAE) * (4.25 - 2)
+    my_z_Arr = np.interp(np.random.rand(N_sources_LAE), PD_counts_cum, PD_z_cum_x)
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
@@ -366,9 +360,9 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
         
     return correct, z, lya_band
 
-def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
+def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
     dirname = '/home/alberto/almacen/Source_cats'
-    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_UNIFORM_0'
+    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_{surname}0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -388,17 +382,17 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     fiber = plate_mjd_fiber[2]
 
 
-    correct, z, lya_band= flux_correct(fits_dir, plate, mjd, fiber,
+    _, z, lya_band= flux_correct(fits_dir, plate, mjd, fiber,
                                        tcurves, qso_r_flx, qso_err_r_flx,
                                        train_or_test)
     lya_band_hw = 75
 
     _, _, _, _, f_cont, _ =\
-         SDSS_QSO_line_fts(mjd, plate, fiber, correct, z, train_or_test)
+         SDSS_QSO_line_fts(mjd, plate, fiber, None, z, train_or_test)
 
     ## Computing L using Lya_band
-    f_cont *= correct
-    lya_band *= correct
+    # f_cont *= correct
+    # lya_band *= correct
 
     F_line = (lya_band - f_cont) * 2 * lya_band_hw
     F_line_err = np.zeros(lya_band.shape)
@@ -472,6 +466,21 @@ if __name__ == '__main__':
 
     z_min = 2
     z_max = 4.25
+    L_min = 42
+    L_max = 46
+    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+
+    for survey_name in ['minijpas', 'jnep']:
+        for train_or_test in ['test', 'train']:
+            print('\n##############################################\n')
+            print(f'Making mock: {survey_name}-{train_or_test}\n')
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, '')
+
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+
+    t0 = time.time()
+    z_min = 2
+    z_max = 4.25
     L_min = 44
     L_max = 46
     area = 2000 / (12 * 2) # We have to do 2 runs of 12 parallel processes
@@ -480,6 +489,6 @@ if __name__ == '__main__':
         for train_or_test in ['test', 'train']:
             print('\n##############################################\n')
             print(f'Making mock: {survey_name}-{train_or_test}\n')
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
