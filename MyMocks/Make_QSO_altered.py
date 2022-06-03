@@ -472,8 +472,6 @@ if __name__ == '__main__':
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            print('\n##############################################\n')
-            print(f'Making mock: {survey_name}-{train_or_test}\n')
             main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, '')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
@@ -487,8 +485,6 @@ if __name__ == '__main__':
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            print('\n##############################################\n')
-            print(f'Making mock: {survey_name}-{train_or_test}\n')
             main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
