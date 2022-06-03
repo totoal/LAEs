@@ -161,8 +161,8 @@ def SDSS_QSO_line_fts(mjd, plate, fiber, correct, z, train_or_test):
         Flambda_err[src] = Lya_fts['LyaF_err'][where]
 
     EW0 = EW / (1 + z) # Now it's rest frame EW0
-    Flambda *= 1e-17 * correct # Correct units & apply correction
-    Flambda_err *= 1e-17 * correct # Correct units & apply correction
+    Flambda *= 1e-17 # * correct # Correct units & apply correction
+    Flambda_err *= 1e-17 # * correct # Correct units & apply correction
 
     # From the EW formula:
     f_cont = Flambda / EW
@@ -278,7 +278,7 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
 
         return correct, z, lya_band
     except:
-        print('Ccomputing correct arr...')
+        print('Computing correct arr...')
         pass
 
     N_sources = len(fiber)
@@ -381,10 +381,9 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-
     _, z, lya_band= flux_correct(fits_dir, plate, mjd, fiber,
-                                       tcurves, qso_r_flx, qso_err_r_flx,
-                                       train_or_test)
+                                 tcurves, qso_r_flx, qso_err_r_flx,
+                                 train_or_test)
     lya_band_hw = 75
 
     _, _, _, _, f_cont, _ =\
