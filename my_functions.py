@@ -690,7 +690,7 @@ def Zero_point_error(tile_id_Arr, catname):
 
     return zpt_err
 
-def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
+def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya):
     '''
     Predicts the L given the photometry fluxes and the peviously estimated z and L.
     '''
@@ -710,14 +710,14 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
 
     # Take the relative fluxes to the selected one
     NB_lya_position = NB_z(NNdata[:, -1].reshape(-1,))
-    for i, nb in enumerate(NB_lya_position):
+    for i, nb in enumerate(NB_lya_position - 2):
         NNdata[i, :53] = (
             flux_to_mag(NNdata[i, :53], w_central[:53])
-            - flux_to_mag(NNdata[i, :53][nb - 2], w_central[nb - 2])
+            # - flux_to_mag(NNdata[i, :53][nb - 2], w_central[nb - 2])
         )
         NNdata[i, 53 : 53 + 3] = flux_to_mag(NNdata[i, 53 : 53 + 3], w_central[-3:])
     
-    NNdata[~np.isfinite(NNdata)] = 0
+    NNdata[~np.isfinite(NNdata)] = 99.
 
     # MinMaxScaler
     with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
@@ -738,5 +738,6 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname):
     reg.set_params(n_jobs=-1, verbose=0)
 
     L_Arr_pred = reg.predict(NNdata)
+    print(f'Score: {reg.score(NNdata, L_lya)}')
 
     return L_Arr_pred

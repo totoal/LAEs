@@ -4,13 +4,15 @@ import numpy as np
 
 from my_functions import count_true
 
-def load_QSO_mock(name, add_errs=True):
+def load_QSO_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
     fi = []
 
-    for name in files:
+    for i, name in enumerate(files):
+        if i == how_many:
+            break
         fi.append(pd.read_csv(name))
 
     data_qso = pd.concat(fi, axis=0, ignore_index=True)
@@ -93,13 +95,15 @@ def load_GAL_mock(name, add_errs=True):
 
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L
 
-def load_SF_mock(name, add_errs=True):
+def load_SF_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename +'data*')
     files.sort()
     fi = []
 
-    for name in files:
+    for i, name in enumerate(files):
+        if i == how_many:
+            break
         fi.append(pd.read_csv(name))
 
     data = pd.concat(fi, axis=0, ignore_index=True)
@@ -128,7 +132,6 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='')
             load_QSO_mock(name_qso_bad)
 
         where_bad_qso = (qso_zspec_bad < 2)
-        N_bad_qso = count_true(where_bad_qso)
         qso_flx = np.hstack((qso_flx_bad[:, where_bad_qso], qso_flx))
         qso_err = np.hstack((qso_err_bad[:, where_bad_qso], qso_err))
         EW_qso = np.hstack((EW_qso_bad[where_bad_qso], EW_qso))
