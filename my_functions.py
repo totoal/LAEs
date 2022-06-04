@@ -713,7 +713,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya):
     for i, nb in enumerate(NB_lya_position - 2):
         NNdata[i, :53] = (
             flux_to_mag(NNdata[i, :53], w_central[:53])
-            # - flux_to_mag(NNdata[i, :53][nb - 2], w_central[nb - 2])
+            - flux_to_mag(NNdata[i, :53][nb], w_central[nb + 2])
         )
         NNdata[i, 53 : 53 + 3] = flux_to_mag(NNdata[i, 53 : 53 + 3], w_central[-3:])
     
