@@ -26,13 +26,13 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 gal_factor = 12.57
 good_qso_factor = 0.5
-hiL_factor = 0.1
+hiL_factor = 0.05
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks(train_or_test, survey_name):
     name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_0'
-    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_highL_0'
+    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_Z_0'
+    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_Z_highL2_0'
     name_gal = f'GAL_100000_{survey_name}_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 
@@ -157,16 +157,16 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
             + totals_qso_hiL * hiL_factor
         )
 
-        if which_one == 'Completeness':
-            ax.plot(
-                b_c, hg_comp / totals, marker='s',
-                label=filter_tags[nb], zorder=99, alpha=0.5
-            )
-        if which_one == 'Purity':
-            ax.plot(
-                b_c, hg_puri / (hg_puri + hb), marker='s',
-                label=filter_tags[nb], zorder=99, alpha=0.5
-            )
+        # if which_one == 'Completeness':
+        #     ax.plot(
+        #         b_c, hg_comp / totals, marker='s',
+        #         label=filter_tags[nb], zorder=99, alpha=0.5
+        #     )
+        # if which_one == 'Purity':
+        #     ax.plot(
+        #         b_c, hg_puri / (hg_puri + hb), marker='s',
+        #         label=filter_tags[nb], zorder=99, alpha=0.5
+        #     )
 
     nb_min = nbs_to_consider[0]
     nb_max = nbs_to_consider[-1]
@@ -728,7 +728,7 @@ def make_the_LF(params):
     yerr_cor_minus = (hist_median + L_LF_err_minus ** 2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
     ax.errorbar(LF_bins, hist_median / bin_width / volume,
-        yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='s', linestyle='', color='k', capsize=4,
         label='miniJPAS + J-NEP', zorder=99)
 
@@ -736,14 +736,14 @@ def make_the_LF(params):
     yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn ** 2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
-        yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='J-NEP')
 
     yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_mj
     yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_mj
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
-        yerr= [yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='miniJPAS')
 
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)

@@ -690,7 +690,7 @@ def Zero_point_error(tile_id_Arr, catname):
 
     return zpt_err
 
-def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya):
+def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya=None):
     '''
     Predicts the L given the photometry fluxes and the peviously estimated z and L.
     '''
@@ -738,6 +738,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya):
     reg.set_params(n_jobs=-1, verbose=0)
 
     L_Arr_pred = reg.predict(NNdata)
-    print(f'Score: {reg.score(NNdata, L_lya)}')
+    if L_lya is not None:
+        print(f'Score: {reg.score(NNdata, L_lya)}')
 
     return L_Arr_pred

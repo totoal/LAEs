@@ -212,9 +212,15 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
     Lx = np.logspace(L_min, L_max, 10000)
     log_Lx = np.log10(Lx)
-    phistar1 = 3.33e-6
-    Lstar1 = 44.65
-    alpha1 = -1.35
+
+    # Daniele's LF
+    # phistar1 = 3.33e-6
+    # Lstar1 = 44.65
+    # alpha1 = -1.35
+    # Zhang's LF
+    phistar1 = 10 ** -5.85
+    Lstar1 = 44.6
+    alpha1 = -1.2
     Phi = schechter(Lx, phistar1, 10 ** Lstar1, alpha1) * Lx * np.log(10)
 
     LF_p_cum_x = np.linspace(L_min, L_max, 1000)
@@ -230,11 +236,11 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # L_Arr is the L_lya distribution for our mock
     my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
-    # g-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
+    # r-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
     # We use the total values over all the magnitude bins
     # The original counts are for an area of 10000 deg2
     PD_z_Arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5, 5.5])
-    PD_counts_Arr = np.array([1216538, 3276523, 2289589, 359429, 16003, 640])
+    PD_counts_Arr = np.array([975471, 2247522, 1282573, 280401, 31368, 4322])
 
     PD_z_cum_x = np.linspace(z_min, z_max, 1000)
     PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
@@ -467,7 +473,7 @@ if __name__ == '__main__':
     z_max = 4.25
     L_min = 42
     L_max = 46
-    area = 400 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+    area = 400 / (16 * 2) # We have to do 2 runs of 12 parallel processes
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
@@ -480,10 +486,10 @@ if __name__ == '__main__':
     z_max = 4.25
     L_min = 44
     L_max = 46
-    area = 2000 / (12 * 2) # We have to do 2 runs of 12 parallel processes
+    area = 4000 / (16 * 2) # We have to do 2 runs of 12 parallel processes
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL_')
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL2_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
