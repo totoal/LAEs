@@ -250,14 +250,17 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     N_QSO_set = len(z_Arr)
     perm = np.random.permutation(np.arange(N_QSO_set))
     if train_or_test == 'train':
-        z_Arr = z_Arr[perm][:np.floor(N_QSO_set * 0.7)]
-        L_Arr = L_Arr[perm][:np.floor(N_QSO_set * 0.7)]
+        slc = slice(0, int(np.floor(N_QSO_set * 0.7)))
+        z_Arr = z_Arr[perm][slc]
+        L_Arr = L_Arr[perm][slc]
     if train_or_test == 'test':
-        z_Arr = z_Arr[perm][np.floor(N_QSO_set * 0.7) : np.floor(N_QSO_set) * 0.95]
-        L_Arr = L_Arr[perm][np.floor(N_QSO_set * 0.7) : np.floor(N_QSO_set) * 0.95]
+        slc = slice(int(np.floor(N_QSO_set * 0.7)),
+                    int(np.floor(N_QSO_set * 0.95)))
+        z_Arr = z_Arr[perm][slc]
+        L_Arr = L_Arr[perm][slc]
 
     for src in range(N_sources_LAE):
-        if src % 50 == 0:
+        if src % 500 == 0:
             print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
         closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.02)[0]
@@ -277,7 +280,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
 
     # Re-convert idx_closest to initial units pre randomization
-    idx_closest = perm[idx_closest]
+    idx_closest = perm[slc][idx_closest]
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
