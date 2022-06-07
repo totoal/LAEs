@@ -135,6 +135,14 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpas'):
     return pm_SEDs, pm_SEDs_err
 
 def source_f_cont(mjd, plate, fiber):
+    try:
+        f_cont = np.load('npy/f_cont_DR16.npy')
+        print('f_cont Arr loaded')
+        return f_cont
+    except:
+        pass
+    print('Computing f_cont Arr')
+
     Lya_fts = pd.read_csv('../csv/Lya_fts_DR16.csv')
 
     N_sources = len(mjd)
@@ -142,6 +150,9 @@ def source_f_cont(mjd, plate, fiber):
     Flambda = np.empty(N_sources)
 
     for src in range(N_sources):
+        if src % 500 == 0:
+            print(f'{src} / {N_sources}', end='\r')
+
         where = np.where(
             (int(mjd[src]) == Lya_fts['mjd'].to_numpy().flatten())
             & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
@@ -158,6 +169,8 @@ def source_f_cont(mjd, plate, fiber):
 
     # From the EW formula:
     f_cont = Flambda / EW
+
+    np.save('npy/f_cont_DR16.npy', f_cont)
 
     return f_cont
 
@@ -189,6 +202,9 @@ def schechter(L, phistar, Lstar, alpha):
 def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     volume = z_volume(z_min, z_max, area)
 
+    Lx = np.logspace(L_min, L_max, 10000)
+    log_Lx = np.log10(Lx)
+
     # Daniele's LF
     # phistar1 = 3.33e-6
     # Lstar1 = 44.65
@@ -212,11 +228,11 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # L_Arr is the L_lya distribution for our mock
     my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
-    # g-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
+    # r-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
     # We use the total values over all the magnitude bins
     # The original counts are for an area of 10000 deg2
     PD_z_Arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5, 5.5])
-    PD_counts_Arr = np.array([1216538, 3276523, 2289589, 359429, 16003, 640])
+    PD_counts_Arr = np.array([975471, 2247522, 1282573, 280401, 31368, 4322])
 
     PD_z_cum_x = np.linspace(z_min, z_max, 1000)
     PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
@@ -226,7 +242,23 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
+    print('Looking for the closest QSOs...')
+
+    # Randomize the whole QSO set and split in:
+    # 70% train, 25% test, 5% validation
+    np.random.seed(48713043)
+    N_QSO_set = len(z_Arr)
+    perm = np.random.permutation(np.arange(N_QSO_set))
+    if train_or_test == 'train':
+        z_Arr = z_Arr[perm][:np.floor(N_QSO_set * 0.7)]
+        L_Arr = L_Arr[perm][:np.floor(N_QSO_set * 0.7)]
+    if train_or_test == 'test':
+        z_Arr = z_Arr[perm][np.floor(N_QSO_set * 0.7) : np.floor(N_QSO_set) * 0.95]
+        L_Arr = L_Arr[perm][np.floor(N_QSO_set * 0.7) : np.floor(N_QSO_set) * 0.95]
+
     for src in range(N_sources_LAE):
+        if src % 50 == 0:
+            print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
         closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.02)[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
@@ -244,6 +276,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # The correction factor to achieve the desired L
     L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
 
+    # Re-convert idx_closest to initial units pre randomization
+    idx_closest = perm[idx_closest]
+
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
     return idx_closest, w_factor, L_factor, my_z_Arr
@@ -260,7 +295,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
 
         return z, lya_band
     except:
-        print('Ccomputing correct arr...')
+        print('Computing correct arr...')
         pass
 
     N_sources = len(fiber)
@@ -319,9 +354,9 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         
     return z, lya_band
 
-def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
+def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
     dirname = '/home/alberto/almacen/Source_cats'
-    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_DR16_0'
+    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_DR16_{surname}0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -337,7 +372,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    z, lya_band= lya_band_z(fits_dir, plate, mjd, fiber, train_or_test)
+    z, lya_band = lya_band_z(fits_dir, plate, mjd, fiber, train_or_test)
     lya_band_hw = 75
 
     f_cont = source_f_cont(mjd, plate, fiber)
@@ -352,14 +387,15 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test):
         area, z, L, z_min, z_max, L_min, L_max
     )
 
-    # Do the integrated photometry
-    filename = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
     # Load the DR16 PM
+    filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
     pm_SEDs_DR16 = pd.read_csv(
-        filename, usecols=np.arange(1, 64)
+        filename_pm_DR16, usecols=np.arange(1, 64)
     ).to_numpy()[:, :60].T
 
+    print('Sampling from DR16 pm...')
     pm_SEDs = pm_SEDs_DR16[:, idx_closest]
+    print('Ok')
 
     new_L = L[idx_closest] + np.log10(L_factor)
     new_F_line = F_line[idx_closest] * L_factor
@@ -407,8 +443,19 @@ if __name__ == '__main__':
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            print('\n##############################################\n')
-            print(f'Making mock: {survey_name}-{train_or_test}\n')
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test)
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, '')
+
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+
+    t0 = time.time()
+    z_min = 2
+    z_max = 4.25
+    L_min = 44
+    L_max = 46
+    area = 4000 / (16 * 2) # We have to do 2 runs of 12 parallel processes
+
+    for survey_name in ['minijpas', 'jnep']:
+        for train_or_test in ['test', 'train']:
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL2_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
