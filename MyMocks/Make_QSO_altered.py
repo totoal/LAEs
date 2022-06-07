@@ -324,8 +324,8 @@ def flux_correct(fits_dir, plate, mjd, fiber, tcurves, qso_r_flx, qso_err_r_flx,
 
         # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
         w_lya_obs = w_lya * (1 + z[src])
-        lya_band_res = 500 # Resolution of the Lya band
-        lya_band_hw = 75 # Half width of the Lya band in Angstroms
+        lya_band_res = 1000 # Resolution of the Lya band
+        lya_band_hw = 150 # Half width of the Lya band in Angstroms
 
         lya_band_tcurves = {
             'tag': ['lyaband'],
