@@ -269,7 +269,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
             closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
 
         # Then, within the closest in z, we choose the 5 closest in L
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+        # Or don't select by L proximity (uncomment one)
+        # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
 
@@ -309,7 +311,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
 
     # Do the integrated photometry
     # print('Extracting band fluxes from the spectra...')
-    print('Making correct Arr')
+    print('Making lya_band Arr')
     plate = plate.astype(int)
     mjd = mjd.astype(int)
     fiber = fiber.astype(int)
@@ -330,6 +332,9 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
             z[src] = z_Arr[-1]
         else:
             z[src] = 0.
+
+        if z[src] < 2:
+            continue
 
         # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
         w_lya_obs = w_lya * (1 + z[src])
