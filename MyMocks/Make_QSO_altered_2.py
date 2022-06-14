@@ -150,7 +150,7 @@ def source_f_cont(mjd, plate, fiber):
     Flambda = np.empty(N_sources)
 
     for src in range(N_sources):
-        if src % 500 == 0:
+        if src % 1000 == 0:
             print(f'{src} / {N_sources}', end='\r')
 
         where = np.where(
@@ -249,6 +249,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     np.random.seed(48713043)
     N_QSO_set = len(z_Arr)
     perm = np.random.permutation(np.arange(N_QSO_set))
+    old_z_Arr = np.copy(z_Arr)
     if train_or_test == 'train':
         slc = slice(0, int(np.floor(N_QSO_set * 0.7)))
         z_Arr = z_Arr[perm][slc]
@@ -270,8 +271,8 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
         # Then, within the closest in z, we choose the 5 closest in L
         # Or don't select by L proximity (uncomment one)
-        # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+        # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
 
@@ -286,19 +287,22 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
-    return idx_closest, w_factor, L_factor, my_z_Arr
+    return idx_closest, w_factor, L_factor, old_z_Arr[idx_closest]
 
 def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     '''
     Computes correct Arr and saves it to a .csv if it dont exist
     '''
+    lya_band_res = 1000 # Resolution of the Lya band
+    lya_band_hw = 150 # Half width of the Lya band in Angstroms
+
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
         z = np.load(f'{correct_dir}z_arr_{t_or_t}_dr16.npy')
         lya_band = np.load(f'{correct_dir}lya_band_arr_{t_or_t}_dr16.npy')
         print('Correct arr loaded')
 
-        return z, lya_band
+        return z, lya_band, lya_band_hw
     except:
         print('Computing correct arr...')
         pass
@@ -338,8 +342,6 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
 
         # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
         w_lya_obs = w_lya * (1 + z[src])
-        lya_band_res = 1000 # Resolution of the Lya band
-        lya_band_hw = 150 # Half width of the Lya band in Angstroms
 
         lya_band_tcurves = {
             'tag': ['lyaband'],
@@ -360,14 +362,12 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     np.save(f'{correct_dir}z_arr_{t_or_t}_dr16', z)
     np.save(f'{correct_dir}lya_band_arr_{t_or_t}_dr16', lya_band)
         
-    return z, lya_band
+    return z, lya_band, lya_band_hw
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
     dirname = '/home/alberto/almacen/Source_cats'
     filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_DR16_{surname}0'
-
-    if not os.path.exists(filename):
-        os.mkdir(filename)
+    os.makedirs(filename, exist_ok=True)
 
     fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/DR16/QSO/'
 
@@ -380,8 +380,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    z, lya_band = lya_band_z(fits_dir, plate, mjd, fiber, train_or_test)
-    lya_band_hw = 75
+    z, lya_band, lya_band_hw = lya_band_z(fits_dir, plate, mjd, fiber, train_or_test)
 
     f_cont = source_f_cont(mjd, plate, fiber)
 
@@ -391,7 +390,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
-    idx_closest, w_factor, L_factor, new_z = duplicate_sources(
+    idx_closest, _, L_factor, new_z = duplicate_sources(
         area, z, L, z_min, z_max, L_min, L_max
     )
 
@@ -402,7 +401,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     ).to_numpy()[:, :60].T
 
     print('Sampling from DR16 pm...')
-    pm_SEDs = pm_SEDs_DR16[:, idx_closest]
+    pm_SEDs = pm_SEDs_DR16[:, idx_closest] * L_factor
     print('Ok')
 
     new_L = L[idx_closest] + np.log10(L_factor)
@@ -447,7 +446,7 @@ if __name__ == '__main__':
     z_max = 4.25
     L_min = 42
     L_max = 46
-    area = 400 / (16 * 2) # We have to do 2 runs of 12 parallel processes
+    area = 400 / (16 * 2) # We have to do 2 runs of 16 parallel processes
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
