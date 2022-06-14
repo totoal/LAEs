@@ -24,9 +24,18 @@ w_central = central_wavelength()
 nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
-gal_factor = 12.57
-good_qso_factor = 0.5
-hiL_factor = 0.05
+
+gal_area = 3.16 ** 2
+bad_qso_area = 200
+good_qso_area = 400
+hiL_qso_area = 4000
+
+# The proportional factors are made in relation to bad_qso
+# So bad_qso_factor = 1
+gal_factor = bad_qso_area / gal_area
+good_qso_factor = bad_qso_area / good_qso_area
+hiL_factor = bad_qso_area / hiL_qso_area
+
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks(train_or_test, survey_name):
