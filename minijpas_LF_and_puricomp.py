@@ -42,7 +42,7 @@ def load_mocks(train_or_test, survey_name):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_0'
-    name_gal = f'GAL_100000_{survey_name}_0'
+    name_gal = f'GAL_LC_{survey_name}_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
