@@ -407,7 +407,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     pm_SEDs = pm_SEDs_DR16[:, idx_closest] * L_factor
     print('Ok')
 
-    new_L = L[idx_closest] + np.log10(L_factor) + np.log(1 + new_z)
+    new_L = L[idx_closest] + np.log10(L_factor) + np.log10(1 + new_z)
     new_F_line = F_line[idx_closest] * L_factor
     new_F_line_err = F_line_err[idx_closest] * L_factor
     new_EW0 = EW0[idx_closest] * (1 + z[idx_closest]) / (1 + new_z)

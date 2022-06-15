@@ -200,6 +200,9 @@ def main(part, survey_name, t_or_t):
 
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False, survey_name=survey_name)
 
+    # Output L_Arr is converted into rest-frame
+    L_Arr_out = L_Arr[good][good2] + np.log10(1 + z_out_Arr)
+
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
     hdr = tcurves['tag'] + [s + '_e' for s in tcurves['tag']] + ['z', 'EW0', 'L_lya']
@@ -207,7 +210,7 @@ def main(part, survey_name, t_or_t):
     pd.DataFrame(
         data=np.hstack((pm_SEDs.T[good2], pm_SEDs_err.T[good2],
         np.array(z_out_Arr).reshape(-1, 1),
-        np.array(EW_out_Arr).reshape(-1, 1), L_Arr[good][good2].reshape(-1, 1)))
+        np.array(EW_out_Arr).reshape(-1, 1), L_Arr_out.reshape(-1, 1)))
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
     # SED_file.close()
