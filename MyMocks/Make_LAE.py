@@ -1,11 +1,10 @@
 #!/home/alberto/miniconda3/bin/python3
 
 import numpy as np
-from Make_QSO_altered import add_errors
+from Make_QSO_altered_2 import add_errors
 
 from my_utilities import *
 
-import csv
 import pandas as pd
 
 from scipy.integrate import simpson
