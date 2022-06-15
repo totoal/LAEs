@@ -240,6 +240,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
     my_z_Arr = np.interp(np.random.rand(N_sources_LAE), PD_counts_cum, PD_z_cum_x)
 
+    # Bring my_L_Arr (rest-frame) into the obs-frame
+    my_L_Arr -= np.log10(1 + my_z_Arr)
+
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
     print('Looking for the closest QSOs...')
