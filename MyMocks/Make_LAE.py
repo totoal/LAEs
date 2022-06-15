@@ -14,8 +14,6 @@ import os
 import sys
 
 def main(part, survey_name, t_or_t):
-    t0 = time()
-
     ####    Line wavelengths
     # w_lya = 1215.67
 
@@ -151,7 +149,7 @@ def main(part, survey_name, t_or_t):
     # print(f'N_sources = {N_good_sources}\n')
 
     for j, i in enumerate(good):
-        if j + 1 % 500 == 0:
+        if (j + 1) % 500 == 0:
             print(f'Part {part}: Generating spectrum {j + 1} / {N_good_sources}')
 
         my_z = z_Arr[i]
@@ -218,10 +216,13 @@ def main(part, survey_name, t_or_t):
     # SED_file.close()
     # SED_no_line_file.close()
 
-    m, s = divmod(int(time() - t0), 60)
-    print('Elapsed: {}m {}s'.format(m, s))
 
 if __name__ == '__main__':
+    t0 = time()
+
     for survey_name in ['minijpas', 'jnep']:
         for t_or_t in ['train', 'test']:
             main(sys.argv[1], survey_name, t_or_t)
+
+    m, s = divmod(int(time() - t0), 60)
+    print('Elapsed: {}m {}s'.format(m, s))
