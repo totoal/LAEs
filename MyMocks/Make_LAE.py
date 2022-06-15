@@ -71,6 +71,9 @@ def main(part, survey_name, t_or_t):
     widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
     s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
+    # L_Arr is brought to the obs-frame
+    L_Arr -= np.log(1 + z_Arr)
+
     # Define EW arr
     ew_x = np.linspace(10, 500, 10000)
     w_0 = 75
