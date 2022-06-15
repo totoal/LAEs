@@ -201,6 +201,7 @@ def main(part, survey_name, t_or_t):
     pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False, survey_name=survey_name)
 
     # Output L_Arr is converted into rest-frame
+    z_out_Arr = np.array(z_out_Arr)
     L_Arr_out = L_Arr[good][good2] + np.log10(1 + z_out_Arr)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
