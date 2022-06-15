@@ -152,7 +152,7 @@ def main(part, survey_name, t_or_t):
 
     for j, i in enumerate(good):
         if j + 1 % 500 == 0:
-            print(f'Part {part}: Generating spectrum {j + 1}/{N_good_sources}', end='\r')
+            print(f'Part {part}: Generating spectrum {j + 1} / {N_good_sources}')
 
         my_z = z_Arr[i]
         my_e = e_Arr[i]
