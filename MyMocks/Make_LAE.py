@@ -148,7 +148,7 @@ def main(part, survey_name, t_or_t):
     # Initialize mask for the second cut. Used later
     good2 = np.ones(good.shape).astype(bool)
 
-    print(f'N_sources = {N_good_sources}\n')
+    # print(f'N_sources = {N_good_sources}\n')
 
     for j, i in enumerate(good):
         if j + 1 % 500 == 0:
