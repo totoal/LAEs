@@ -93,6 +93,14 @@ def load_GAL_mock(name, add_errs=True):
     gal_zspec = data_gal['z'].to_numpy()[good_src].astype(float)
     gal_L = np.zeros(EW_gal.shape).astype(float)
 
+    # GAL mock is for contaminants, so we want sources with z>2 only
+    where_low_z = (gal_zspec < 2)
+    gal_flx = gal_flx[where_low_z]
+    gal_err = gal_err[where_low_z]
+    EW_err = EW_err[where_low_z]
+    gal_zspec = gal_zspec[where_low_z]
+    gal_L = gal_L[where_low_z]
+
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L
 
 def load_SF_mock(name, add_errs=True, how_many=-1):
