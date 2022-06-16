@@ -45,12 +45,12 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.
 
-    qso_flx = qso_flx[:, good_src]
-    qso_err = qso_err[:, good_src]
+    qso_flx = qso_flx[:, good_src].astype(float)
+    qso_err = qso_err[:, good_src].astype(float)
 
-    EW_qso = EW_qso[good_src]
-    qso_zspec = qso_zspec[good_src]
-    qso_L = qso_L[good_src]
+    EW_qso = EW_qso[good_src].astype(float)
+    qso_zspec = qso_zspec[good_src].astype(float)
+    qso_L = qso_L[good_src].astype(float)
 
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L
 
@@ -86,12 +86,12 @@ def load_GAL_mock(name, add_errs=True):
 
     gal_flx[gal_err > 1] = 0.
 
-    gal_flx = gal_flx[:, good_src]
-    gal_err = gal_err[:, good_src]
+    gal_flx = gal_flx[:, good_src].astype(float)
+    gal_err = gal_err[:, good_src].astype(float)
 
-    EW_gal = np.zeros(data_gal['z'].to_numpy().shape)[good_src]
-    gal_zspec = data_gal['z'].to_numpy()[good_src]
-    gal_L = np.zeros(EW_gal.shape)
+    EW_gal = np.zeros(data_gal['z'].to_numpy().shape)[good_src].astype(float)
+    gal_zspec = data_gal['z'].to_numpy()[good_src].astype(float)
+    gal_L = np.zeros(EW_gal.shape).astype(float)
 
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L
 
@@ -108,15 +108,15 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
     data = pd.concat(fi, axis=0, ignore_index=True)
 
-    sf_flx = data.to_numpy()[:, 1 : 60 + 1].T
-    sf_err = data.to_numpy()[:, 60 + 1 : 120 + 1].T
+    sf_flx = data.to_numpy()[:, 1 : 60 + 1].T.astype(float)
+    sf_err = data.to_numpy()[:, 60 + 1 : 120 + 1].T.astype(float)
 
     if add_errs:
         sf_flx += sf_err * np.random.normal(size=sf_err.shape)
 
-    EW_sf = data['EW0'].to_numpy()
-    sf_zspec = data['z'].to_numpy()
-    sf_L = data['L_lya'].to_numpy()
+    EW_sf = data['EW0'].to_numpy().astype(float)
+    sf_zspec = data['z'].to_numpy().astype(float)
+    sf_L = data['L_lya'].to_numpy().astype(float)
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
@@ -165,4 +165,5 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='')
     is_LAE = (is_qso & (zspec > 2)) | is_sf
     where_hiL = (is_qso & (L_lya > 44))
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
+    return pm_flx, pm_err, zspec, EW_lya, L_lya.astype(float), is_qso,\
+        is_sf, is_gal, is_LAE, where_hiL
