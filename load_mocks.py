@@ -94,7 +94,7 @@ def load_GAL_mock(name, add_errs=True):
     gal_L = np.zeros(EW_gal.shape).astype(float)
 
     # GAL mock is for contaminants, so we want sources with z>2 only
-    where_low_z = (gal_zspec < 2)
+    where_low_z = (gal_zspec < 8)
     gal_flx = gal_flx[:, where_low_z]
     gal_err = gal_err[:, where_low_z]
     EW_gal = EW_gal[where_low_z]
