@@ -19,6 +19,7 @@ def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
 def flux_to_mag(f, w):
+    log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(np.float)
     return -2.5 * np.log10(log_arg) - 48.60
 
 def load_filter_tags():
@@ -657,11 +658,11 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         )
     )
 
-    L_Arr = np.log10(flambda * 4*np.pi * dL ** 2 * (1 + z_Arr))
+    L_Arr = np.log10(flambda * 4*np.pi * dL ** 2)
     L_e_Arr = (
         (dL ** 2 * flambda_e) ** 2
         + (2*dL * dL_e * flambda) ** 2
-    ) ** 0.5 * 4*np.pi * (1 + z_Arr)
+    ) ** 0.5 * 4*np.pi
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 

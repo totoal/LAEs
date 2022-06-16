@@ -68,9 +68,6 @@ def main(part, survey_name, t_or_t):
     widths_Arr = np.random.rand(N_sources_LAE) * (w_in[1] - w_in[0]) + w_in[0]
     s_Arr = 10**(np.random.rand(N_sources_LAE) * (s_in[1] - s_in[0]) + s_in[0])
 
-    # L_Arr is brought to the obs-frame
-    L_Arr -= np.log(1 + z_Arr)
-
     # Define EW arr
     ew_x = np.linspace(10, 500, 10000)
     w_0 = 75
@@ -201,7 +198,8 @@ def main(part, survey_name, t_or_t):
 
     # Output L_Arr is converted into rest-frame
     z_out_Arr = np.array(z_out_Arr)
-    L_Arr_out = L_Arr[good][good2] + np.log10(1 + z_out_Arr)
+    L_Arr_out = L_Arr[good][good2]
+    L_Arr_out = L_Arr_out.astype(float)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
@@ -212,10 +210,6 @@ def main(part, survey_name, t_or_t):
         np.array(z_out_Arr).reshape(-1, 1),
         np.array(EW_out_Arr).reshape(-1, 1), L_Arr_out.reshape(-1, 1)))
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
-
-    # SED_file.close()
-    # SED_no_line_file.close()
-
 
 if __name__ == '__main__':
     t0 = time()
