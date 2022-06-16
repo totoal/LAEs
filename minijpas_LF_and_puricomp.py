@@ -25,7 +25,7 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 
-gal_area = 3.16 ** 2
+gal_area = 5.54
 bad_qso_area = 200
 good_qso_area = 400
 hiL_qso_area = 4000
