@@ -19,7 +19,8 @@ def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
 def flux_to_mag(f, w):
-    return -2.5 * np.log10(f * w**2/c * 1e-8) - 48.60
+    log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(np.float)
+    return -2.5 * np.log10(log_arg) - 48.60
 
 def load_filter_tags():
     filepath = './JPAS_Transmission_Curves_20170316/minijpas.Filter.csv'
