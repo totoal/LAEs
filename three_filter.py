@@ -1,15 +1,16 @@
 import numpy as np
-from scipy.integrate import simpson
-from my_functions import IGM_TRANSMISSION
+from scipy.integrate import quad
+
+from my_functions import central_wavelength, load_tcurves, load_filter_tags
 
 '''
 alpha & beta: two auxiliary functions for the three-filter continuum estimate method
 '''
 def alpha(w_Arr, t):
-    return simpson(w_Arr**2 * t, w_Arr) / simpson(w_Arr*t, w_Arr)
+    return quad(w_Arr**2 * t, w_Arr) / quad(w_Arr*t, w_Arr)
 
 def beta(w_Arr, t, w_EL):
-    return np.interp(w_EL, w_Arr, t) * w_EL / simpson(t*w_Arr, w_Arr)
+    return np.interp(w_EL, w_Arr, t) * w_EL / quad(t*w_Arr, w_Arr)
 
 ## Main function
 def three_filter_method(NB, BB_LC, BB_LU,
@@ -49,49 +50,56 @@ def three_filter_method(NB, BB_LC, BB_LU,
 
     return F_EL, A, B, A_err, B_err
 
-def NB_3fm(pm_data, pm_err, nb_c, tcurves, w_central, bb_dist=10, N_nb=4):
+def cont_est_3FM(pm_flx, pm_err, NB_Arr):
     '''
-    Builds synthetic photometry for virtual broad bands made out of narrow bands which
-    serve as arguments for the three_filter_method function.
+    INPUT
+    pm_flx: matrix of band fluxes (60 x N_sources)
+    pm_err: errors of pm_flx
+    NB_Arr: Array of NBs at the position of which to estimate the continuum
 
-    INPUTS: pm_data (60xN_sources), pm_err (60xN_sources), nb_c central NB, bb_dist
-    separation in Angstroms of the virtual BBs, N_nb number of NBs to make the virtual
-    BB.
+    RETURNS
+    cont_est: A matrix of dimension 56 x N_sources with the continuum estimate for all the
+        NB positions of NB_Arr. The continum at the non-requested NBs is 0.
+    cont_err: Errors of cont_est. The error at the non-requested NBs is 99.
     '''
-    # IGM_T_Arr = IGM_TRANSMISSION(np.array(w_central[nb_c-N_nb : nb_c])).reshape(-1, 1)
-    # pm_data[nb_c-N_nb : nb_c] *= IGM_T_Arr
-    # pm_err[nb_c-N_nb : nb_c] *= IGM_T_Arr
+    tcurves = load_tcurves(load_filter_tags())
+    w_central = central_wavelength()
+    N_sources = pm_flx.shape[1]
 
-    NB = pm_data[nb_c]
-    BB_LC = np.average(
-        pm_data[nb_c-N_nb : nb_c+N_nb+1], axis=0,
-        weights=pm_err[nb_c-N_nb : nb_c+N_nb+1] ** -2
-    )
-    BB_LU = np.average(
-        pm_data[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist], axis=0,
-        weights=pm_err[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist] ** -2
-    )
-    NB_err = pm_err[nb_c]
-    BB_LC_err = np.sum(pm_err[nb_c-N_nb : nb_c+N_nb+1] ** -2, axis=0) ** -0.5
-    BB_LU_err = np.sum(
-        pm_err[nb_c-N_nb+bb_dist : nb_c+N_nb+1+bb_dist] ** -2, axis=0) ** -0.5
+    cont_est_lya = np.zeros((56, N_sources))
+    cont_err_lya = np.ones((56, N_sources)) ** 99.
 
-    w_Arr = np.array(tcurves['w'][nb_c])
-    t_NB = np.array(tcurves['t'][nb_c])
-    t_BB_LC = np.zeros(len(w_Arr))
-    t_BB_LU = np.zeros(len(w_Arr))
+    for nb_c in NB_Arr:
+        NB = pm_flx[nb_c]
+        NB_err = pm_err[nb_c]
+        t_NB = np.array(tcurves['t'][nb_c])
+        w_NB = np.array(tcurves['w'][nb_c])
+        w_EL = w_central[nb_c]
+        if 5 <= nb_c < 18: # g band range
+            BB_LC = pm_flx[-3]
+            BB_LC_err = pm_err[-3]
+            t_BB_LC = np.array(tcurves['t'][-3])
+            w_BB_LC = np.array(tcurves['w'][-3])
+            BB_LU = pm_flx[-2]
+            BB_LU_err = pm_err[-2]
+            t_BB_LU = np.array(tcurves['t'][-2])
+            w_BB_LU = np.array(tcurves['w'][-2])
+        if 19 <= nb_c < 33: # r band range
+            BB_LC = pm_flx[-2]
+            BB_LC_err = pm_err[-2]
+            t_BB_LC = np.array(tcurves['t'][-2])
+            w_BB_LC = np.array(tcurves['w'][-2])
+            BB_LU = pm_flx[-1]
+            BB_LU_err = pm_err[-1]
+            t_BB_LU = np.array(tcurves['t'][-1])
+            w_BB_LU = np.array(tcurves['w'][-1])
 
-    for i in range(2 * N_nb + 1):
-        t_BB_LC += np.interp(
-            w_Arr, tcurves['w'][nb_c-N_nb+i], tcurves['t'][nb_c-N_nb+i]
+        _, A, B, A_err, B_err = three_filter_method(
+            NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB, w_NB, t_BB_LC, t_BB_LU,
+            w_BB_LC, w_BB_LU, w_EL
         )
-        t_BB_LU += np.interp(
-            w_Arr, tcurves['w'][nb_c-N_nb+bb_dist+i], tcurves['t'][nb_c-N_nb+bb_dist+i]
-        )
 
-    w_NB = w_BB_LU = w_BB_LC = w_Arr
+        cont_est_lya[nb_c] = A * w_EL + B
+        cont_err_lya[nb_c] = (w_EL**2 * A_err**2 + B_err**2) ** 0.5
 
-    w_EL = w_central[nb_c]
-
-    return three_filter_method(NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB,
-                               w_NB, t_BB_LC, t_BB_LU, w_BB_LC, w_BB_LU, w_EL)
+        return cont_est_lya, cont_err_lya
