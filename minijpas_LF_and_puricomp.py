@@ -39,7 +39,7 @@ hiL_factor = bad_qso_area / hiL_qso_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
-def load_mocks(train_or_test, survey_name):
+def load_mocks(train_or_test, survey_name, add_errs=True):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_0'
@@ -47,7 +47,7 @@ def load_mocks(train_or_test, survey_name):
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, name_qso_hiL)
+        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, name_qso_hiL, add_errs)
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 

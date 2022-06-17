@@ -128,10 +128,10 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
-def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL=''):
-    qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso)
-    gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal)
-    sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf)
+def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='', add_errs=True):
+    qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso, add_errs)
+    gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal, add_errs)
+    sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs)
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
