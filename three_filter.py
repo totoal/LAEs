@@ -84,7 +84,7 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
             BB_LU_err = pm_err[-2]
             t_BB_LU = np.array(tcurves['t'][-2])
             w_BB_LU = np.array(tcurves['w'][-2])
-        if 19 <= nb_c < 33: # r band range
+        elif 19 <= nb_c < 33: # r band range
             BB_LC = pm_flx[-2]
             BB_LC_err = pm_err[-2]
             t_BB_LC = np.array(tcurves['t'][-2])
@@ -93,6 +93,9 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
             BB_LU_err = pm_err[-1]
             t_BB_LU = np.array(tcurves['t'][-1])
             w_BB_LU = np.array(tcurves['w'][-1])
+        else:
+            cont_est_lya[nb_c] = 0.
+            cont_err_lya[nb_c] = 99.
 
         _, A, B, A_err, B_err = three_filter_method(
             NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB, w_NB, t_BB_LC, t_BB_LU,
@@ -102,4 +105,4 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
         cont_est_lya[nb_c] = A * w_EL + B
         cont_err_lya[nb_c] = (w_EL**2 * A_err**2 + B_err**2) ** 0.5
 
-        return cont_est_lya, cont_err_lya
+    return cont_est_lya, cont_err_lya
