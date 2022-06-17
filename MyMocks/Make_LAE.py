@@ -199,7 +199,6 @@ def main(part, survey_name, t_or_t):
     # Output L_Arr is converted into rest-frame
     z_out_Arr = np.array(z_out_Arr)
     L_Arr_out = L_Arr[good][good2]
-    L_Arr_out = L_Arr_out.astype(float)
 
     np.save(filename + '/w_Arr.npy', w_Arr_reduced)
 
