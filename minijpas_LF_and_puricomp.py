@@ -14,6 +14,7 @@ import pandas as pd
 from my_functions import *
 from load_mocks import ensemble_mock
 from LumFunc_miniJPAS import LF_perturb_err
+from three_filter import cont_est_3FM
 
 import os
 
@@ -50,9 +51,23 @@ def load_mocks(train_or_test, survey_name):
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 
-def search_lines(pm_flx, pm_err, ew0_cut, zspec):
+def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
+    if cont_est_m == 'nb':
+        est_lya, err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
+        est_oth, err_oth = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
+    elif cont_est_m == '3fm':
+        est_lya, err_lya = cont_est_3FM(pm_flx, pm_err, np.arange(1, 28))
+        est_oth = est_lya
+        err_oth = err_lya
+    else:
+        print('Not a valid continuum estimation method')
+    return est_lya, err_lya, est_oth, err_oth
+
+def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
+    cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
+        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m) 
+
     # Lya search
-    cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
     lya_lines, lya_cont_lines, line_widths = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
@@ -60,7 +75,6 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec):
     lya_lines = np.array(lya_lines)
 
     # Other lines
-    cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
         400, obs=True)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
@@ -396,7 +410,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name):
-    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
+    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # Vector of magnitudes in r band
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -413,7 +427,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     # Estimate continuum, search lines
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
-        search_lines(pm_flx, pm_err, ew0_cut, zspec)
+        search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m)
 
     z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
@@ -617,15 +631,17 @@ def effective_volume(nb_min, nb_max, survey_name):
     return volume_abs + volume_overlap * 0.5
 
 def make_the_LF(params):
-    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth = params
+    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
     N_minijpas = load_minijpas_jnep()
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
+    cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
+        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m) 
+
     # Lya search
-    cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut, mask=mask)
     lya_lines, lya_cont_lines, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
@@ -633,7 +649,6 @@ def make_the_LF(params):
     lya_lines = np.array(lya_lines)
 
     # Other lines
-    cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
         ew_oth, obs=True, mask=mask)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
@@ -810,21 +825,23 @@ def make_the_LF(params):
 
 if __name__ == '__main__':
     # Parameters of the LF:
-    # (min_mag, max_mag, nb_min, nb_max, ew0_cut)
+    # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
+    # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 23, 6, 15, 30, 400),
-        (17, 23, 15, 23, 30, 400),
-        (17, 23, 6, 6, 30, 400),
-        (17, 23, 7, 7, 30, 400),
-        (17, 23, 8, 8, 30, 400),
-        (17, 23, 9, 9, 30, 400),
-        (17, 23, 10, 10, 30, 400),
-        (17, 23, 11, 11, 30, 400),
-        (17, 23, 12, 12, 30, 400),
-        (17, 23, 13, 13, 30, 400),
-        (17, 23, 14, 14, 30, 400),
-        (17, 23, 15, 15, 30, 400)
+        (17, 23, 6, 15, 30, 400, 'nb'),
+        (17, 23, 6, 15, 30, 400, '3fm')
+        # (17, 23, 15, 23, 30, 400),
+        # (17, 23, 6, 6, 30, 400),
+        # (17, 23, 7, 7, 30, 400),
+        # (17, 23, 8, 8, 30, 400),
+        # (17, 23, 9, 9, 30, 400),
+        # (17, 23, 10, 10, 30, 400),
+        # (17, 23, 11, 11, 30, 400),
+        # (17, 23, 12, 12, 30, 400),
+        # (17, 23, 13, 13, 30, 400),
+        # (17, 23, 14, 14, 30, 400),
+        # (17, 23, 15, 15, 30, 400)
     ]
 
     for params in LF_parameters:
