@@ -96,6 +96,7 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
         else:
             cont_est_lya[nb_c] = 0.
             cont_err_lya[nb_c] = 99.
+            continue
 
         _, A, B, A_err, B_err = three_filter_method(
             NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB, w_NB, t_BB_LC, t_BB_LU,
