@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.integrate import quad
+from scipy.integrate import simpson
 
 from my_functions import central_wavelength, load_tcurves, load_filter_tags
 
@@ -7,10 +7,10 @@ from my_functions import central_wavelength, load_tcurves, load_filter_tags
 alpha & beta: two auxiliary functions for the three-filter continuum estimate method
 '''
 def alpha(w_Arr, t):
-    return quad(w_Arr**2 * t, w_Arr) / quad(w_Arr*t, w_Arr)
+    return simpson(w_Arr**2 * t, w_Arr) / simpson(w_Arr*t, w_Arr)
 
 def beta(w_Arr, t, w_EL):
-    return np.interp(w_EL, w_Arr, t) * w_EL / quad(t*w_Arr, w_Arr)
+    return np.interp(w_EL, w_Arr, t) * w_EL / simpson(t*w_Arr, w_Arr)
 
 ## Main function
 def three_filter_method(NB, BB_LC, BB_LU,
