@@ -421,7 +421,10 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     print(f'z interval: ({z_min:0.2f}, {z_max:0.2f})')
 
     # Make the directory if it doesn't exist
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}'
+    )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
@@ -683,7 +686,7 @@ def make_the_LF(params):
     ML_predict_mask = (mag > 23) & (mag < 24) & (L_Arr > 0)
     L_Arr[ML_predict_mask] = ML_predict_L(
         pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag22-23.5'
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
     )
 
     L_binning = np.load('npy/L_nb_err_binning.npy')
