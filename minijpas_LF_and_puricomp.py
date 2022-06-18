@@ -446,17 +446,17 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    # ML_predict_mask = (mag < 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    # )
+    ML_predict_mask = (mag < 23) & (L_Arr > 0)
+    L_Arr[ML_predict_mask] = ML_predict_L(
+        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
+    )
 
-    # ML_predict_mask = (mag > 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
-    # )
+    ML_predict_mask = (mag > 23) & (L_Arr > 0)
+    L_Arr[ML_predict_mask] = ML_predict_L(
+        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
+    )
 
     ## Compute and save L corrections and errors
     L_binning = np.logspace(41, 46, 20 + 1)
@@ -674,17 +674,17 @@ def make_the_LF(params):
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    # ML_predict_mask = (mag < 22) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    # )
+    ML_predict_mask = (mag < 23) & (L_Arr > 0)
+    L_Arr[ML_predict_mask] = ML_predict_L(
+        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
+    )
 
-    # ML_predict_mask = (mag > 22) & (mag < 24) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag22-24'
-    # )
+    ML_predict_mask = (mag > 23) & (mag < 24) & (L_Arr > 0)
+    L_Arr[ML_predict_mask] = ML_predict_L(
+        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag22-23.5'
+    )
 
     L_binning = np.load('npy/L_nb_err_binning.npy')
     L_Lbin_err = np.load('npy/L_nb_err.npy')
@@ -816,7 +816,10 @@ def make_the_LF(params):
         f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}'
     )
 
-    folder_name = f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}'
+    )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
@@ -829,8 +832,8 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 23, 6, 15, 30, 400, 'nb'),
-        (17, 23, 6, 15, 30, 400, '3fm')
+        (17, 24, 6, 20, 30, 400, 'nb'),
+        (17, 24, 6, 20, 30, 400, '3fm')
         # (17, 23, 15, 23, 30, 400),
         # (17, 23, 6, 6, 30, 400),
         # (17, 23, 7, 7, 30, 400),
