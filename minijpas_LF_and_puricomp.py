@@ -418,7 +418,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
-    print(f'z interval: ({z_min:0.2f}, {z_max:0.2f})')
 
     # Make the directory if it doesn't exist
     folder_name = (
@@ -449,26 +448,30 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    ML_predict_mask = (mag < 23) & (L_Arr > 0)
-    L_Arr[ML_predict_mask] = ML_predict_L(
-        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    )
+    # ML_predict_mask = (mag < 23) & (L_Arr > 0)
+    # L_Arr[ML_predict_mask] = ML_predict_L(
+    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
+    # )
 
-    ML_predict_mask = (mag > 23) & (L_Arr > 0)
-    L_Arr[ML_predict_mask] = ML_predict_L(
-        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
-    )
+    # ML_predict_mask = (mag > 23) & (L_Arr > 0)
+    # L_Arr[ML_predict_mask] = ML_predict_L(
+    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
+    # )
 
     ## Compute and save L corrections and errors
     L_binning = np.logspace(41, 46, 20 + 1)
+    L_bin_c = [L_binning[i : i + 1].sum() for i in range(len(L_binning) - 1)]
     L_Lbin_err, median_L = compute_L_Lbin_err(
         L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning
     )
     np.save('npy/L_nb_err.npy', L_Lbin_err)
     np.save('npy/L_bias.npy', median_L)
     np.save('npy/L_nb_err_binning.npy', L_binning)
+
+    # Correct L_Arr with the median
+    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -673,24 +676,30 @@ def make_the_LF(params):
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
     )
 
-    _, _, L_Arr, L_e_Arr, _, _ = EW_L_NB(
+    ### Estimate Luminosity
+    _, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    ML_predict_mask = (mag < 23) & (L_Arr > 0)
-    L_Arr[ML_predict_mask] = ML_predict_L(
-        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    )
+    # ML_predict_mask = (mag < 23) & (L_Arr > 0)
+    # L_Arr[ML_predict_mask] = ML_predict_L(
+    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
+    # )
 
-    ML_predict_mask = (mag > 23) & (mag < 24) & (L_Arr > 0)
-    L_Arr[ML_predict_mask] = ML_predict_L(
-        pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-        z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
-    )
+    # ML_predict_mask = (mag > 23) & (L_Arr > 0)
+    # L_Arr[ML_predict_mask] = ML_predict_L(
+    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
+    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
+    # )
 
-    L_binning = np.load('npy/L_nb_err_binning.npy')
     L_Lbin_err = np.load('npy/L_nb_err.npy')
+    median_L = np.load('npy/L_bias.npy')
+    L_binning = np.load('npy/L_nb_err_binning.npy')
+    L_bin_c = [L_binning[i : i + 1].sum() for i in range(len(L_binning) - 1)]
+
+    # Correct L_Arr with the median
+    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -836,20 +845,12 @@ if __name__ == '__main__':
     
     LF_parameters = [
         (17, 24, 6, 20, 30, 400, 'nb'),
-        (17, 24, 6, 20, 30, 400, '3fm')
-        # (17, 23, 15, 23, 30, 400),
-        # (17, 23, 6, 6, 30, 400),
-        # (17, 23, 7, 7, 30, 400),
-        # (17, 23, 8, 8, 30, 400),
-        # (17, 23, 9, 9, 30, 400),
-        # (17, 23, 10, 10, 30, 400),
-        # (17, 23, 11, 11, 30, 400),
-        # (17, 23, 12, 12, 30, 400),
-        # (17, 23, 13, 13, 30, 400),
-        # (17, 23, 14, 14, 30, 400),
-        # (17, 23, 15, 15, 30, 400)
+        (17, 24, 6, 20, 30, 400, '3fm'),
+        (17, 24, 6, 20, 50, 400, 'nb'),
+        (17, 23, 6, 20, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
+        print('mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'.format(*params))
         make_corrections(params)
         make_the_LF(params)
