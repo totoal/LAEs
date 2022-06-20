@@ -104,11 +104,11 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
             L_Lbin_err_plus[i] = last[0]
             L_Lbin_err_minus[i] = last[1]
             continue
-        perc = np.nanpercentile((10 ** L_Arr - 10 ** L_lya)[in_bin], [16, 50, 84])
+        perc = np.nanpercentile((L_Arr - L_lya)[in_bin], [16, 50, 84])
         L_Lbin_err_plus[i] = perc[2] - perc[1]
         
         last = [L_Lbin_err_plus[i], L_Lbin_err_minus[i]]
-        median[i] = perc[1]
+        median[i] = 10 ** perc[1]
 
     return L_Lbin_err_plus, median
 
@@ -316,9 +316,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
 
     for k in range(N_iter):
-        L_perturbed = np.log10(
-            10 ** L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
-        )
+        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
@@ -461,7 +459,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # )
 
     ## Compute and save L corrections and errors
-    L_binning = np.logspace(41, 46, 20 + 1)
+    L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i : i + 1].sum() for i in range(len(L_binning) - 1)]
     L_Lbin_err, median_L = compute_L_Lbin_err(
         L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning

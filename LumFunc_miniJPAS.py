@@ -44,9 +44,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     hist_i_mat = np.zeros((N_iter, N_bins))
 
     for k in range(N_iter):
-        L_perturbed = np.log10(
-            10 ** L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
-        )
+        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         puri, comp = weights_LF(
