@@ -476,6 +476,9 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 (
                     good_l
                 )
+                & (
+                    pm_flx[-2, src] < pm_flx[-3, src]
+                )
                 # The Lya line flux is the highest
                 # & (
                 #     (pm_flx[l_lya, src] - cont_est[l_lya, src])
