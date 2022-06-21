@@ -670,16 +670,19 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
 def Zero_point_error(tile_id_Arr, catname):
-    w_central = central_wavelength()
-
     ## Load Zero Point magnitudes
+    w_central = central_wavelength()
     zpt_cat = pd.read_csv(f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
 
+    zpt_mag = zpt_cat['ZPT'].to_numpy()
     zpt_err = zpt_cat['ERRZPT'].to_numpy()
 
-    ones = np.ones((len(w_central), len(zpt_err)))
+    ones = np.ones((len(w_central), len(zpt_mag)))
 
-    zpt_err = ones * zpt_err
+    zpt_err = (
+        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
+        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
+    )
 
     # Duplicate rows to match the tile_ID of each source
     idx = np.empty(tile_id_Arr.shape).astype(int)

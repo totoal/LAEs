@@ -424,7 +424,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     )
 
     ## Let's remove the sources with very low r magnitudes
-    low_r_mask = (pm_SEDs[-2] > 6e-19)
+    low_r_mask = (pm_SEDs[-2] > 4e-19)
     print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
 
     pd.DataFrame(

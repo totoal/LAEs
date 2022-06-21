@@ -13,6 +13,7 @@ import pandas as pd
 
 from my_functions import *
 from load_mocks import ensemble_mock
+from load_jpas_catalogs import load_minijpas_jnep
 from LumFunc_miniJPAS import LF_perturb_err
 from three_filter import cont_est_3FM
 
@@ -46,8 +47,9 @@ def load_mocks(train_or_test, survey_name, add_errs=True):
     name_gal = f'GAL_LC_{survey_name}_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, name_qso_hiL, add_errs)
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
+        is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
+                                                 name_qso_bad, name_qso_hiL, add_errs)
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 
@@ -460,7 +462,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     ## Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
-    L_bin_c = [L_binning[i : i + 1].sum() for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i : i + 1].sum() * 0.5 for i in range(len(L_binning) - 1)]
     L_Lbin_err, median_L = compute_L_Lbin_err(
         L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning
     )
@@ -513,89 +515,6 @@ def make_corrections(params):
             is_qso, is_sf, is_LAE, where_hiL, survey_name
         )
 
-def Zero_point_error(tile_id_Arr, catname):
-    ## Load Zero Point magnitudes
-    zpt_cat = pd.read_csv(f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
-
-    zpt_mag = zpt_cat['ZPT'].to_numpy()
-    zpt_err = zpt_cat['ERRZPT'].to_numpy()
-
-    ones = np.ones((len(w_central), len(zpt_mag)))
-
-    zpt_err = (
-        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
-        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
-    )
-
-    # Duplicate rows to match the tile_ID of each source
-    idx = np.empty(tile_id_Arr.shape).astype(int)
-
-    zpt_id = zpt_cat['TILE_ID'].to_numpy()
-    for src in range(len(tile_id_Arr)):
-        idx[src] = np.where(
-            (zpt_id == tile_id_Arr[src]) & (zpt_cat['IS_REFERENCE_METHOD'] == 1)
-        )[0][0]
-    
-    zpt_err = zpt_err[:, idx]
-
-    return zpt_err
-
-def load_minijpas_jnep():
-    pm_flx = np.array([]).reshape(60, 0)
-    pm_err = np.array([]).reshape(60, 0)
-    tile_id = np.array([])
-    parallax_sn = np.array([])
-    pmra_sn = np.array([])
-    pmdec_sn = np.array([])
-    starprob = np.array([])
-    spCl = np.array([])
-    zsp = np.array([])
-
-    N_minijpas = 0
-    split_converter = lambda s: np.array(s.split()).astype(float)
-    sum_flags = lambda s: np.sum(np.array(s.split()).astype(float))
-
-    for name in ['minijpas', 'jnep']:
-        cat = pd.read_csv(f'csv/{name}.Flambda_aper3_photoz_gaia_3.csv', sep=',', header=1,
-            converters={0: int, 1: int, 2: split_converter, 3: split_converter, 4: sum_flags,
-            5: sum_flags})
-
-        cat = cat[np.array([len(x) for x in cat['FLUX_APER_3_0']]) != 0] # Drop bad rows due to bad query
-        cat = cat[(cat.FLAGS == 0) & (cat.MASK_FLAGS == 0)] # Drop flagged
-        cat = cat.reset_index()
-
-        tile_id_i = cat['TILE_ID'].to_numpy()
-
-        parallax_i = cat['parallax'].to_numpy() / cat['parallax_error'].to_numpy()
-        pmra_i = cat['pmra'].to_numpy() / cat['pmra_error'].to_numpy()
-        pmdec_i = cat['pmdec'].to_numpy() / cat['pmdec_error'].to_numpy()
-
-        pm_flx_i = np.stack(cat['FLUX_APER_3_0'].to_numpy()).T * 1e-19
-        pm_err_i = np.stack(cat['FLUX_RELERR_APER_3_0'].to_numpy()).T * pm_flx_i
-
-        if name == 'minijpas':
-            N_minijpas = pm_flx_i.shape[1]
-
-        starprob_i = cat['morph_prob_star']
-
-        pm_err_i = (pm_err_i ** 2 + Zero_point_error(cat['TILE_ID'], name) ** 2) ** 0.5
-
-        spCl_i = cat['spCl']
-        zsp_i = cat['zsp']
-
-        pm_flx = np.hstack((pm_flx, pm_flx_i))
-        pm_err = np.hstack((pm_err, pm_err_i))
-        tile_id = np.concatenate((tile_id, tile_id_i))
-        pmra_sn = np.concatenate((pmra_sn, pmra_i))
-        pmdec_sn = np.concatenate((pmdec_sn, pmdec_i))
-        parallax_sn = np.concatenate((parallax_sn, parallax_i))
-        starprob = np.concatenate((starprob, starprob_i))
-        spCl = np.concatenate((spCl, spCl_i))
-        zsp = np.concatenate((zsp, zsp_i))
-
-    return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob,\
-        spCl, zsp, N_minijpas
-
 def effective_volume(nb_min, nb_max, survey_name):
     '''
     Due to NB overlap, specially when considering single filters, the volume probed by one
@@ -638,7 +557,7 @@ def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-    N_minijpas = load_minijpas_jnep()
+        photoz, photoz_chi_best, N_minijpas = load_minijpas_jnep()
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -694,7 +613,7 @@ def make_the_LF(params):
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
-    L_bin_c = [L_binning[i : i + 1].sum() for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i : i + 1].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
     # Correct L_Arr with the median
     L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
