@@ -2,7 +2,8 @@ import glob
 import pandas as pd
 import numpy as np
 
-from my_functions import count_true
+from astropy.cosmology import Planck18 as cosmo
+import astropy.units as u
 
 def load_QSO_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
@@ -54,6 +55,16 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
 
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L
 
+def angular_radius(R, z):
+    '''
+    Takes as input a distance R in comoving Mpc and a redshift z and returns the
+    angular size in the sky.
+    '''
+    arcsec_per_kpc = cosmo.arcsec_per_kpc_comoving(z)
+    R = np.array(R) * u.Mpc * cosmo.h
+    R_ang = R * arcsec_per_kpc
+    return R_ang.to(u.deg).value
+
 def load_GAL_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename +'data*')
@@ -93,15 +104,14 @@ def load_GAL_mock(name, add_errs=True):
     gal_zspec = data_gal['z'].to_numpy()[good_src].astype(float)
     gal_L = np.zeros(EW_gal.shape).astype(float)
 
-    # GAL mock is for contaminants, so we want sources with z>2 only
-    where_low_z = (gal_zspec < 8)
-    gal_flx = gal_flx[:, where_low_z]
-    gal_err = gal_err[:, where_low_z]
-    EW_gal = EW_gal[where_low_z]
-    gal_zspec = gal_zspec[where_low_z]
-    gal_L = gal_L[where_low_z]
+    Rdisk = data_gal['Rdisk'][good_src]
+    Rbulge = data_gal['Rbulge'][good_src]
+    Mdisk = data_gal['Mdisk'][good_src]
+    Mbulge = data_gal['Mbulge'][good_src]
+    R_eff = (Rdisk * Mdisk + Rbulge * Mbulge) / (Mbulge + Mdisk)
+    R_ang = angular_radius(R_eff, gal_zspec)
 
-    return gal_flx, gal_err, EW_gal, gal_zspec, gal_L
+    return gal_flx, gal_err, EW_gal, gal_zspec, gal_L, R_ang
 
 def load_SF_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
@@ -130,7 +140,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='', add_errs=True):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso, add_errs)
-    gal_flx, gal_err, EW_gal, gal_zspec, gal_L = load_GAL_mock(name_gal, add_errs)
+    gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(name_gal, add_errs)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs)
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
@@ -173,5 +183,8 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     is_LAE = (is_qso & (zspec > 2)) | is_sf
     where_hiL = (is_qso & (L_lya > 44))
 
+    ang_R = np.zeros(EW_lya.shape)
+    ang_R[is_gal] = gal_R
+
     return pm_flx, pm_err, zspec, EW_lya, L_lya.astype(float), is_qso,\
-        is_sf, is_gal, is_LAE, where_hiL
+        is_sf, is_gal, is_LAE, where_hiL, ang_R
