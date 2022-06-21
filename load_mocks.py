@@ -60,7 +60,7 @@ def angular_radius(R, z):
     Takes as input a distance R in comoving Mpc and a redshift z and returns the
     angular size in the sky.
     '''
-    arcsec_per_kpc = cosmo.arcsec_per_kpc_comoving(z)
+    arcsec_per_kpc = cosmo.arcsec_per_kpc_proper(z)
     R = np.array(R) * u.Mpc * cosmo.h
     R_ang = R * arcsec_per_kpc
     return R_ang.to(u.deg).value
