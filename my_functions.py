@@ -422,8 +422,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     )
     return line
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=True,
-    give_bad_lines=False):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -437,9 +436,6 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     w_CIII = 1908.73
     # w_MgII = 2799.12
 
-    if give_bad_lines:
-        good_lines_Arr = np.copy(nice_lya)
-
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
         z_src = z_Arr[src]
@@ -452,7 +448,6 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         # w_obs_MgII = (1 + z_src) * w_MgII
 
         this_nice = True
-        good_lines = True
         for l in other_lines[src]:
             # Ignore very red and very blue NBs
             if (l > 46) | (l < 3):
@@ -471,82 +466,27 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 | (w_obs_l > w_obs_CIII + fwhm)
             )
 
-            if ~(   
-                # Lines are in expected possitions for QSOs
-                (
-                    good_l
-                )
-                & (
-                    pm_flx[-2, src] < pm_flx[-3, src]
-                )
-                # The Lya line flux is the highest
-                # & (
-                #     (pm_flx[l_lya, src] - cont_est[l_lya, src])
-                #     - (pm_flx[l, src] - cont_est[l, src])
-                #     >= 0
-                # )
-                # # Also check that Lya line + cont is the highest
-                # & (
-                #     pm_flx[l, src] <= pm_flx[l_lya, src]
-                # )
-                # Max z for LAE set to 4.3
-                # & (l_lya < 30)
-                # Cannot be other lines bluer than Lya - NOT TRUE
-                # & (l >= l_lya - 1)
-            ):
+            if ~good_l:
                 this_nice = False
-                good_lines = False
                 break
+
+        if ~this_nice:
+            continue
+        elif len(other_lines[src]) > 1:
+            pass
+        else:
+            good_colors = (
+                (pm_flx[-2, src] < pm_flx[-3, src])
+                & (pm_flx[-1, src] < pm_flx[-2, src])
+            )
+            if ~good_colors:
+                this_nice = False
+
         if this_nice:
             nice_lya[src] = True
         
-        if give_bad_lines:
-            good_lines_Arr[src] = good_lines
-
-
-    # lya_L = np.zeros(N_sources)
-    # lya_R = np.zeros(N_sources)
-    # lya_R2 = np.zeros(N_sources)
-    # lya_L_err = np.zeros(N_sources) * 99
-    # lya_R_err = np.zeros(N_sources) * 99
-    # lya_R2_err = np.zeros(N_sources) * 99
-
-    # for src in range(N_sources): 
-    #     if z_Arr[src] == -1:
-    #             continue
-    #     l = lya_lines[src]
-    #     if l > 1:
-    #         if l > 6:
-    #             lya_L[src] = np.average(
-    #                 pm_flx[l - 7 : l - 1, src],
-    #                 weights=pm_err[l - 7 : l - 1, src] ** -2
-    #             )
-    #             lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
-    #         else:
-    #             lya_L[src] = np.average(
-    #                 pm_flx[:l - 1, src],
-    #                 weights=pm_err[:l - 1, src] ** -2
-    #             )
-    #             lya_L_err[src] = np.sum(pm_err[l - 7 : l - 1, src] ** -2) ** -0.5
-
-    #     lya_R[src] = np.average(
-    #         pm_flx[l + 2 : l + 8, src],
-    #         weights=pm_err[l + 2 : l + 8, src] ** -2
-    #     )
-    #     lya_R2[src] = np.mean(pm_flx[l + 12 : l + 12 + 5, src])
-
-    #     lya_R_err[src] = np.sum(pm_err[l + 2 : l + 8, src] ** -2) ** -0.5
-    #     lya_R2_err[src] = np.sum(pm_err[l + 12 : l + 12 + 5, src] ** -2) ** -0.5
-
-    # nice_lya = (
-    #     nice_lya
-    #     & np.invert(lya_L - lya_R > 3 * (lya_L_err ** 2 + lya_R_err ** 2) ** 0.5)
-        # & np.invert(lya_R2 - lya_R > 3 * (lya_R_err ** 2 + lya_R2_err ** 2) ** 0.5)
-        # & (lya_R / lya_R2 > 1.)
-    # )
-
-    if give_bad_lines:
-        return nice_lya & mask, good_lines_Arr
+    if mask is None:
+        return nice_lya
     else:
         return nice_lya & mask
 
