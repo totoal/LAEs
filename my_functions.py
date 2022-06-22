@@ -470,7 +470,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
                 this_nice = False
                 break
 
-        if ~this_nice:
+        if not this_nice:
             continue
         elif len(other_lines[src]) > 1:
             pass
