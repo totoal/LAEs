@@ -557,7 +557,7 @@ def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-        photoz, photoz_chi_best, N_minijpas = load_minijpas_jnep()
+        _, _, _, _, N_minijpas = load_minijpas_jnep()
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
