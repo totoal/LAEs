@@ -593,7 +593,8 @@ def make_the_LF(params):
     selection = {
         'tile_id': tile_id[nice_lya],
         'x_im': x_im[nice_lya],
-        'y_im': y_im[nice_lya]
+        'y_im': y_im[nice_lya],
+        'nb_sel': lya_lines[nice_lya]
     }
     np.save('npy/selection.npy', selection)
 
