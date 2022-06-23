@@ -16,6 +16,8 @@ def load_minijpas_jnep():
     photoz = np.array([])
     photoz_odds = np.array([])
     photoz_chi_best = np.array([])
+    x_im = np.array([])
+    y_im = np.array([])
 
     N_minijpas = 0
     split_converter = lambda s: np.array(s.split()).astype(float)
@@ -54,6 +56,9 @@ def load_minijpas_jnep():
         photoz_odds_i = cat['ODDS']
         photoz_chi_best_i = cat['CHI_BEST']
 
+        x_im_i = cat['X_IMAGE']
+        y_im_i = cat['Y_IMAGE']
+
         pm_flx = np.hstack((pm_flx, pm_flx_i))
         pm_err = np.hstack((pm_err, pm_err_i))
         tile_id = np.concatenate((tile_id, tile_id_i))
@@ -67,6 +72,8 @@ def load_minijpas_jnep():
         photoz = np.concatenate((photoz, photoz_i))
         photoz_odds = np.concatenate((photoz_odds, photoz_odds_i))
         photoz_chi_best = np.concatenate((photoz_chi_best, photoz_chi_best_i))
+        x_im = np.concatenate((x_im, x_im_i))
+        y_im = np.concatenate((y_im, y_im_i))
 
     return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, starlhood,\
-        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas
+        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im

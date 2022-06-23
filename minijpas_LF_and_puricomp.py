@@ -555,7 +555,7 @@ def make_the_LF(params):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-        _, _, _, _, N_minijpas = load_minijpas_jnep()
+        _, _, _, _, N_minijpas, x_im, y_im = load_minijpas_jnep()
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -586,10 +586,16 @@ def make_the_LF(params):
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
     mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut
-
     nice_lya = nice_lya_select(
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
     )
+    # Save the selection
+    selection = {
+        'tile_id': tile_id[nice_lya],
+        'x_im': x_im[nice_lya],
+        'y_im': y_im[nice_lya]
+    }
+    np.save('npy/selection.npy', selection)
 
     ### Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -759,10 +765,10 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 24, 6, 20, 30, 400, 'nb'),
-        (17, 24, 6, 20, 30, 400, '3fm'),
-        (17, 24, 6, 20, 50, 400, 'nb'),
-        (17, 23, 6, 20, 30, 400, 'nb'),
+        (17, 24, 6, 20, 30, 400, 'nb')
+        # (17, 24, 6, 20, 30, 400, '3fm'),
+        # (17, 24, 6, 20, 50, 400, 'nb'),
+        # (17, 23, 6, 20, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
