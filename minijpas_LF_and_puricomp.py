@@ -9,8 +9,6 @@ matplotlib.rcParams.update({'font.size': 10})
 
 import seaborn as sns
 
-import pandas as pd
-
 from my_functions import *
 from load_mocks import ensemble_mock
 from load_jpas_catalogs import load_minijpas_jnep
@@ -42,8 +40,8 @@ z_nb_Arr = w_central[:-4] / w_lya - 1
 
 def load_mocks(train_or_test, survey_name, add_errs=True):
     name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_0'
-    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_0'
+    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
+    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
     name_gal = f'GAL_LC_{survey_name}_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_0'
 

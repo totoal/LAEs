@@ -206,13 +206,13 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     log_Lx = np.log10(Lx)
 
     # Daniele's LF
-    # phistar1 = 3.33e-6
-    # Lstar1 = 44.65
-    # alpha1 = -1.35
+    phistar1 = 3.33e-6
+    Lstar1 = 44.65
+    alpha1 = -1.35
     # Zhang's LF
-    phistar1 = 10 ** -5.85
-    Lstar1 = 44.6
-    alpha1 = -1.2
+    # phistar1 = 10 ** -5.85
+    # Lstar1 = 44.6
+    # alpha1 = -1.2
     Phi = schechter(Lx, phistar1, 10 ** Lstar1, alpha1) * Lx * np.log(10)
 
     LF_p_cum_x = np.linspace(L_min, L_max, 1000)
@@ -450,7 +450,7 @@ if __name__ == '__main__':
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, '')
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'D_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
 
@@ -463,6 +463,6 @@ if __name__ == '__main__':
 
     for survey_name in ['minijpas', 'jnep']:
         for train_or_test in ['test', 'train']:
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL2_')
+            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL2_D_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
