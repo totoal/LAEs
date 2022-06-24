@@ -3,6 +3,8 @@
 import numpy as np
 np.seterr(all='ignore')
 
+import pickle
+
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.rcParams.update({'font.size': 10})
@@ -591,12 +593,14 @@ def make_the_LF(params):
     )
     # Save the selection
     selection = {
+        'src': np.where(nice_lya)[0],
         'tile_id': tile_id[nice_lya],
         'x_im': x_im[nice_lya],
         'y_im': y_im[nice_lya],
         'nb_sel': lya_lines[nice_lya]
     }
-    np.save('npy/selection.npy', selection)
+    with open('npy/selection.npy', 'wb') as f:
+        pickle.dump(f, selection)
 
     ### Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
