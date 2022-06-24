@@ -84,6 +84,11 @@ def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins,
         puri_mat[np.isnan(puri_mat) | np.isinf(puri_mat)] = 0.
         comp_mat[np.isnan(comp_mat) | np.isinf(comp_mat)] = 0.
 
+        puri_mat = np.vstack([puri_mat, np.zeros(puri_mat.shape[1])])
+        puri_mat = np.hstack([puri_mat, np.zeros(puri_mat.shape[0]).reshape(-1, 1)])
+        comp_mat = np.vstack([comp_mat, np.zeros(comp_mat.shape[1])])
+        comp_mat = np.hstack([comp_mat, np.zeros(comp_mat.shape[0]).reshape(-1, 1)])
+
     xx, yy = bs.binnumber
 
     if not give_puri_comp:

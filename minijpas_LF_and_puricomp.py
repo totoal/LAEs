@@ -32,15 +32,15 @@ bad_qso_area = 200
 good_qso_area = 400
 hiL_qso_area = 4000
 
-# The proportional factors are made in relation to bad_qso
-# So bad_qso_factor = 1
+# the proportional factors are made in relation to bad_qso
+# so bad_qso_factor = 1
 gal_factor = bad_qso_area / gal_area
 good_qso_factor = bad_qso_area / good_qso_area
 hiL_factor = bad_qso_area / hiL_qso_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
-def load_mocks(train_or_test, survey_name, add_errs=True):
+def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
@@ -49,7 +49,8 @@ def load_mocks(train_or_test, survey_name, add_errs=True):
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
-                                                 name_qso_bad, name_qso_hiL, add_errs)
+                                             name_qso_bad, name_qso_hiL, add_errs,
+                                             qso_LAE_frac)
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 
@@ -71,7 +72,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
-    lya_lines, lya_cont_lines, line_widths = identify_lines(
+    lya_lines, lya_cont_lines, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
     lya_lines = np.array(lya_lines)
@@ -304,7 +305,8 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
-                         is_gal, is_sf, is_qso, is_LAE, where_hiL):
+                         is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
+                         good_qso_factor, gal_factor):
     r_bins = np.linspace(mag_min, mag_max, 10 + 1)
 
     # Perturb L
@@ -409,7 +411,8 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     return puri2d, comp2d, L_bins, r_bins
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-                    is_qso, is_sf, is_LAE, where_hiL, survey_name):
+                    is_qso, is_sf, is_LAE, where_hiL, survey_name,
+                    hiL_factor, good_qso_factor, gal_factor, plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # Vector of magnitudes in r band
@@ -486,7 +489,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     puri2d, comp2d, L_bins, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, bins,
-        L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL
+        L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
+        good_qso_factor, gal_factor
     )
 
     plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
@@ -497,6 +501,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
     nbs_to_consider = np.arange(nb_min, nb_max + 1)
+
+    if not plot_it:
+        return
 
     for which_one in ['Purity', 'Completeness']:
         purity_or_completeness_plot(
@@ -553,11 +560,11 @@ def effective_volume(nb_min, nb_max, survey_name):
 
     return volume_abs + volume_overlap * 0.5
 
-def make_the_LF(params):
+def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-        _, _, _, _, N_minijpas, x_im, y_im = load_minijpas_jnep()
+        _, _, _, _, N_minijpas, x_im, y_im = load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -599,8 +606,8 @@ def make_the_LF(params):
         'y_im': y_im[nice_lya],
         'nb_sel': lya_lines[nice_lya]
     }
-    with open('npy/selection.npy', 'wb') as f:
-        pickle.dump(f, selection)
+    # with open('npy/selection.npy', 'wb') as f:
+    #     pickle.dump(f, selection)
 
     ### Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -763,6 +770,9 @@ def make_the_LF(params):
 
     plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white')
     plt.close()
+    
+    if return_hist:
+        return hist_median, LF_bins
 
 if __name__ == '__main__':
     # Parameters of the LF:

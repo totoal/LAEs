@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from my_functions import Zero_point_error
 
-def load_minijpas_jnep():
+def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
     pm_flx = np.array([]).reshape(60, 0)
     pm_err = np.array([]).reshape(60, 0)
     tile_id = np.array([])
@@ -23,7 +23,7 @@ def load_minijpas_jnep():
     split_converter = lambda s: np.array(s.split()).astype(float)
     sum_flags = lambda s: np.sum(np.array(s.split()).astype(float))
 
-    for name in ['minijpas', 'jnep']:
+    for name in cat_list:
         cat = pd.read_csv(f'csv/{name}.Flambda_aper3_photoz_gaia_3.csv', sep=',', header=1,
             converters={0: int, 1: int, 2: split_converter, 3: split_converter, 4: sum_flags,
             5: sum_flags})

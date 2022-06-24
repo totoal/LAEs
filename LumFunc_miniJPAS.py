@@ -40,7 +40,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     which_w = [0, 2]
     N_bins = len(bins) - 1
 
-    N_iter = 1000
+    N_iter = 200
     hist_i_mat = np.zeros((N_iter, N_bins))
 
     for k in range(N_iter):
