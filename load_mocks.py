@@ -139,19 +139,29 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
-                  add_errs=True, qso_LAE_frac=1.):
+                  add_errs=True, qso_LAE_frac=1., sf_frac=1.):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso, add_errs)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(name_gal, add_errs)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs)
 
+    # Truncate SF
+    if sf_frac < 1:
+        N_sf = sf_flx.shape[1]
+        choice = np.random.choice(np.arange(N_sf), np.floor(N_sf * sf_frac).astype(int))
+        sf_flx = sf_flx[:, choice]
+        sf_err = sf_err[:, choice]
+        EW_sf = EW_sf[choice]
+        sf_zspec = sf_zspec[choice]
+        sf_L = sf_L[choice]
     # Truncate LAE QSOs
-    N_qso = qso_flx.shape[1]
-    choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac).astype(int))
-    qso_flx = qso_flx[:, choice]
-    qso_err = qso_err[:, choice]
-    EW_qso = EW_qso[choice]
-    qso_zspec = qso_zspec[choice]
-    qso_L = qso_L[choice]
+    if qso_LAE_frac < 1:
+        N_qso = qso_flx.shape[1]
+        choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac).astype(int))
+        qso_flx = qso_flx[:, choice]
+        qso_err = qso_err[:, choice]
+        EW_qso = EW_qso[choice]
+        qso_zspec = qso_zspec[choice]
+        qso_L = qso_L[choice]
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
@@ -177,13 +187,15 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         qso_L = np.hstack((qso_L[where_bad_loL], qso_L_hiL))
 
         # Truncate LAE QSOs
-        N_qso = qso_flx_hiL.shape[1]
-        choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac))
-        qso_flx_hiL = qso_flx_hiL[:, choice]
-        qso_err_hiL = qso_err_hiL[:, choice]
-        EW_qso_hiL = EW_qso_hiL[choice]
-        qso_zspec_hiL = qso_zspec_hiL[choice]
-        qso_L_hiL = qso_L_hiL[choice]
+        if qso_LAE_frac < 1:
+            N_qso = qso_flx_hiL.shape[1]
+            choice = np.random.choice(np.arange(N_qso),
+                                      np.floor(N_qso * qso_LAE_frac).astype(int))
+            qso_flx_hiL = qso_flx_hiL[:, choice]
+            qso_err_hiL = qso_err_hiL[:, choice]
+            EW_qso_hiL = EW_qso_hiL[choice]
+            qso_zspec_hiL = qso_zspec_hiL[choice]
+            qso_L_hiL = qso_L_hiL[choice]
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))

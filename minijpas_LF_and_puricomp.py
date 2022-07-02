@@ -519,7 +519,8 @@ def make_corrections(params):
             load_mocks('train', survey_name)
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
-            is_qso, is_sf, is_LAE, where_hiL, survey_name
+            is_qso, is_sf, is_LAE, where_hiL, survey_name,
+            hiL_factor, good_qso_factor, gal_factor
         )
 
 def effective_volume(nb_min, nb_max, survey_name):
@@ -606,8 +607,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'y_im': y_im[nice_lya],
         'nb_sel': lya_lines[nice_lya]
     }
-    # with open('npy/selection.npy', 'wb') as f:
-    #     pickle.dump(f, selection)
+    with open('npy/selection.npy', 'wb') as f:
+        pickle.dump(selection, f)
 
     ### Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -772,7 +773,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     plt.close()
     
     if return_hist:
-        return hist_median, LF_bins
+        return hist_median, bins
 
 if __name__ == '__main__':
     # Parameters of the LF:

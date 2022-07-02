@@ -73,13 +73,14 @@ def retrieve_mock_LF(pm_flx, pm_err, ew0_cut, ew_oth, mag,
     b = bins
     LF_bins = np.array([(b[i] + b[i + 1]) / 2 for i in range(len(b) - 1)])
 
-    return LF_percentiles[1], LF_bins
+    return LF_percentiles[1], bins
 
-def LF_R_squared(mock_fraction):
+def LF_R_squared(qso_fraction, sf_fraction):
     minijpas_area = 0.895
     gal_area = 5.54
     bad_qso_area = 200
-    good_qso_area = 400 * mock_fraction
+    good_qso_area = 400 * 0.5
+    # sf_area would be = 200 too, not necessary to specify
 
     # the proportional factors are made in relation to bad_qso
     # so bad_qso_factor = 1
@@ -101,7 +102,7 @@ def LF_R_squared(mock_fraction):
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             mock_fraction)
+                                             qso_fraction, sf_fraction)
 
     # Make 2D puricomp
     print('2D puricomp...')
@@ -120,12 +121,12 @@ def LF_R_squared(mock_fraction):
     
     # Retrieve mock LF
     print('Mock LF')
-    mock_hist, _ = retrieve_mock_LF(pm_flx, pm_err, ew0lya, ewoth, mag,
+    mock_hist, b = retrieve_mock_LF(pm_flx, pm_err, ew0lya, ewoth, mag,
                                     mag_min, mag_max, nb_min, nb_max)
 
     # Make minijpas LF
     print('miniJPAS LF')
-    minijpas_hist, b = make_the_LF(*make_the_LF_params, ['minijpas'], True)
+    minijpas_hist, b = make_the_LF(make_the_LF_params, ['minijpas'], True)
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
@@ -137,15 +138,28 @@ def LF_R_squared(mock_fraction):
     mock_LF = mock_hist / bin_width / mock_vol
     minijpas_LF = minijpas_hist / bin_width / minijpas_vol
 
-    SS_res = ((mock_LF - minijpas_LF) ** 2).sum()
-    SS_tot = ((mock_LF - np.nanmean(mock_LF)) ** 2).sum()
-    R_squared = 1 - SS_res / SS_tot
+    where_not_zero = ((mock_LF > 0) & (minijpas_LF > 0))
+    SS_res = ((np.log10((mock_LF / minijpas_LF)[where_not_zero])) ** 2).sum()
+    SS_tot = ((np.log10(mock_LF[where_not_zero])
+        - np.nanmean(np.log10(mock_LF[where_not_zero]))) ** 2).sum()
+    R_squared = 1 - (SS_res / SS_tot)
+
+    print(f'R^2 = {R_squared}')
 
     return mock_LF, minijpas_LF, R_squared
 
 if __name__ == '__main__':
     t0 = time.time()
 
-    LF_R_squared(0.9)
+    frac_list = [1., 0.9, 0.75, 0.5, 0.3]
+    out_list = []
+
+    for X in frac_list:
+        for Y in frac_list:
+            print(f'fracs = {X}, {Y}')
+            out = LF_R_squared(X, Y)
+            out_list.append(out)
+
+    np.save('output.npy', out_list)
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))

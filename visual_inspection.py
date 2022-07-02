@@ -35,11 +35,11 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel):
     mngr.window.setGeometry(50, 100, 640, 545)
 
     # plt.tight_layout()
-    plt.show(block=False)
+    plt.show(block=True)
 
 if __name__ == '__main__':
-    # with open('npy/selection.npy', 'rb') as f:
-    #     selection = pickle.load(f)
+    with open('npy/selection.npy', 'rb') as f:
+        selection = pickle.load(f)
 
     print('Loading catalogs...')
     pm_flx, pm_err = load_minijpas_jnep()[:2]
