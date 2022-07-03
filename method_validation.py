@@ -1,4 +1,3 @@
-from termios import TAB0
 from minijpas_LF_and_puricomp import *
 from my_functions import *
 
@@ -44,7 +43,7 @@ def retrieve_mock_LF(pm_flx, pm_err, ew0_cut, ew_oth, mag,
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
-    L_bin_c = [L_binning[i : i + 1].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -71,7 +70,6 @@ def retrieve_mock_LF(pm_flx, pm_err, ew0_cut, ew_oth, mag,
                                     'minijpas', tile_id)
     
     b = bins
-    LF_bins = np.array([(b[i] + b[i + 1]) / 2 for i in range(len(b) - 1)])
 
     return LF_percentiles[1], bins
 
@@ -160,6 +158,6 @@ if __name__ == '__main__':
             out = LF_R_squared(X, Y)
             out_list.append(out)
 
-    np.save('output.npy', out_list)
+    np.save('npy/method_val_out.npy', out_list)
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))

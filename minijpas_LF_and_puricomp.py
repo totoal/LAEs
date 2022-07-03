@@ -465,7 +465,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     ## Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
-    L_bin_c = [L_binning[i : i + 1].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     L_Lbin_err, median_L = compute_L_Lbin_err(
         L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning
     )
@@ -630,7 +630,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
-    L_bin_c = [L_binning[i : i + 1].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
     # Correct L_Arr with the median
     L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))

@@ -502,12 +502,13 @@ def schechter(L, phistar, Lstar, alpha):
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
 
-def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2):
+def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2,
+                     scale1=1., scale2=1.):
     '''
     A double schechter.
     '''
-    Phi2 = schechter(L, phistar1, Lstar1, alpha1)
-    Phi1 = schechter(L, phistar2, Lstar2, alpha2)
+    Phi1 = schechter(L, phistar2, Lstar2, alpha2) * scale1
+    Phi2 = schechter(L, phistar1, Lstar1, alpha1) * scale2
 
     return Phi1 + Phi2
 
