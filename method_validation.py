@@ -45,15 +45,15 @@ def retrieve_mock_LF(pm_flx, pm_err, ew0_cut, ew_oth, mag,
     L_binning = np.load('npy/L_nb_err_binning.npy')
     L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
+    # Correct L_Arr with the median
+    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
+
     # Apply bin err
     L_binning_position = binned_statistic(
             10 ** L_Arr, None, 'count', bins=L_binning
     ).binnumber
     L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
-
-    # Correct L_Arr with the median
-    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
@@ -67,18 +67,16 @@ def retrieve_mock_LF(pm_flx, pm_err, ew0_cut, ew_oth, mag,
     LF_percentiles = LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr,
                                     starprob, bins, puri2d_minijpas,
                                     comp2d_minijpas, L_bins, r_bins,
-                                    'minijpas', tile_id)
+                                    'minijpas', tile_id, [0])
     
-    b = bins
-
     return LF_percentiles[1], bins
 
 def LF_R_squared(qso_fraction, sf_fraction):
     minijpas_area = 0.895
     gal_area = 5.54
-    bad_qso_area = 200
-    good_qso_area = 400 * 0.5
-    # sf_area would be = 200 too, not necessary to specify
+    bad_qso_area = 100
+    good_qso_area = 200
+    # sf_area would be = 100 too, not necessary to specify
 
     # the proportional factors are made in relation to bad_qso
     # so bad_qso_factor = 1
@@ -130,7 +128,7 @@ def LF_R_squared(qso_fraction, sf_fraction):
 
     z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
-    mock_vol = z_volume(z_min, z_max, good_qso_area)
+    mock_vol = z_volume(z_min, z_max, bad_qso_area)
     minijpas_vol = z_volume(z_min, z_max, minijpas_area)
 
     mock_LF = mock_hist / bin_width / mock_vol
@@ -149,7 +147,7 @@ def LF_R_squared(qso_fraction, sf_fraction):
 if __name__ == '__main__':
     t0 = time.time()
 
-    frac_list = [1., 0.9, 0.75, 0.5, 0.3]
+    frac_list = [1.]
     out_list = []
 
     for X in frac_list:

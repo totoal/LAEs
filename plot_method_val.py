@@ -16,8 +16,8 @@ if __name__ == '__main__':
     for i, (a, b, c) in enumerate(out):
         fig, ax = plt.subplots(figsize=(7, 6))
 
-        ax.scatter(L_bin_c, a, marker='x', facecolor='k', label='miniJPAS')
-        ax.scatter(L_bin_c, b, marker='o', facecolor='none', edgecolor='k', label='Mock')
+        ax.scatter(L_bin_c, b, marker='x', facecolor='k', label='miniJPAS')
+        ax.scatter(L_bin_c, a, marker='o', facecolor='none', edgecolor='k', label='Mock')
 
         Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
         phistar1 = 3.33e-6
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
         Phi_center = double_schechter(
             Lx, phistar1, 10 ** Lstar1, alpha1, 10 ** phistar2, 10 ** Lstar2, alpha2,
-            scale1=fracs[i][0] * 0.5, scale2=fracs[i][1]
+            scale1=fracs[i][1] * 0.5, scale2=fracs[i][0] * 0.5
         ) * Lx * np.log(10)
 
         ax.plot(
@@ -39,9 +39,9 @@ if __name__ == '__main__':
             )
 
         ax.set_yscale('log')
-        ax.set_title(f'R$^2$ = {c:0.2f}   ({fracs[i][0]}, {fracs[i][1]})', fontsize=15)
-        ax.set_xlim(42, 45.5)
-        ax.set_ylim(1e-8, 1e-4)
+        ax.set_title(f'R$^2$ = {c:0.2f}   qso, sf = ({fracs[i][0]}, {fracs[i][1]})', fontsize=15)
+        ax.set_xlim(42, 46)
+        ax.set_ylim(1e-8, 1e-2)
         ax.legend(fontsize=15)
     
         plt.savefig(f'/home/alberto/Desktop/fig{i}', bbox_inches='tight', facecolor='white')

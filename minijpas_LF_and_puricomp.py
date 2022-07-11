@@ -493,17 +493,17 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         good_qso_factor, gal_factor
     )
 
-    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
-
     np.save(f'npy/puri2d_{survey_name}.npy', puri2d)
     np.save(f'npy/comp2d_{survey_name}.npy', comp2d)
     np.save('npy/puricomp2d_L_bins.npy', L_bins)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
-    nbs_to_consider = np.arange(nb_min, nb_max + 1)
-
     if not plot_it:
         return
+
+    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
+
+    nbs_to_consider = np.arange(nb_min, nb_max + 1)
 
     for which_one in ['Purity', 'Completeness']:
         purity_or_completeness_plot(

@@ -36,8 +36,7 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
 
 def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, puri2d, comp2d, L_bins,
-                   r_bins, survey_name, tile_id):
-    which_w = [0, 2]
+                   r_bins, survey_name, tile_id, which_w=[0, 2]):
     N_bins = len(bins) - 1
 
     N_iter = 500
