@@ -138,9 +138,9 @@ def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins,
     args2 = (L_Arr, z_Arr, starprob)
     args3 = (starprob, mag, tile_id, survey_name)
 
-    w1 = 0
-    w2 = 0
-    w3 = 0
+    w1 = 1.
+    w2 = 1.
+    w3 = 1.
 
     for i in which_w:
         if i == 0:

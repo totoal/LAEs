@@ -221,10 +221,14 @@ def conf_matrix(line_Arr, z_Arr, nb_c):
 
     return np.array([[TP, FP], [FN, TN]]) 
 
-def plot_JPAS_source(flx, err, set_ylim=True):
+def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
     '''
     Generates a plot with the JPAS data.
     '''
+
+    if e17scale:
+        flx = flx * 1e17
+        err = err * 1e17
 
     data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
     cmap = data_tab['color_representation'][:-4]
@@ -261,7 +265,10 @@ def plot_JPAS_source(flx, err, set_ylim=True):
         pass
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
-    ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+    if e17scale:
+        ax.set_ylabel(r'$f_\lambda\cdot10^{17}$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+    else:
+        ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
 
     return ax
 

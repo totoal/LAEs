@@ -7,7 +7,7 @@ if __name__ == '__main__':
     L_binning = np.log10(np.load('npy/L_nb_err_binning.npy'))
     L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
-    frac_list = [1, 0.9, 0.75, 0.5, 0.3]
+    frac_list = [1., 0.75, 0.5, 0.25]
     fracs = []
     for x in frac_list:
         for y in frac_list:

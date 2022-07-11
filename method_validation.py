@@ -126,10 +126,10 @@ def LF_R_squared(qso_fraction, sf_fraction):
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
-    mock_vol = z_volume(z_min, z_max, bad_qso_area)
-    minijpas_vol = z_volume(z_min, z_max, minijpas_area)
+    # z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+    # z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
+    mock_vol = effective_volume(nb_min, nb_max, bad_qso_area)
+    minijpas_vol = effective_volume(nb_min, nb_max, minijpas_area)
 
     mock_LF = mock_hist / bin_width / mock_vol
     minijpas_LF = minijpas_hist / bin_width / minijpas_vol
@@ -147,7 +147,7 @@ def LF_R_squared(qso_fraction, sf_fraction):
 if __name__ == '__main__':
     t0 = time.time()
 
-    frac_list = [1.]
+    frac_list = [1., 0.75, 0.5, 0.25]
     out_list = []
 
     for X in frac_list:

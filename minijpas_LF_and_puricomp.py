@@ -543,7 +543,11 @@ def effective_volume(nb_min, nb_max, survey_name):
     elif survey_name == 'both':
         area = 0.24 + 0.895
     else:
-        raise ValueError('Survey name not known')
+        # If the survey name is not known, try to use the given value as area
+        try:
+            area = float(survey_name)
+        except:
+            raise ValueError('Survey name not known')
 
     z_min_overlap = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max_overlap = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
