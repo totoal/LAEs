@@ -1,4 +1,5 @@
 import glob
+from certifi import where
 import pandas as pd
 import numpy as np
 
@@ -153,15 +154,6 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         EW_sf = EW_sf[choice]
         sf_zspec = sf_zspec[choice]
         sf_L = sf_L[choice]
-    # Truncate LAE QSOs
-    if qso_LAE_frac < 1:
-        N_qso = qso_flx.shape[1]
-        choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac).astype(int))
-        qso_flx = qso_flx[:, choice]
-        qso_err = qso_err[:, choice]
-        EW_qso = EW_qso[choice]
-        qso_zspec = qso_zspec[choice]
-        qso_L = qso_L[choice]
 
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
@@ -169,22 +161,33 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad =\
             load_QSO_mock(name_qso_bad)
 
-        where_bad_qso = (qso_zspec_bad < 2)
-        qso_flx = np.hstack((qso_flx_bad[:, where_bad_qso], qso_flx))
-        qso_err = np.hstack((qso_err_bad[:, where_bad_qso], qso_err))
-        EW_qso = np.hstack((EW_qso_bad[where_bad_qso], EW_qso))
-        qso_zspec = np.hstack((qso_zspec_bad[where_bad_qso], qso_zspec))
-        qso_L = np.hstack((qso_L_bad[where_bad_qso], qso_L))
+        # Truncate LAE QSOs
+        if qso_LAE_frac < 1:
+            N_qso = qso_flx_bad.shape[1]
+            choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac).astype(int))
+            qso_flx_bad = qso_flx_bad[:, choice]
+            qso_err_bad = qso_err_bad[:, choice]
+            EW_qso_bad = EW_qso_bad[choice]
+            qso_zspec_bad = qso_zspec_bad[choice]
+            qso_L_bad = qso_L_bad[choice]
+
+        where_low_z = (qso_zspec < 2)
+        qso_flx = np.hstack((qso_flx_bad, qso_flx[:, where_low_z]))
+        qso_err = np.hstack((qso_err_bad, qso_err[:, where_low_z]))
+        EW_qso = np.hstack((EW_qso_bad, EW_qso[where_low_z]))
+        qso_zspec = np.hstack((qso_zspec_bad, qso_zspec[where_low_z]))
+        qso_L = np.hstack((qso_L_bad, qso_L[where_low_z]))
+
     if len(name_qso_hiL) > 0:
         qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL =\
             load_QSO_mock(name_qso_hiL)
         
-        where_bad_loL = (qso_L <= 44)
-        qso_flx = np.hstack((qso_flx[:, where_bad_loL], qso_flx_hiL))
-        qso_err = np.hstack((qso_err[:, where_bad_loL], qso_err_hiL))
-        EW_qso = np.hstack((EW_qso[where_bad_loL], EW_qso_hiL))
-        qso_zspec = np.hstack((qso_zspec[where_bad_loL], qso_zspec_hiL))
-        qso_L = np.hstack((qso_L[where_bad_loL], qso_L_hiL))
+        where_loL = (qso_L <= 44)
+        qso_flx = np.hstack((qso_flx[:, where_loL], qso_flx_hiL))
+        qso_err = np.hstack((qso_err[:, where_loL], qso_err_hiL))
+        EW_qso = np.hstack((EW_qso[where_loL], EW_qso_hiL))
+        qso_zspec = np.hstack((qso_zspec[where_loL], qso_zspec_hiL))
+        qso_L = np.hstack((qso_L[where_loL], qso_L_hiL))
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
