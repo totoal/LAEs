@@ -29,10 +29,10 @@ filter_tags = load_filter_tags()
 
 gal_area = 5.54
 bad_qso_area = 200
-# good_qso_area = 400
-# hiL_qso_area = 4000
-good_qso_area = 200
-hiL_qso_area = 2000
+good_qso_area = 400
+hiL_qso_area = 4000
+# good_qso_area = 200
+# hiL_qso_area = 2000
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1
@@ -453,18 +453,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    # ML_predict_mask = (mag < 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    # )
-
-    # ML_predict_mask = (mag > 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
-    # )
-
     ## Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
@@ -621,18 +609,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    # ML_predict_mask = (mag < 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag15-23'
-    # )
-
-    # ML_predict_mask = (mag > 23) & (L_Arr > 0)
-    # L_Arr[ML_predict_mask] = ML_predict_L(
-    #     pm_flx[:, ML_predict_mask], pm_err[:, ML_predict_mask],
-    #     z_Arr[ML_predict_mask], L_Arr[ML_predict_mask], 'RFmag23-23.5'
-    # )
-
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
@@ -698,8 +674,13 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_plus = L_LF_err_plus_jn + L_LF_err_plus_mj
     L_LF_err_minus = L_LF_err_minus_jn + L_LF_err_minus_mj
 
+    ###### RAW LF ######
+    LF_raw = np.histogram(L_Arr[nice_lya], bins=bins)[0] / bin_width / volume
+    ####################
+
     fig, ax = plt.subplots(figsize=(7, 5))
 
+    # Plot the corrected total LF
     yerr_cor_plus = (hist_median + L_LF_err_plus ** 2) ** 0.5 / bin_width / volume
     yerr_cor_minus = (hist_median + L_LF_err_minus ** 2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
@@ -707,7 +688,12 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='s', linestyle='', color='k', capsize=4,
         label='miniJPAS + J-NEP', zorder=99)
+    
+    ## Plot the total raw LF
+    ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
+            marker='^', markersize=11, zorder=-99, label='Raw LF')
 
+    ## Plot the corrected J-NEP LF
     yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn ** 2) ** 0.5 / bin_width / volume_jn
     yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn ** 2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
@@ -715,6 +701,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='J-NEP')
 
+    ## Plot the corrected miniJPAS LF
     yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_mj
     yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_mj
     xerr = bin_width / 2
@@ -722,6 +709,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
         marker='^', linestyle='', markersize=10, label='miniJPAS')
 
+    ## Plot the reference LF curves
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
     phistar1 = 3.33e-6
     Lstar1 = 44.65
@@ -787,7 +775,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 23.5, 6, 20, 30, 400, 'nb')
+        (17, 24, 6, 20, 30, 400, 'nb')
         # (17, 24, 6, 20, 30, 400, '3fm'),
         # (17, 24, 6, 20, 50, 400, 'nb'),
         # (17, 23, 6, 20, 30, 400, 'nb'),
