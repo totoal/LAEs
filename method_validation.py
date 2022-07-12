@@ -147,7 +147,7 @@ def LF_R_squared(qso_fraction, sf_fraction):
 if __name__ == '__main__':
     t0 = time.time()
 
-    frac_list = [1., 0.75, 0.5, 0.25]
+    frac_list = [1., 0.75, 0.5, 0.25, 0.1]
     out_list = []
 
     for X in frac_list:

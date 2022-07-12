@@ -29,8 +29,10 @@ filter_tags = load_filter_tags()
 
 gal_area = 5.54
 bad_qso_area = 200
-good_qso_area = 400
-hiL_qso_area = 4000
+# good_qso_area = 400
+# hiL_qso_area = 4000
+good_qso_area = 200
+hiL_qso_area = 2000
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1
@@ -785,7 +787,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 24, 6, 20, 30, 400, 'nb')
+        (17, 23.5, 6, 20, 30, 400, 'nb')
         # (17, 24, 6, 20, 30, 400, '3fm'),
         # (17, 24, 6, 20, 50, 400, 'nb'),
         # (17, 23, 6, 20, 30, 400, 'nb'),

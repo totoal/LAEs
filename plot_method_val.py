@@ -7,7 +7,7 @@ if __name__ == '__main__':
     L_binning = np.log10(np.load('npy/L_nb_err_binning.npy'))
     L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
-    frac_list = [1., 0.75, 0.5, 0.25]
+    frac_list = [1., 0.75, 0.5, 0.25, 0.1]
     fracs = []
     for x in frac_list:
         for y in frac_list:
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
         Phi_center = double_schechter(
             Lx, phistar1, 10 ** Lstar1, alpha1, 10 ** phistar2, 10 ** Lstar2, alpha2,
-            scale1=fracs[i][1] * 0.5, scale2=fracs[i][0] * 0.5
+            scale1=fracs[i][1] * 2, scale2=fracs[i][0] * 2
         ) * Lx * np.log(10)
 
         ax.plot(
@@ -39,7 +39,7 @@ if __name__ == '__main__':
             )
 
         ax.set_yscale('log')
-        ax.set_title(f'R$^2$ = {c:0.2f}   qso, sf = ({fracs[i][0]}, {fracs[i][1]})', fontsize=15)
+        ax.set_title(f'R$^2$ = {c:0.2f}   qso, sf = ({fracs[i][0] * 2}, {fracs[i][1] * 2})', fontsize=15)
         ax.set_xlim(42, 46)
         ax.set_ylim(1e-8, 1e-2)
         ax.legend(fontsize=15)

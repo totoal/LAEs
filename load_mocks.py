@@ -181,13 +181,6 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     if len(name_qso_hiL) > 0:
         qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL =\
             load_QSO_mock(name_qso_hiL)
-        
-        where_loL = (qso_L <= 44)
-        qso_flx = np.hstack((qso_flx[:, where_loL], qso_flx_hiL))
-        qso_err = np.hstack((qso_err[:, where_loL], qso_err_hiL))
-        EW_qso = np.hstack((EW_qso[where_loL], EW_qso_hiL))
-        qso_zspec = np.hstack((qso_zspec[where_loL], qso_zspec_hiL))
-        qso_L = np.hstack((qso_L[where_loL], qso_L_hiL))
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
@@ -199,6 +192,13 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
             EW_qso_hiL = EW_qso_hiL[choice]
             qso_zspec_hiL = qso_zspec_hiL[choice]
             qso_L_hiL = qso_L_hiL[choice]
+        
+        where_loL = (qso_L <= 44)
+        qso_flx = np.hstack((qso_flx[:, where_loL], qso_flx_hiL))
+        qso_err = np.hstack((qso_err[:, where_loL], qso_err_hiL))
+        EW_qso = np.hstack((EW_qso[where_loL], EW_qso_hiL))
+        qso_zspec = np.hstack((qso_zspec[where_loL], qso_zspec_hiL))
+        qso_L = np.hstack((qso_L[where_loL], qso_L_hiL))
 
     pm_flx = np.hstack((qso_flx, sf_flx, gal_flx))
     pm_err = np.hstack((qso_err, sf_err, gal_err))

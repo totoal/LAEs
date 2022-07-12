@@ -446,6 +446,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     i = flux_to_mag(pm_flx[-1], w_central[-1])
     r = flux_to_mag(pm_flx[-2], w_central[-2])
     g = flux_to_mag(pm_flx[-3], w_central[-3])
+    color = (r - g) * (i - r)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -490,7 +491,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             #     (pm_flx[-2, src] < pm_flx[-3, src])
             #     & (pm_flx[-1, src] < pm_flx[-2, src])
             # )
-            good_colors = ((r - g) * (i - r) < 0.25)
+            good_colors = (color[src] < 0.25)
             if ~good_colors:
                 this_nice = False
 
