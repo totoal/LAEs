@@ -748,9 +748,9 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.set_yscale('log')
     ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
-    ax.set_ylim(1e-8, 1e-3)
+    ax.set_ylim(1e-8, 5e-3)
     ax.set_xlim(42, 46)
-    ax.legend()
+    ax.legend(fontsize=8)
 
     ax.set_title(
         fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
@@ -776,10 +776,12 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     
     LF_parameters = [
-        (17, 24, 6, 20, 30, 400, 'nb')
-        # (17, 24, 6, 20, 30, 400, '3fm'),
-        # (17, 24, 6, 20, 50, 400, 'nb'),
-        # (17, 23, 6, 20, 30, 400, 'nb'),
+        (17, 24, 6, 20, 30, 400, 'nb'),
+        (17, 24, 6, 9, 30, 400, 'nb'),
+        (17, 24, 9, 12, 30, 400, 'nb'),
+        (17, 24, 12, 15, 30, 400, 'nb'),
+        (17, 24, 15, 18, 30, 400, 'nb'),
+
     ]
 
     for params in LF_parameters:
