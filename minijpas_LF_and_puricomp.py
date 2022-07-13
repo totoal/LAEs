@@ -691,7 +691,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     
     ## Plot the total raw LF
     ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
-            marker='^', markersize=11, zorder=-99, label='Raw LF')
+            marker='^', markersize=11, zorder=4, label='Raw LF (miniJPAS + J-NEP)')
 
     ## Plot the corrected J-NEP LF
     yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn ** 2) ** 0.5 / bin_width / volume_jn
@@ -699,7 +699,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
         yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-        marker='^', linestyle='', markersize=10, label='J-NEP')
+        marker='^', linestyle='', markersize=10, label='J-NEP', zorder=3)
 
     ## Plot the corrected miniJPAS LF
     yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_mj
@@ -707,7 +707,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
         yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-        marker='^', linestyle='', markersize=10, label='miniJPAS')
+        marker='^', linestyle='', markersize=10, label='miniJPAS', zorder=2)
 
     ## Plot the reference LF curves
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
@@ -725,7 +725,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Spinoso2020 (2.2 < z < 3.25)'
+        label='Spinoso2020 (2.2 < z < 3.25)', zorder=1
         )
 
     phistar1 = 10 ** -3.41
@@ -742,18 +742,18 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Zhang2021 (2 < z < 3.2)'
+        label='Zhang2021 (2 < z < 3.2)', zorder=0
     )
 
     ax.set_yscale('log')
     ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
-    ax.set_ylim(1e-8, 1e-2)
+    ax.set_ylim(1e-8, 1e-3)
     ax.set_xlim(42, 46)
     ax.legend()
 
     ax.set_title(
-        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}'
+        fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
     )
 
     folder_name = (
@@ -763,7 +763,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
-    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white')
+    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white',
+                edgecolor='white')
     plt.close()
     
     if return_hist:

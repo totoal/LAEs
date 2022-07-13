@@ -487,12 +487,8 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            # good_colors = (
-            #     (pm_flx[-2, src] < pm_flx[-3, src])
-            #     & (pm_flx[-1, src] < pm_flx[-2, src])
-            # )
             good_colors = (color[src] < 0.25)
-            # good_colors = True
+            # good_colors = (color[src] > -99)
             if ~good_colors:
                 this_nice = False
 
