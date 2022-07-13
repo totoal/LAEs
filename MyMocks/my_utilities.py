@@ -300,26 +300,26 @@ def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
         w_line = 0.5 * (3727.092 + 3729.875)
 
     cat_w_Arr , cat_rest_spectrum = Interpolate_Lines_Arrays_3D_grid_MCMC(
-            my_MET, my_AGE, my_EXT, Grid_Dictionary
-            )
+        my_MET, my_AGE, my_EXT, Grid_Dictionary
+    )
     obs_frame_spectrum = np.interp(w_Arr, cat_w_Arr * (1 + my_z), cat_rest_spectrum)
-    IGM_obs_continum = np.copy( obs_frame_spectrum )
+    IGM_obs_continum = np.copy(obs_frame_spectrum)
 
     if LINE == 'Lya':
         redshift_w_Arr = w_Arr * 1. / w_line - 1.
         IGM_T_w_Arr = IGM_TRANSMISSION(redshift_w_Arr, T_A, T_B)
-        mask_IGM = w_Arr < w_line * (1+my_z)
+        mask_IGM = w_Arr < w_line * (1 + my_z)
         IGM_obs_continum[mask_IGM] = IGM_obs_continum[mask_IGM] * IGM_T_w_Arr[mask_IGM]
 
     noisy_spectrum = np.random.normal(0.0, my_noises, len(w_Arr))
 
     NOISE_w = True
     if NOISE_w :
-        Noise_in_my_w_Arr = np.interp( w_Arr , Noise_w_Arr , Noise_Arr )
+        Noise_in_my_w_Arr = np.interp(w_Arr, Noise_w_Arr, Noise_Arr)
 
         Delta_w_noise = 50.0 #A
 
-        w_Lya_observed = ( my_z + 1. ) * w_line
+        w_Lya_observed = (my_z + 1.) * w_line
 
         mask_noise_norms = (w_Arr > w_Lya_observed - 0.5*Delta_w_noise)\
                         * (w_Arr < w_Lya_observed + 0.5*Delta_w_noise)
@@ -329,7 +329,7 @@ def generate_spectrum(LINE, my_z, my_ew, my_flux_g, my_widths, my_noises,
 
         Noise_in_my_w_Arr = my_noises * Noise_in_my_w_Arr * 1. / I_noise_Arr 
 
-        noisy_spectrum = np.random.normal( 0.0 , Noise_in_my_w_Arr , len(w_Arr) )
+        noisy_spectrum = np.random.normal(0.0, Noise_in_my_w_Arr, len(w_Arr))
     
     g_w_Arr = gSDSS_data['lambda_Arr_f']
     g_T_Arr = gSDSS_data[ 'Transmission_Arr_f' ]
@@ -425,7 +425,7 @@ def JPAS_synth_phot(SEDs, w_Arr, tcurves, which_filters=[]):
         w = w[cut_t_curve]
         t = t[cut_t_curve]
 
-        sed_interp = np.interp(w, w_Arr, SEDs, left=np.inf, right=np.inf)
+        sed_interp = np.interp(w, w_Arr, SEDs, left=np.inf)
 
         sed_int = np.trapz(w * t * sed_interp, w)
         t_int = np.trapz(w * t, w)

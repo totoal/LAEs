@@ -109,7 +109,7 @@ def main(part, survey_name, t_or_t):
 
     dirname = '/home/alberto/almacen/Source_cats'
     filename =\
-        f'{dirname}/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_{t_or_t}_{survey_name}_0'
+        f'{dirname}/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_{t_or_t}_{survey_name}_0_pre'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
