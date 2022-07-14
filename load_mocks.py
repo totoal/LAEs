@@ -83,12 +83,15 @@ def load_GAL_mock(name, add_errs=True):
     if add_errs:
         gal_flx += gal_err * np.random.normal(size=gal_err.shape)
 
+    gal_zspec = data_gal['z'].to_numpy().astype(float)
+
     # Remove bad sources
     good_src = []
     for src in range(gal_err.shape[1]):
         bad_src = (
             np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
             & np.all(gal_flx[:, src] == 0)
+            | (gal_zspec[src] > 2)
         )
         if bad_src:
             continue
@@ -100,9 +103,9 @@ def load_GAL_mock(name, add_errs=True):
 
     gal_flx = gal_flx[:, good_src].astype(float)
     gal_err = gal_err[:, good_src].astype(float)
+    gal_zspec = gal_zspec[good_src]
 
     EW_gal = np.zeros(data_gal['z'].to_numpy().shape)[good_src].astype(float)
-    gal_zspec = data_gal['z'].to_numpy()[good_src].astype(float)
     gal_L = np.zeros(EW_gal.shape).astype(float)
 
     Rdisk = data_gal['Rdisk'][good_src]
