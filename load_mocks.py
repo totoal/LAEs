@@ -6,6 +6,7 @@ import numpy as np
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
 
+
 def load_QSO_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
@@ -19,8 +20,8 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
 
     data_qso = pd.concat(fi, axis=0, ignore_index=True)
 
-    qso_flx = data_qso.to_numpy()[:, 1 : 60 + 1].T
-    qso_err = data_qso.to_numpy()[:, 60 + 1 : 120 + 1].T
+    qso_flx = data_qso.to_numpy()[:, 1: 60 + 1].T
+    qso_err = data_qso.to_numpy()[:, 60 + 1: 120 + 1].T
 
     if add_errs:
         qso_flx += qso_err * np.random.normal(size=qso_err.shape)
@@ -56,6 +57,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
 
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L
 
+
 def angular_radius(R, z):
     '''
     Takes as input a distance R in comoving Mpc and a redshift z and returns the
@@ -66,9 +68,10 @@ def angular_radius(R, z):
     R_ang = R * arcsec_per_kpc
     return R_ang.to(u.deg).value
 
+
 def load_GAL_mock(name, add_errs=True):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
-    files = glob.glob(filename +'data*')
+    files = glob.glob(filename + 'data*')
     files.sort()
     fi = []
 
@@ -77,8 +80,8 @@ def load_GAL_mock(name, add_errs=True):
 
     data_gal = pd.concat(fi, axis=0, ignore_index=True)
 
-    gal_flx = data_gal.to_numpy()[:, 1 : 60 + 1].T
-    gal_err = data_gal.to_numpy()[:, 60 + 1 : 120 + 1].T
+    gal_flx = data_gal.to_numpy()[:, 1: 60 + 1].T
+    gal_err = data_gal.to_numpy()[:, 60 + 1: 120 + 1].T
 
     if add_errs:
         gal_flx += gal_err * np.random.normal(size=gal_err.shape)
@@ -89,9 +92,10 @@ def load_GAL_mock(name, add_errs=True):
     good_src = []
     for src in range(gal_err.shape[1]):
         bad_src = (
-            np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
-            & np.all(gal_flx[:, src] == 0)
-            | (gal_zspec[src] > 2)
+            # np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
+            # & np.all(gal_flx[:, src] == 0)
+            # | (gal_zspec[src] > 2)
+            (gal_zspec[src] > 2)
         )
         if bad_src:
             continue
@@ -117,9 +121,10 @@ def load_GAL_mock(name, add_errs=True):
 
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L, R_ang
 
+
 def load_SF_mock(name, add_errs=True, how_many=-1):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
-    files = glob.glob(filename +'data*')
+    files = glob.glob(filename + 'data*')
     files.sort()
     fi = []
 
@@ -130,8 +135,8 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
     data = pd.concat(fi, axis=0, ignore_index=True)
 
-    sf_flx = data.to_numpy()[:, 1 : 60 + 1].T.astype(float)
-    sf_err = data.to_numpy()[:, 60 + 1 : 120 + 1].T.astype(float)
+    sf_flx = data.to_numpy()[:, 1: 60 + 1].T.astype(float)
+    sf_err = data.to_numpy()[:, 60 + 1: 120 + 1].T.astype(float)
 
     if add_errs:
         sf_flx += sf_err * np.random.normal(size=sf_err.shape)
@@ -142,16 +147,20 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
+
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
                   add_errs=True, qso_LAE_frac=1., sf_frac=1.):
-    qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(name_qso, add_errs)
-    gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(name_gal, add_errs)
+    qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(
+        name_qso, add_errs)
+    gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
+        name_gal, add_errs)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs)
 
     # Truncate SF
     if sf_frac < 1:
         N_sf = sf_flx.shape[1]
-        choice = np.random.choice(np.arange(N_sf), np.floor(N_sf * sf_frac).astype(int))
+        choice = np.random.choice(
+            np.arange(N_sf), np.floor(N_sf * sf_frac).astype(int))
         sf_flx = sf_flx[:, choice]
         sf_err = sf_err[:, choice]
         EW_sf = EW_sf[choice]
@@ -167,7 +176,8 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
             N_qso = qso_flx_bad.shape[1]
-            choice = np.random.choice(np.arange(N_qso), np.floor(N_qso * qso_LAE_frac).astype(int))
+            choice = np.random.choice(np.arange(N_qso), np.floor(
+                N_qso * qso_LAE_frac).astype(int))
             qso_flx_bad = qso_flx_bad[:, choice]
             qso_err_bad = qso_err_bad[:, choice]
             EW_qso_bad = EW_qso_bad[choice]
@@ -195,7 +205,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
             EW_qso_hiL = EW_qso_hiL[choice]
             qso_zspec_hiL = qso_zspec_hiL[choice]
             qso_L_hiL = qso_L_hiL[choice]
-        
+
         where_loL = (qso_L <= 44)
         qso_flx = np.hstack((qso_flx[:, where_loL], qso_flx_hiL))
         qso_err = np.hstack((qso_err[:, where_loL], qso_err_hiL))
@@ -214,9 +224,12 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
 
     L_lya = np.concatenate((qso_L, sf_L, gal_L))
 
-    is_qso = np.concatenate((np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
-    is_sf = np.concatenate((np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
-    is_gal = np.concatenate((np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
+    is_qso = np.concatenate(
+        (np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
+    is_sf = np.concatenate(
+        (np.zeros(N_qso), np.ones(N_sf), np.zeros(N_gal))).astype(bool)
+    is_gal = np.concatenate(
+        (np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
     is_LAE = (is_qso & (zspec > 2)) | is_sf
     where_hiL = (is_qso & (L_lya > 44))
 
