@@ -5,6 +5,7 @@ from my_functions import *
 w_central = central_wavelength()
 w_lya = 1215.67
 
+
 def L_lim(nb_c, ew0_lim, survey, sigma=3):
     if survey == 'minijpas':
         detec_lim = np.vstack(
@@ -28,6 +29,7 @@ def L_lim(nb_c, ew0_lim, survey, sigma=3):
     L_lim = np.log10(Fline_lim * 4*np.pi * dL**2)
 
     return L_lim
+
 
 filter_tags = load_filter_tags()
 data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
@@ -61,9 +63,6 @@ ax.set_ylabel(r'$\log L_{\mathrm{Ly}\alpha}^\mathrm{min}$ (erg$\,$s$^{-1}$)')
 ax.legend()
 
 filename = 'figures/NB_L_lims.pdf'
-plt.savefig(
-    filename, bbox_inches='tight',
-    facecolor='w', edgecolor='w'
-)
+plt.savefig(filename, bbox_inches='tight', facecolor='w', edgecolor='w')
 # plt.show()
 plt.close()
