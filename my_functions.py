@@ -7,20 +7,23 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 
-from scipy.integrate import simpson 
+from scipy.integrate import simpson
 
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
 
-c = 29979245800 # cm / s
+c = 29979245800  # cm / s
+
 
 def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
+
 def flux_to_mag(f, w):
     log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(np.float)
     return -2.5 * np.log10(log_arg) - 48.60
+
 
 def load_filter_tags():
     filepath = './JPAS_Transmission_Curves_20170316/minijpas.Filter.csv'
@@ -38,6 +41,7 @@ def load_filter_tags():
     filters_tags[0] = 'J0348'
 
     return filters_tags
+
 
 def load_tcurves(filters_tags):
     filters_w = []
@@ -58,13 +62,13 @@ def load_tcurves(filters_tags):
         filters_w.append(w)
         filters_trans.append(trans)
 
-
     tcurves = {
-        "tag"  :  filters_tags,
-        "w"    :  filters_w ,
-        "t"    :  filters_trans
+        "tag":  filters_tags,
+        "w":  filters_w,
+        "t":  filters_trans
     }
     return tcurves
+
 
 def central_wavelength():
     data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
@@ -72,7 +76,9 @@ def central_wavelength():
 
     return np.array(w_central)
 
-### FWHM of a curve
+# FWHM of a curve
+
+
 def nb_fwhm(nb_ind, give_fwhm=True):
     '''
     Returns the FWHM of a filter in tcurves if give_fwhm is True. If it is False, the
@@ -81,11 +87,12 @@ def nb_fwhm(nb_ind, give_fwhm=True):
     data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
     w_central = data_tab['wavelength'][nb_ind]
     fwhm = data_tab['width'][nb_ind]
-            
+
     if give_fwhm == False:
         return w_central + fwhm / 2, w_central - fwhm / 2
     if give_fwhm == True:
         return fwhm
+
 
 def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
                        only_right=False, N_nb_min=0, N_nb_max=56):
@@ -106,10 +113,10 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
         if nb_idx > N_nb_max:
             break
 
-        if (nb_idx < N_nb) or only_right :
+        if (nb_idx < N_nb) or only_right:
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
-                        np.array(w_central[: nb_idx - 1])
+                    np.array(w_central[: nb_idx - 1])
                 ).reshape(-1, 1)
             else:
                 IGM_T = 1.
@@ -118,46 +125,46 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
             if not only_right:
                 NBs_to_avg = np.vstack((
                     NB_flx[: nb_idx - 1] / IGM_T,
-                    NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+                    NB_flx[nb_idx + 2: nb_idx + N_nb + 1]
                 ))
                 NBs_errs = np.vstack((
                     NB_err[: nb_idx - 1] / IGM_T,
-                    NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+                    NB_err[nb_idx + 2: nb_idx + N_nb + 1]
                 ))
             if only_right:
-                NBs_to_avg = NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
-                NBs_errs = NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+                NBs_to_avg = NB_flx[nb_idx + 2: nb_idx + N_nb + 1]
+                NBs_errs = NB_err[nb_idx + 2: nb_idx + N_nb + 1]
 
         if (N_nb <= nb_idx < (NB_flx.shape[0] - 6)) and not only_right:
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
-                        np.array(w_central[nb_idx - N_nb : nb_idx - 1])
+                    np.array(w_central[nb_idx - N_nb: nb_idx - 1])
                 ).reshape(-1, 1)
             else:
                 IGM_T = 1.
             NBs_to_avg = np.vstack((
-                NB_flx[nb_idx - N_nb : nb_idx - 1] / IGM_T,
-                NB_flx[nb_idx + 2 : nb_idx + N_nb + 1]
+                NB_flx[nb_idx - N_nb: nb_idx - 1] / IGM_T,
+                NB_flx[nb_idx + 2: nb_idx + N_nb + 1]
             ))
             NBs_errs = np.vstack((
-                NB_err[nb_idx - N_nb : nb_idx - 1] / IGM_T,
-                NB_err[nb_idx + 2 : nb_idx + N_nb + 1]
+                NB_err[nb_idx - N_nb: nb_idx - 1] / IGM_T,
+                NB_err[nb_idx + 2: nb_idx + N_nb + 1]
             ))
 
         if nb_idx >= (NB_flx.shape[0] - 6):
             if IGM_T_correct:
                 IGM_T = IGM_TRANSMISSION(
-                        np.array(w_central[nb_idx - N_nb : nb_idx - 1])
+                    np.array(w_central[nb_idx - N_nb: nb_idx - 1])
                 ).reshape(-1, 1)
             else:
                 IGM_T = 1.
             NBs_to_avg = np.vstack((
-                NB_flx[nb_idx - N_nb : nb_idx - 1] / IGM_T,
-                NB_flx[nb_idx + 2 :]
+                NB_flx[nb_idx - N_nb: nb_idx - 1] / IGM_T,
+                NB_flx[nb_idx + 2:]
             ))
             NBs_errs = np.vstack((
-                NB_err[nb_idx - N_nb : nb_idx - 1] / IGM_T,
-                NB_err[nb_idx + 2 :]
+                NB_err[nb_idx - N_nb: nb_idx - 1] / IGM_T,
+                NB_err[nb_idx + 2:]
             ))
 
         # Conver errors to relative errors for the weights
@@ -170,6 +177,7 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
 
     return cont_est, cont_err
 
+
 def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     '''
     Returns the synthetic photometry of a set f of (N_sources x binning) in a
@@ -180,9 +188,10 @@ def NB_synthetic_photometry(f, w_Arr, w_c, fwhm):
     T_integrated = simpson(synth_tcurve * w_Arr, w_Arr)
 
     if len(f.shape) == 1:
-        return simpson(synth_tcurve * f * w_Arr, w_Arr) / T_integrated 
+        return simpson(synth_tcurve * f * w_Arr, w_Arr) / T_integrated
     else:
-        return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated 
+        return simpson(synth_tcurve * f * w_Arr, w_Arr, axis=1) / T_integrated
+
 
 def z_volume(z_min, z_max, area):
     '''
@@ -196,11 +205,13 @@ def z_volume(z_min, z_max, area):
     vol = simpson(dV, z_x) * Omega
     return vol
 
+
 def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
     '''
     Returns the IGM transmission associated with the Lya Break.
     '''
     return np.exp(A * (w_Arr / 1215.67)**B)
+
 
 def conf_matrix(line_Arr, z_Arr, nb_c):
     '''
@@ -213,13 +224,14 @@ def conf_matrix(line_Arr, z_Arr, nb_c):
     w_in.sort()
     w_in += np.array([-10, 10])
     z_in = np.array([w / 1215.67 - 1 for w in w_in])
-    
-    TP = len(np.where( line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    FP = len(np.where( line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    TN = len(np.where(~line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    FN = len(np.where(~line_Arr &  ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
 
-    return np.array([[TP, FP], [FN, TN]]) 
+    TP = len(np.where(line_Arr & ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    FP = len(np.where(line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    TN = len(np.where(~line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+    FN = len(np.where(~line_Arr & ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
+
+    return np.array([[TP, FP], [FN, TN]])
+
 
 def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
     '''
@@ -243,37 +255,41 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
     ax = plt.gca()
     for i, w in enumerate(w_central[:-4]):
         ax.errorbar(w, flx[i], yerr=err[i],
-            marker='o', markeredgecolor='dimgray', markerfacecolor=cmap[i],
-            markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
-            zorder=-99)
+                    marker='o', markeredgecolor='dimgray', markerfacecolor=cmap[i],
+                    markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
+                    zorder=-99)
     ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
-        xerr=fwhm_Arr[-4] / 2,
-        fmt='none', color='purple', elinewidth=5)
+                xerr=fwhm_Arr[-4] / 2,
+                fmt='none', color='purple', elinewidth=5)
     ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
-        xerr=fwhm_Arr[-3] / 2,
-        fmt='none', color='green', elinewidth=5)
+                xerr=fwhm_Arr[-3] / 2,
+                fmt='none', color='green', elinewidth=5)
     ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
-        xerr=fwhm_Arr[-2] / 2,
-        fmt='none', color='red', elinewidth=5)
+                xerr=fwhm_Arr[-2] / 2,
+                fmt='none', color='red', elinewidth=5)
     ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
-        xerr=fwhm_Arr[-1] / 2,
-        fmt='none', color='saddlebrown', elinewidth=5)
+                xerr=fwhm_Arr[-1] / 2,
+                fmt='none', color='saddlebrown', elinewidth=5)
 
     try:
-        if set_ylim: ax.set_ylim((y_min, y_max))
+        if set_ylim:
+            ax.set_ylim((y_min, y_max))
     except:
         pass
 
     ax.set_xlabel('$\lambda\ (\AA)$', size=15)
     if e17scale:
-        ax.set_ylabel(r'$f_\lambda\cdot10^{17}$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+        ax.set_ylabel(
+            r'$f_\lambda\cdot10^{17}$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
     else:
-        ax.set_ylabel('$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+        ax.set_ylabel(
+            '$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
 
     return ax
 
+
 def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
-    return_line_width=False):
+                   return_line_width=False):
     '''
     Returns a list of N lists with the index positions of the lines.
 
@@ -289,24 +305,28 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
 
     for src in range(N_src):
         fil = 0
-        this_src_lines = [] # The list of lines
-        this_cont_lines = [] # The list of continuum indices of lines
+        this_src_lines = []  # The list of lines
+        this_cont_lines = []  # The list of continuum indices of lines
 
         while fil < N_fil:
-            this_line = [] # The list of contiguous indices of this line
+            this_line = []  # The list of contiguous indices of this line
             while ~line_Arr[fil, src]:
                 fil += 1
-                if fil == N_fil - 1: break
-            if fil == N_fil - 1: break
+                if fil == N_fil - 1:
+                    break
+            if fil == N_fil - 1:
+                break
             while line_Arr[fil, src]:
                 this_line.append(fil)
                 fil += 1
-                if fil == N_fil - 1: break
-            if fil == N_fil - 1: break
+                if fil == N_fil - 1:
+                    break
+            if fil == N_fil - 1:
+                break
 
             aux = -len(this_line) + nb_min + fil
-            
-            if first: # If first=True, append continuum index to list
+
+            if first:  # If first=True, append continuum index to list
                 this_cont_lines.append(
                     np.average(
                         np.array(this_line),
@@ -317,8 +337,8 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
             this_src_lines.append(
                 np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
             )
-        
-        if first: # If first=True, 
+
+        if first:  # If first=True,
             try:
                 idx = np.argmax(
                     qso_flx[np.array(this_src_lines), src]
@@ -343,6 +363,7 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
             return line_list, line_cont_list
     return line_list
 
+
 def z_NB(cont_line_pos):
     '''
     Computes the Lya z for a continuum NB index.
@@ -351,13 +372,14 @@ def z_NB(cont_line_pos):
 
     # Convert to numpy arr
     cont_line_pos = np.atleast_1d(cont_line_pos)
-    
+
     w1 = w_central[cont_line_pos.astype(int)]
     w2 = w_central[cont_line_pos.astype(int) + 1]
 
-    w = (w2 - w1) * cont_line_pos%1 + w1
+    w = (w2 - w1) * cont_line_pos % 1 + w1
 
     return w / 1215.67 - 1
+
 
 def NB_z(z):
     '''
@@ -371,7 +393,7 @@ def NB_z(z):
     n_NB = np.zeros(len(z)).astype(int)
     for i, w in enumerate(w_lya_obs):
         n_NB[i] = int(np.argmin(np.abs(w_central_NB - w)))
-    
+
     # 0 means the medium band, so thats a bad value -> assign it -1
     # 55 It's too much, so let's assign also -1
     n_NB[(n_NB < 1) | (n_NB > 54)] = -1
@@ -379,8 +401,9 @@ def NB_z(z):
     # If only one value passed, return as a number instead of numpy array
     if len(n_NB) == 1:
         n_NB = n_NB[0]
-    
+
     return n_NB
+
 
 def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
     '''
@@ -395,8 +418,9 @@ def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
     )
     return mask
 
+
 def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
-    mask=True, obs=False):
+                  mask=True, obs=False):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
 
@@ -429,6 +453,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     )
     return line
 
+
 def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
@@ -454,7 +479,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
         z_src = z_Arr[src]
-    
+
         w_obs_lya = (1 + z_src) * w_lya
         w_obs_lyb = (1 + z_src) * w_lyb
         w_obs_SiIV = (1 + z_src) * w_SiIV
@@ -498,11 +523,12 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
 
         if this_nice:
             nice_lya[src] = True
-        
+
     if mask is None:
         return nice_lya
     else:
         return nice_lya & mask
+
 
 def count_true(arr):
     '''
@@ -510,11 +536,13 @@ def count_true(arr):
     '''
     return len(np.where(arr)[0])
 
+
 def schechter(L, phistar, Lstar, alpha):
     '''
     Just the regular Schechter function
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
+
 
 def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2,
                      scale1=1., scale2=1.):
@@ -526,8 +554,9 @@ def double_schechter(L, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2,
 
     return Phi1 + Phi2
 
+
 def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
-    nice_lya=None, N_nb=0):
+            nice_lya=None, N_nb=0):
     '''
     Returns the EW0 and the luminosity from a NB selection given by lya_lines
     '''
@@ -549,10 +578,11 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     flambda = np.zeros(N_sources)
     flambda_e = np.zeros(N_sources)
 
-    for src in np.where(nice_lya)[0]: 
+    for src in np.where(nice_lya)[0]:
         l = lya_lines[src]
-        if l == -1: continue
-        
+        if l == -1:
+            continue
+
         cont[src] = cont_flx[l, src]
         cont_e[src] = cont_err[l, src]
 
@@ -562,11 +592,14 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         lw = np.arange(l_start, l + N_nb + 1)
 
         IGM_T_Arr = np.ones(len(lw))
-        IGM_T_Arr[: l - l_start] = IGM_TRANSMISSION(w_central[lw[: l - l_start]])
-        IGM_T_Arr[l - l_start] = (IGM_TRANSMISSION(w_central[lw[l - l_start]]) + 1) * 0.5
+        IGM_T_Arr[: l -
+                  l_start] = IGM_TRANSMISSION(w_central[lw[: l - l_start]])
+        IGM_T_Arr[l -
+                  l_start] = (IGM_TRANSMISSION(w_central[lw[l - l_start]]) + 1) * 0.5
 
-        pm_flx[l_start : l + N_nb + 1, src] /= IGM_T_Arr
-        pm_flx[l_start : l + N_nb + 1, src][pm_flx[l_start : l + N_nb + 1, src] < cont[src]] = cont[src]
+        pm_flx[l_start: l + N_nb + 1, src] /= IGM_T_Arr
+        pm_flx[l_start: l + N_nb + 1, src][pm_flx[l_start: l +
+                                                  N_nb + 1, src] < cont[src]] = cont[src]
 
         intersec = 0.
         for i in range(lw[0], lw[-1]):
@@ -576,7 +609,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
             )
             intersec += np.min(
                 [(pm_flx[i, src]) * intersec_dlambda,
-                (pm_flx[i + 1, src]) * intersec_dlambda]
+                 (pm_flx[i + 1, src]) * intersec_dlambda]
             )
 
         flambda_cont = cont[src] * (
@@ -585,11 +618,12 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
         )
 
         flambda[src] = np.sum(
-            (pm_flx[lw[0] : lw[-1] + 1, src]) * nb_fwhm_Arr[lw[0] : lw[-1] + 1]
-            ) - intersec - flambda_cont
+            (pm_flx[lw[0]: lw[-1] + 1, src]) * nb_fwhm_Arr[lw[0]: lw[-1] + 1]
+        ) - intersec - flambda_cont
         flambda_e[src] = (
             np.sum(
-                (pm_err[lw[0] : lw[-1] + 1, src] * nb_fwhm_Arr[lw[0] : lw[-1] + 1]) ** 2
+                (pm_err[lw[0]: lw[-1] + 1, src] *
+                 nb_fwhm_Arr[lw[0]: lw[-1] + 1]) ** 2
             )
             + (flambda_cont / cont[src] * cont_e[src]) ** 2
         ) ** 0.5
@@ -600,8 +634,8 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     EW_nb_Arr = flambda / cont / (1 + z_Arr)
     EW_nb_e = flambda_e / cont / (1 + z_Arr)
 
-    LumDist = lambda z: cosmo.luminosity_distance(z).to(u.cm).value
-    Redshift = lambda w: w / 1215.67 - 1
+    def LumDist(z): return cosmo.luminosity_distance(z).to(u.cm).value
+    def Redshift(w): return w / 1215.67 - 1
     dL = LumDist(z_Arr)
     dL_e = (
         LumDist(
@@ -624,10 +658,12 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
 
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
+
 def Zero_point_error(tile_id_Arr, catname):
-    ## Load Zero Point magnitudes
+    # Load Zero Point magnitudes
     w_central = central_wavelength()
-    zpt_cat = pd.read_csv(f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+    zpt_cat = pd.read_csv(
+        f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
 
     zpt_mag = zpt_cat['ZPT'].to_numpy()
     zpt_err = zpt_cat['ERRZPT'].to_numpy()
@@ -645,12 +681,14 @@ def Zero_point_error(tile_id_Arr, catname):
     zpt_id = zpt_cat['TILE_ID'].to_numpy()
     for src in range(len(tile_id_Arr)):
         idx[src] = np.where(
-            (zpt_id == tile_id_Arr[src]) & (zpt_cat['IS_REFERENCE_METHOD'] == 1)
+            (zpt_id == tile_id_Arr[src]) & (
+                zpt_cat['IS_REFERENCE_METHOD'] == 1)
         )[0][0]
-    
+
     zpt_err = zpt_err[:, idx]
 
     return zpt_err
+
 
 def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya=None):
     '''
@@ -677,8 +715,9 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya=None):
             flux_to_mag(NNdata[i, :53], w_central[:53])
             - flux_to_mag(NNdata[i, :53][nb], w_central[nb + 2])
         )
-        NNdata[i, 53 : 53 + 3] = flux_to_mag(NNdata[i, 53 : 53 + 3], w_central[-3:])
-    
+        NNdata[i, 53: 53 +
+               3] = flux_to_mag(NNdata[i, 53: 53 + 3], w_central[-3:])
+
     NNdata[~np.isfinite(NNdata)] = 99.
 
     # MinMaxScaler
@@ -696,7 +735,7 @@ def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya=None):
     # Import the regressor
     with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
         reg = pickle.load(file)
-    
+
     reg.set_params(n_jobs=-1, verbose=0)
 
     L_Arr_pred = reg.predict(NNdata)

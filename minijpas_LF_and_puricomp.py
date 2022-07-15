@@ -1,25 +1,22 @@
 #!/home/alberto/miniconda3/bin/python3
 
+from scipy.stats import binned_statistic
+import os
+from three_filter import cont_est_3FM
+from LumFunc_miniJPAS import LF_perturb_err
+from load_jpas_catalogs import load_minijpas_jnep
+from load_mocks import ensemble_mock
+from my_functions import *
+import seaborn as sns
+import matplotlib
+import matplotlib.pyplot as plt
+import pickle
 import numpy as np
 np.seterr(all='ignore')
 
-import pickle
 
-import matplotlib.pyplot as plt
-import matplotlib
 matplotlib.rcParams.update({'font.size': 10})
 
-import seaborn as sns
-
-from my_functions import *
-from load_mocks import ensemble_mock
-from load_jpas_catalogs import load_minijpas_jnep
-from LumFunc_miniJPAS import LF_perturb_err
-from three_filter import cont_est_3FM
-
-import os
-
-from scipy.stats import binned_statistic
 
 # Useful definitions
 w_central = central_wavelength()
@@ -42,6 +39,7 @@ hiL_factor = bad_qso_area / hiL_qso_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
+
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
@@ -56,10 +54,13 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 
+
 def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
     if cont_est_m == 'nb':
-        est_lya, err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
-        est_oth, err_oth = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
+        est_lya, err_lya = estimate_continuum(
+            pm_flx, pm_err, IGM_T_correct=True)
+        est_oth, err_oth = estimate_continuum(
+            pm_flx, pm_err, IGM_T_correct=False)
     elif cont_est_m == '3fm':
         est_lya, err_lya = cont_est_3FM(pm_flx, pm_err, np.arange(1, 28))
         est_oth = est_lya
@@ -68,9 +69,10 @@ def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
         print('Not a valid continuum estimation method')
     return est_lya, err_lya, est_oth, err_oth
 
+
 def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m) 
+        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
@@ -81,7 +83,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-        400, obs=True)
+                               400, obs=True)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -95,6 +97,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
 
     return cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z
 
+
 def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     '''
     Computes the errors due to dispersion of L_retrieved with some L_retrieved binning
@@ -104,18 +107,20 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     median = np.ones(len(L_binning) - 1) * 99
     last = [99., 99.]
     for i in range(len(L_binning) - 1):
-        in_bin = (10 ** L_Arr >= L_binning[i]) & (10 ** L_Arr < L_binning[i + 1])
+        in_bin = (10 ** L_Arr >= L_binning[i]
+                  ) & (10 ** L_Arr < L_binning[i + 1])
         if count_true(in_bin) == 0:
             L_Lbin_err_plus[i] = last[0]
             L_Lbin_err_minus[i] = last[1]
             continue
         perc = np.nanpercentile((L_Arr - L_lya)[in_bin], [16, 50, 84])
         L_Lbin_err_plus[i] = perc[2] - perc[1]
-        
+
         last = [L_Lbin_err_plus[i], L_Lbin_err_minus[i]]
         median[i] = 10 ** perc[1]
 
     return L_Lbin_err_plus, median
+
 
 def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
                                 z_Arr, nice_lya, nice_z, L_Arr, mag_max,
@@ -138,15 +143,23 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         this_zspec_cut = (z_min < zspec) & (zspec < z_max)
         totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-        goodh_puri_sf = L_Arr[nice_lya & nice_z & is_sf & ew_cut & this_mag_cut & nb_mask]
-        goodh_puri_qso_hiL = L_Arr[nice_lya & nice_z & is_qso & ew_cut & this_mag_cut & nb_mask & where_hiL]
-        goodh_puri_qso_loL = L_Arr[nice_lya & nice_z & is_qso & ew_cut & this_mag_cut & nb_mask & ~where_hiL]
+        goodh_puri_sf = L_Arr[nice_lya & nice_z &
+                              is_sf & ew_cut & this_mag_cut & nb_mask]
+        goodh_puri_qso_hiL = L_Arr[nice_lya & nice_z &
+                                   is_qso & ew_cut & this_mag_cut & nb_mask & where_hiL]
+        goodh_puri_qso_loL = L_Arr[nice_lya & nice_z & is_qso &
+                                   ew_cut & this_mag_cut & nb_mask & ~where_hiL]
         goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
-        goodh_comp_qso_hiL = L_lya[nice_lya & nice_z & is_qso & totals_mask & where_hiL]
-        goodh_comp_qso_loL = L_lya[nice_lya & nice_z & is_qso & totals_mask & ~where_hiL]
-        badh_qso_hiL = L_Arr[nice_lya & ~nice_z & is_qso & is_LAE & nb_mask & this_mag_cut & where_hiL]
-        badh_qso_loL = L_Arr[nice_lya & ~nice_z & is_qso & is_LAE & nb_mask & this_mag_cut & ~where_hiL]
-        badh_normal = L_Arr[nice_lya & ~nice_z & (is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
+        goodh_comp_qso_hiL = L_lya[nice_lya &
+                                   nice_z & is_qso & totals_mask & where_hiL]
+        goodh_comp_qso_loL = L_lya[nice_lya &
+                                   nice_z & is_qso & totals_mask & ~where_hiL]
+        badh_qso_hiL = L_Arr[nice_lya & ~nice_z & is_qso &
+                             is_LAE & nb_mask & this_mag_cut & where_hiL]
+        badh_qso_loL = L_Arr[nice_lya & ~nice_z & is_qso &
+                             is_LAE & nb_mask & this_mag_cut & ~where_hiL]
+        badh_normal = L_Arr[nice_lya & ~nice_z & (
+            is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
         badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
         hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
@@ -159,7 +172,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
         hb_qso_loL, _ = np.histogram(badh_qso_loL, bins=bins2)
         hb_normal, _ = np.histogram(badh_normal, bins=bins2)
         hb_gal, _ = np.histogram(badh_gal, bins=bins2)
-        
+
         hg_puri = (
             hg_puri_sf
             + hg_puri_qso_loL * good_qso_factor
@@ -177,8 +190,10 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
             + hb_gal * gal_factor
         )
         totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
-        totals_qso_loL, _ = np.histogram(L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
-        totals_qso_hiL, _ = np.histogram(L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
+        totals_qso_loL, _ = np.histogram(
+            L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
+        totals_qso_hiL, _ = np.histogram(
+            L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
         totals = (
             totals_sf
             + totals_qso_loL * good_qso_factor
@@ -205,12 +220,16 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
 
     totals_mask = this_zspec_cut & this_mag_cut & ew_cut
 
-    goodh_puri_sf = L_Arr[nice_lya & nice_z & is_sf & ew_cut & this_mag_cut & nb_mask]
-    goodh_puri_qso = L_Arr[nice_lya & nice_z & is_qso & ew_cut & this_mag_cut & nb_mask]
+    goodh_puri_sf = L_Arr[nice_lya & nice_z &
+                          is_sf & ew_cut & this_mag_cut & nb_mask]
+    goodh_puri_qso = L_Arr[nice_lya & nice_z &
+                           is_qso & ew_cut & this_mag_cut & nb_mask]
     goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
     goodh_comp_qso = L_lya[nice_lya & nice_z & is_qso & totals_mask]
-    badh_to_corr = L_Arr[nice_lya & ~nice_z & (is_qso & is_LAE) & nb_mask & this_mag_cut]
-    badh_normal = L_Arr[nice_lya & ~nice_z & (is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
+    badh_to_corr = L_Arr[nice_lya & ~nice_z & (
+        is_qso & is_LAE) & nb_mask & this_mag_cut]
+    badh_normal = L_Arr[nice_lya & ~nice_z & (
+        is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
     hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
@@ -220,7 +239,7 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
     hb_normal, _ = np.histogram(badh_normal, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
-    
+
     hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
     hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
     hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
@@ -245,11 +264,13 @@ def purity_or_completeness_plot(which_one, mag, nbs_to_consider, lya_lines,
     ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
     ax.legend()
-    ax.set_title(f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
+    ax.set_title(
+        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
 
     plt.savefig(f'{dirname}/{which_one}_{survey_name}',
                 bbox_inches='tight', facecolor='white')
     plt.close()
+
 
 def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     fig = plt.figure(figsize=(7, 6))
@@ -259,22 +280,21 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     spacing = 0.1
     cbar_width = 0.08
 
-    ### ADD AXES
+    # ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])
     ax1 = fig.add_axes([width + spacing, 0, width, height])
     axc = fig.add_axes([width * 2 + spacing * 2, 0, cbar_width, height])
 
-    ### PLOT STUFF
+    # PLOT STUFF
     cmap = 'Spectral'
     sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc, cmap=cmap)
     sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=1, cbar=False, cmap=cmap)
 
-    ### TICKS
+    # TICKS
     xticks = range(len(L_bins))
     yticks = range(len(r_bins))
     xtick_labels = ['{0:0.1f}'.format(n) for n in L_bins]
     ytick_labels = ['{0:0.1f}'.format(n) for n in r_bins]
-
 
     ax0.set_yticks(yticks)
     ax0.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -294,16 +314,18 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.tick_params(axis='y', direction='in', labelsize=14)
     ax1.tick_params(axis='x', direction='in', labelsize=14)
 
-    ### SPINES
+    # SPINES
     ax0.spines[:].set_visible(True)
     ax1.spines[:].set_visible(True)
 
-    ### TITLES
+    # TITLES
     ax0.set_title('Purity', fontsize=25)
     ax1.set_title('Completeness', fontsize=25)
 
-    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}', bbox_inches='tight', facecolor='white')
+    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}',
+                bbox_inches='tight', facecolor='white')
     plt.close()
+
 
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
@@ -344,19 +366,22 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
 
         h2d_sel_normal_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut & (is_sf | (is_qso & ~is_LAE))],
+            L_perturbed[nice_lya & ~is_gal & z_cut &
+                        (is_sf | (is_qso & ~is_LAE))],
             mag[nice_lya & ~is_gal & z_cut & (is_sf | (is_qso & ~is_LAE))],
             bins=[L_bins, r_bins]
         )
-        
+
         h2d_sel_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & ~where_hiL],
+            L_perturbed[nice_lya & ~is_gal & z_cut &
+                        is_qso & is_LAE & ~where_hiL],
             mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & ~where_hiL],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_hiL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & where_hiL],
+            L_perturbed[nice_lya & ~is_gal & z_cut &
+                        is_qso & is_LAE & where_hiL],
             mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & where_hiL],
             bins=[L_bins, r_bins]
         )
@@ -397,13 +422,13 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     )
     h2d_nice = (
         h2d_nice_qso_hiL * hiL_factor
-        + h2d_nice_qso_loL * good_qso_factor 
+        + h2d_nice_qso_loL * good_qso_factor
         + h2d_nice_sf
     )
     h2d_sel = (
-        h2d_sel_normal 
+        h2d_sel_normal
         + h2d_sel_qso_hiL * hiL_factor
-        + h2d_sel_qso_loL * good_qso_factor 
+        + h2d_sel_qso_loL * good_qso_factor
         + h2d_sel_gal * gal_factor
     )
 
@@ -411,6 +436,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     comp2d = h2d_nice / h2d_parent
 
     return puri2d, comp2d, L_bins, r_bins
+
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
@@ -448,14 +474,14 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     )
     nice_lya = (nice_lya & z_cut_nice & mag_cut)
 
-    ### Estimate Luminosity
+    # Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    ## Compute and save L corrections and errors
+    # Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
-    L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     L_Lbin_err, median_L = compute_L_Lbin_err(
         L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning
     )
@@ -464,13 +490,14 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/L_nb_err_binning.npy', L_binning)
 
     # Correct L_Arr with the median
-    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
+    L_Arr = np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
 
     # Apply bin err
     L_binning_position = binned_statistic(
-            10 ** L_Arr, None, 'count', bins=L_binning
+        10 ** L_Arr, None, 'count', bins=L_binning
     ).binnumber
-    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
+    L_binning_position[L_binning_position > len(
+        L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
 
     bins = np.log10(L_binning)
@@ -503,6 +530,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             where_hiL, survey_name
         )
 
+
 def make_corrections(params):
     for survey_name in ['minijpas', 'jnep']:
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
@@ -513,19 +541,20 @@ def make_corrections(params):
             hiL_factor, good_qso_factor, gal_factor
         )
 
+
 def effective_volume(nb_min, nb_max, survey_name):
     '''
     Due to NB overlap, specially when considering single filters, the volume probed by one
     NB has to be corrected because some sources could be detected in that NB or in either
     of the adjacent ones.
-    
+
     ## Tile_IDs ##
     AEGIS001: 2241
     AEGIS002: 2243
     AEGIS003: 2406
     AEGIS004: 2470
     '''
-    
+
     if survey_name == 'jnep':
         area = 0.24
     elif survey_name == 'minijpas':
@@ -542,8 +571,10 @@ def effective_volume(nb_min, nb_max, survey_name):
     z_min_overlap = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max_overlap = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
-    z_min_abs = (w_central[nb_min - 1] + nb_fwhm_Arr[nb_min - 1] * 0.5) / w_lya - 1
-    z_max_abs = (w_central[nb_max + 1] - nb_fwhm_Arr[nb_min + 1] * 0.5) / w_lya - 1
+    z_min_abs = (w_central[nb_min - 1] +
+                 nb_fwhm_Arr[nb_min - 1] * 0.5) / w_lya - 1
+    z_max_abs = (w_central[nb_max + 1] -
+                 nb_fwhm_Arr[nb_min + 1] * 0.5) / w_lya - 1
 
     # volume_abs is a single scalar value in case of 'jnep' and an array of
     # 4 values for each pointing in case of 'minijpas
@@ -555,6 +586,7 @@ def effective_volume(nb_min, nb_max, survey_name):
 
     return volume_abs + volume_overlap * 0.5
 
+
 def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
@@ -564,10 +596,11 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m) 
+        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
     # Lya search
-    line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut, mask=mask)
+    line = is_there_line(pm_flx, pm_err, cont_est_lya,
+                         cont_err_lya, ew0_cut, mask=mask)
     lya_lines, lya_cont_lines, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
@@ -575,7 +608,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-        ew_oth, obs=True, mask=mask)
+                               ew_oth, obs=True, mask=mask)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -604,7 +637,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     with open('npy/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
 
-    ### Estimate Luminosity
+    # Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
@@ -612,16 +645,17 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
-    L_bin_c = [L_binning[i : i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
 
     # Correct L_Arr with the median
-    L_Arr =  np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
+    L_Arr = np.log10(10 ** L_Arr - np.interp(10 ** L_Arr, L_bin_c, median_L))
 
     # Apply bin err
     L_binning_position = binned_statistic(
-            10 ** L_Arr, None, 'count', bins=L_binning
+        10 ** L_Arr, None, 'count', bins=L_binning
     ).binnumber
-    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
+    L_binning_position[L_binning_position > len(
+        L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
@@ -681,35 +715,41 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     fig, ax = plt.subplots(figsize=(7, 5))
 
     # Plot the corrected total LF
-    yerr_cor_plus = (hist_median + L_LF_err_plus ** 2) ** 0.5 / bin_width / volume
-    yerr_cor_minus = (hist_median + L_LF_err_minus ** 2) ** 0.5 / bin_width / volume
+    yerr_cor_plus = (hist_median + L_LF_err_plus **
+                     2) ** 0.5 / bin_width / volume
+    yerr_cor_minus = (hist_median + L_LF_err_minus **
+                      2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
     ax.errorbar(LF_bins, hist_median / bin_width / volume,
-        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-        marker='s', linestyle='', color='k', capsize=4,
-        label='miniJPAS + J-NEP', zorder=99)
-    
-    ## Plot the total raw LF
+                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+                marker='s', linestyle='', color='k', capsize=4,
+                label='miniJPAS + J-NEP', zorder=99)
+
+    # Plot the total raw LF
     ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
             marker='^', markersize=11, zorder=4, label='Raw LF (miniJPAS + J-NEP)')
 
-    ## Plot the corrected J-NEP LF
-    yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn ** 2) ** 0.5 / bin_width / volume_jn
-    yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn ** 2) ** 0.5 / bin_width / volume_jn
+    # Plot the corrected J-NEP LF
+    yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn **
+                     2) ** 0.5 / bin_width / volume_jn
+    yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn **
+                      2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
-        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-        marker='^', linestyle='', markersize=10, label='J-NEP', zorder=3)
+                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+                marker='^', linestyle='', markersize=10, label='J-NEP', zorder=3)
 
-    ## Plot the corrected miniJPAS LF
-    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj ** 2) ** 0.5 / bin_width / volume_mj
-    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj ** 2) ** 0.5 / bin_width / volume_mj
+    # Plot the corrected miniJPAS LF
+    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
+                     2) ** 0.5 / bin_width / volume_mj
+    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj **
+                      2) ** 0.5 / bin_width / volume_mj
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
-        yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-        marker='^', linestyle='', markersize=10, label='miniJPAS', zorder=2)
+                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+                marker='^', linestyle='', markersize=10, label='miniJPAS', zorder=2)
 
-    ## Plot the reference LF curves
+    # Plot the reference LF curves
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
     phistar1 = 3.33e-6
     Lstar1 = 44.65
@@ -726,7 +766,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
         label='Spinoso2020 (2.2 < z < 3.25)', zorder=1
-        )
+    )
 
     phistar1 = 10 ** -3.41
     Lstar1 = 10 ** 42.87
@@ -766,26 +806,22 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white',
                 edgecolor='white')
     plt.close()
-    
+
     if return_hist:
         return hist_median, bins
+
 
 if __name__ == '__main__':
     # Parameters of the LF:
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
-    
-    LF_parameters = [
-        (17, 24, 6, 20, 30, 400, 'nb'),
-        (17, 24, 6, 9, 30, 400, 'nb'),
-        (17, 24, 9, 12, 30, 400, 'nb'),
-        (17, 24, 12, 15, 30, 400, 'nb'),
-        (17, 24, 15, 18, 30, 400, 'nb'),
-        (17, 24, 15, 22, 30, 400, 'nb'),
 
+    LF_parameters = [
+        (17, 24, 6, 20, 20, 400, 'nb'),
     ]
 
     for params in LF_parameters:
-        print('mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'.format(*params))
+        print(
+            'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'.format(*params))
         make_corrections(params)
         make_the_LF(params)
