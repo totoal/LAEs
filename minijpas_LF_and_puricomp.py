@@ -817,7 +817,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 6, 20, 20, 400, 'nb'),
+        (17, 24, 6, 20, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
