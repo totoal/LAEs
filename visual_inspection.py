@@ -2,7 +2,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from my_functions import plot_JPAS_source, load_filter_tags
+from my_functions import central_wavelength, plot_JPAS_source, load_filter_tags
 from load_jpas_catalogs import load_minijpas_jnep
 import os
 
@@ -16,18 +16,27 @@ tile_dict = {
     2520: 'J-NEP'
 }
 filter_labels = load_filter_tags()
+w_central = central_wavelength()
 
 def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     filenamer = f'/home/alberto/almacen/images_fits/minijpas/{tile_id}-{59}.fits'
     filenamenb = f'/home/alberto/almacen/images_fits/minijpas/{tile_id}-{nb_sel + 1}.fits'
     
-    y_range = slice(x_im - 10, x_im + 10 + 1)
-    x_range = slice(y_im - 10, y_im + 10 + 1)
+    box_side = 16
+    y_range = slice(x_im - box_side, x_im + box_side + 1)
+    x_range = slice(y_im - box_side, y_im + box_side + 1)
     im_r = fits.open(filenamer)[1].data[x_range, y_range]
     im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
 
+    # Get max and min of the images to establish common scale
+    im_max = np.max([im_r.max(), im_nb.max()])
+    im_min = np.min([im_r.min(), im_nb.min()])
+
     fig = plt.figure(figsize=(7, 6))
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True)
+
+    # Draw line on the selected NB
+    ax.axvline(w_central[nb_sel], color='r', linestyle='--')
     
     wh = 0.23
     ax1 = fig.add_axes([1 - 2 * wh, 1 - wh - 0.1, wh, wh])
@@ -42,19 +51,22 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
                     right=False, left=False,
                     labelright=False, labelleft=False)
 
-    ax1.imshow(im_r, cmap='binary')
-    ax2.imshow(im_nb, cmap='binary')
+    ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
+    ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
+
+    # Add circumference showing aperture 3arcsec diameter
+    aper_r_px = 1.5 / 0.23
+    circ1 = plt.Circle((box_side, box_side), radius=aper_r_px, ec='r', fc='none')
+    circ2 = plt.Circle((box_side, box_side), radius=aper_r_px, ec='r', fc='none')
+    ax1.add_patch(circ1)
+    ax2.add_patch(circ2)
 
     tile_name = tile_dict[tile_id]
-    ax.set_title(tile_name, fontsize=15, loc='left')
+    title = f'{tile_name}-{src}'
+    ax.set_title(title, fontsize=15, loc='left')
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
-    
-    mngr = plt.get_current_fig_manager()
-    # to put it into the upper left corner:
-    mngr.window.setGeometry(50, 100, 640, 545)
 
-    # plt.tight_layout()
     # plt.show(block=True)
     dirname = '/home/alberto/almacen/selected_LAEs'
     os.makedirs(dirname, exist_ok=True)
@@ -71,7 +83,7 @@ if __name__ == '__main__':
 
     N_sel = len(selection['src'])
     for n in range(N_sel):
-        print(f'Plotting {n} / {N_sel}')
+        print(f'Plotting {n + 1} / {N_sel}')
         src = selection['src'][n].astype(int)
         tile = selection['tile_id'][n].astype(int)
         x_im = selection['x_im'][n].astype(int)
