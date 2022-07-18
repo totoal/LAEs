@@ -2,7 +2,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from my_functions import central_wavelength, plot_JPAS_source, load_filter_tags
+from my_functions import central_wavelength, nb_fwhm, plot_JPAS_source, load_filter_tags
 from load_jpas_catalogs import load_minijpas_jnep
 import os
 
@@ -17,6 +17,11 @@ tile_dict = {
 }
 filter_labels = load_filter_tags()
 w_central = central_wavelength()
+fwhm_Arr = nb_fwhm(np.arange(60))
+
+# Exposure times for NB and BB in seconds
+bb_exp_time = 30
+nb_exp_time = 120
 
 def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     filenamer = f'/home/alberto/almacen/images_fits/minijpas/{tile_id}-{59}.fits'
@@ -27,6 +32,10 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     x_range = slice(y_im - box_side, y_im + box_side + 1)
     im_r = fits.open(filenamer)[1].data[x_range, y_range]
     im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
+
+    # Normalize by the bandwidth
+    im_r = im_r / fwhm_Arr[-2] * bb_exp_time
+    im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
 
     # Get max and min of the images to establish common scale
     im_max = np.max([im_r.max(), im_nb.max()])
@@ -73,6 +82,7 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     plt.savefig(f'{dirname}/{tile_name}-{src}.png',
                 bbox_inches='tight', facecolor='w',
                 edgecolor='w')
+    plt.close()
 
 if __name__ == '__main__':
     with open('npy/selection.npy', 'rb') as f:
