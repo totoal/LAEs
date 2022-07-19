@@ -176,7 +176,7 @@ def IGM_TRANSMISSION(redshift_Arr, A, B):
 
 def Load_BC03_grid_data():
 
-    path = 'BC03_Interpolation/'
+    path = 'TAU_PROJECT/BC03_Interpolation/'
 
     name = 'data_from_BC03.npy'
 

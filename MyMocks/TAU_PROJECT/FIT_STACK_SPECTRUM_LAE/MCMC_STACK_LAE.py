@@ -396,14 +396,14 @@ w_Lya = 1215.67
 #======================================================#
 #======================================================#
 #======================================================#
-w_int_min = 1000.
+w_int_min = 700.
 w_int_max = 3200.
 #======================================================#
 #======================================================#
 #======================================================#
-N_walkers = 200
+N_walkers = 800
 N_dim = 3
-N_steps = 100
+N_steps = 400
 N_burn = 100
 #======================================================#
 #======================================================#
@@ -455,7 +455,7 @@ MET_min = 22.
 MET_max = 72.
 
 EXT_min = 0.0
-EXT_max = 1.0
+EXT_max = 0.1
 
 theta_0[:, 0] = np.random.rand(
     N_walkers) * (log_AGE_max - log_AGE_min) + log_AGE_min
@@ -561,7 +561,7 @@ semilogy(model_w_LAE_Arr, model_f_LAE_normed_Arr, label='model')
 fill_between(model_w_LAE_Arr, model_f_LAE_normed_Arr - model_f_err_normed_Arr,
              model_f_LAE_normed_Arr + model_f_err_normed_Arr, alpha=0.3, label='unvertainty')
 
-ylim(1e-6, 1e5)
+ylim(1e-1, 1e1)
 xlim(w_int_min, w_int_max)
 
 savefig('fig_answer.pdf')
