@@ -2,6 +2,8 @@ import sys
 
 import numpy as np
 
+import pickle
+
 import matplotlib
 # see http://matplotlib.org/faq/usage_faq.html#what-is-a-backend
 # matplotlib.use('Svg')
@@ -200,7 +202,7 @@ def Interpolate_Lines_Arrays_3D_grid_MCMC(Met_value, Age_value, Ext_value, Grid_
 
 def Load_BC03_grid_data():
 
-    path = '/home/alberto/LAEs/MyMocks/TAU_PROJECT/BC03_Interpolation/'
+    path = '/home/alberto/cosmos/LAEs/MyMocks/TAU_PROJECT/BC03_Interpolation'
 
     name = 'data_from_BC03.npy'
 
@@ -252,7 +254,7 @@ def prior_f(theta):
 
 def compute_mask_fit(w_stack_Arr):
 
-    w_min_fit = 230
+    w_min_fit = 200
     w_max_fit = 1000700
 
     mask_line = mask_spectrum_from_emission_lines(
@@ -278,8 +280,8 @@ def compute_mask_fit(w_stack_Arr):
 
 def normalize_spectrum(w_Arr, flux_Arr, flux_Err=None):
 
-    w_min_red = 1250
-    w_max_red = 3350
+    w_min_red = 1500
+    w_max_red = 2000
 
     mask_red = (w_Arr > w_min_red) * (w_Arr < w_max_red)
 
@@ -394,30 +396,27 @@ w_Lya = 1215.67
 #======================================================#
 #======================================================#
 #======================================================#
-w_int_min = 1350.
-w_int_max = 5375.
+w_int_min = 1000.
+w_int_max = 3200.
 #======================================================#
 #======================================================#
 #======================================================#
-N_walkers = 100
+N_walkers = 200
 N_dim = 3
-N_steps = 200
-N_burn = 200
+N_steps = 100
+N_burn = 100
 #======================================================#
 #======================================================#
 #======================================================#
-# Generate a random spectrum to fit!
 
-MET_LAE = 37.
-AGE_LAE = 1.2
-EXT_LAE = 0.21
+# Load the LAE stack to fit
+pathname = '/home/alberto/cosmos/LAEs/MyMocks/TAU_PROJECT/FIT_STACK_SPECTRUM_LAE/VUDS_stack_files'
+filename = 'Stack_flux_w_dict.pkl'
+with open(f'{pathname}/{filename}', 'rb') as f:
+    stack_dict = pickle.load(f)
 
-print('The target MET is', MET_LAE)
-print('The target AGE is', AGE_LAE)
-print('The target EXT is', EXT_LAE)
-
-model_w_LAE_Arr, model_f_LAE_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC(
-    MET_LAE, AGE_LAE, EXT_LAE, Grid_Dictionary)
+model_w_LAE_Arr = stack_dict['wavelength']
+model_f_LAE_Arr = stack_dict['normalized_flux']
 
 print('model_w_LAE_Arr', model_w_LAE_Arr)
 
@@ -536,7 +535,7 @@ dic_dic['chains'] = my_chains_matrix
 dic_dic['mean'] = MAIN_VALUE_mean
 dic_dic['median'] = MAIN_VALUE_median
 
-save_name = 'mcmc_chains_LAE_Nw_' + str(N_walkers) + '_Nd_' + str(
+save_name = 'output/mcmc_chains_LAE_Nw_' + str(N_walkers) + '_Nd_' + str(
     N_dim) + '_Ns_' + str(N_steps) + '_Nb_' + str(N_burn) + '.npy'
 
 np.save(save_name, dic_dic)
