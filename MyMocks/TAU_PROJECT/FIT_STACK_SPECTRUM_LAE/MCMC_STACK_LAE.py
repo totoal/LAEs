@@ -4,7 +4,7 @@ import numpy as np
 
 import matplotlib
 # see http://matplotlib.org/faq/usage_faq.html#what-is-a-backend
-#matplotlib.use('Svg')
+# matplotlib.use('Svg')
 
 from pylab import *
 
@@ -16,7 +16,7 @@ from scipy.stats import norm
 
 import scipy
 
-import emcee 
+import emcee
 ###########
 
 # IMPORTANT !!!
@@ -29,10 +29,12 @@ mpl.rcParams['xtick.labelsize'] = 15
 mpl.rcParams['ytick.labelsize'] = 15
 
 # OII stack properties!!
-#[-1.36344111 41.99792174  0.34791187]
+# [-1.36344111 41.99792174  0.34791187]
 #==============================================================#
 #==============================================================#
 #==============================================================#
+
+
 def return_emission_line_catalog():
     Line_list =[[770.409  ,'Ne VIII'    ],[780.324  ,'Ne VIII'    ],[937.814  ,'Ly-epsilon' ],[949.742  ,'Ly-delta'   ],
                 [972.02   ,'Ly-gamma'   ],
@@ -99,25 +101,27 @@ def return_emission_line_catalog():
 #==============================================================#
 #==============================================================#
 #==============================================================#
-def mask_spectrum_from_emission_lines( w_Arr , Dw=20 , w_min=80. , w_max=200000000. ):
 
-    Line_list = np.array( return_emission_line_catalog() )
 
-    w_line_list = Line_list[:,0].astype( np.float64 )
+def mask_spectrum_from_emission_lines(w_Arr, Dw=20, w_min=80., w_max=200000000.):
 
-    mask_lines_to_use = ( w_line_list > w_min - Dw ) * ( w_line_list < w_max + Dw )
+    Line_list = np.array(return_emission_line_catalog())
 
-    w_line_list = w_line_list[ mask_lines_to_use ]
+    w_line_list = Line_list[:, 0].astype(np.float64)
 
-    mask_1 = ( w_Arr > w_min ) * ( w_Arr < w_max )
+    mask_lines_to_use = (w_line_list > w_min - Dw) * (w_line_list < w_max + Dw)
 
-    line_mask = np.ones( len(w_Arr) ).astype(bool)
+    w_line_list = w_line_list[mask_lines_to_use]
+
+    mask_1 = (w_Arr > w_min) * (w_Arr < w_max)
+
+    line_mask = np.ones(len(w_Arr)).astype(bool)
 
     #print( line_mask )
 
-    for w_line in w_line_list :
+    for w_line in w_line_list:
 
-        tmp_mask = ( w_Arr < w_line - Dw*0.5 ) + ( w_Arr > w_line + Dw*0.5 )
+        tmp_mask = (w_Arr < w_line - Dw*0.5) + (w_Arr > w_line + Dw*0.5)
 
         line_mask = line_mask * tmp_mask
 
@@ -127,50 +131,55 @@ def mask_spectrum_from_emission_lines( w_Arr , Dw=20 , w_min=80. , w_max=2000000
 #==============================================================#
 #==============================================================#
 #==============================================================#
-def Linear_3D_interpolator( X_prob , Y_prob , Z_prob , X_grid , Y_grid , Z_grid , Field_in_grid ):
 
-    INDEX_X = np.where( ( X_grid < X_prob ) )[0][-1]
-    INDEX_Y = np.where( ( Y_grid < Y_prob ) )[0][-1]
-    INDEX_Z = np.where( ( Z_grid < Z_prob ) )[0][-1]
 
-    dX_grid = X_grid[ INDEX_X + 1 ] - X_grid[ INDEX_X ]
-    dY_grid = Y_grid[ INDEX_Y + 1 ] - Y_grid[ INDEX_Y ]
-    dZ_grid = Z_grid[ INDEX_Z + 1 ] - Z_grid[ INDEX_Z ]
+def Linear_3D_interpolator(X_prob, Y_prob, Z_prob, X_grid, Y_grid, Z_grid, Field_in_grid):
 
-    X_min_grid = X_grid[ INDEX_X     ]
-    Y_min_grid = Y_grid[ INDEX_Y     ]
-    Z_min_grid = Z_grid[ INDEX_Z     ]
+    INDEX_X = np.where((X_grid < X_prob))[0][-1]
+    INDEX_Y = np.where((Y_grid < Y_prob))[0][-1]
+    INDEX_Z = np.where((Z_grid < Z_prob))[0][-1]
 
-    Xprob_X0 = ( X_prob - X_min_grid ) * 1. / dX_grid
-    Yprob_Y0 = ( Y_prob - Y_min_grid ) * 1. / dY_grid
-    Zprob_Z0 = ( Z_prob - Z_min_grid ) * 1. / dZ_grid
+    dX_grid = X_grid[INDEX_X + 1] - X_grid[INDEX_X]
+    dY_grid = Y_grid[INDEX_Y + 1] - Y_grid[INDEX_Y]
+    dZ_grid = Z_grid[INDEX_Z + 1] - Z_grid[INDEX_Z]
 
-    Vol1 = ( 1. - Xprob_X0 ) * ( 1. - Yprob_Y0 ) * ( 1. - Zprob_Z0 )
-    Vol2 = ( 1. - Xprob_X0 ) * (      Yprob_Y0 ) * ( 1. - Zprob_Z0 )
-    Vol3 = ( 1. - Xprob_X0 ) * (      Yprob_Y0 ) * (      Zprob_Z0 )
-    Vol4 = ( 1. - Xprob_X0 ) * ( 1. - Yprob_Y0 ) * (      Zprob_Z0 )
+    X_min_grid = X_grid[INDEX_X]
+    Y_min_grid = Y_grid[INDEX_Y]
+    Z_min_grid = Z_grid[INDEX_Z]
 
-    Vol5 = (      Xprob_X0 ) * ( 1. - Yprob_Y0 ) * ( 1. - Zprob_Z0 )
-    Vol6 = (      Xprob_X0 ) * (      Yprob_Y0 ) * ( 1. - Zprob_Z0 )
-    Vol7 = (      Xprob_X0 ) * (      Yprob_Y0 ) * (      Zprob_Z0 )
-    Vol8 = (      Xprob_X0 ) * ( 1. - Yprob_Y0 ) * (      Zprob_Z0 )
+    Xprob_X0 = (X_prob - X_min_grid) * 1. / dX_grid
+    Yprob_Y0 = (Y_prob - Y_min_grid) * 1. / dY_grid
+    Zprob_Z0 = (Z_prob - Z_min_grid) * 1. / dZ_grid
 
-    Field1 = Field_in_grid[ INDEX_X     , INDEX_Y     , INDEX_Z     ]
-    Field2 = Field_in_grid[ INDEX_X     , INDEX_Y + 1 , INDEX_Z     ]
-    Field3 = Field_in_grid[ INDEX_X     , INDEX_Y + 1 , INDEX_Z + 1 ]
-    Field4 = Field_in_grid[ INDEX_X     , INDEX_Y     , INDEX_Z + 1 ]
-    Field5 = Field_in_grid[ INDEX_X + 1 , INDEX_Y     , INDEX_Z     ]
-    Field6 = Field_in_grid[ INDEX_X + 1 , INDEX_Y + 1 , INDEX_Z     ]
-    Field7 = Field_in_grid[ INDEX_X + 1 , INDEX_Y + 1 , INDEX_Z + 1 ]
-    Field8 = Field_in_grid[ INDEX_X + 1 , INDEX_Y     , INDEX_Z + 1 ]
+    Vol1 = (1. - Xprob_X0) * (1. - Yprob_Y0) * (1. - Zprob_Z0)
+    Vol2 = (1. - Xprob_X0) * (Yprob_Y0) * (1. - Zprob_Z0)
+    Vol3 = (1. - Xprob_X0) * (Yprob_Y0) * (Zprob_Z0)
+    Vol4 = (1. - Xprob_X0) * (1. - Yprob_Y0) * (Zprob_Z0)
 
-    Field_at_the_prob_point = Vol1 * Field1 + Vol2 * Field2 + Vol3 * Field3 + Vol4 * Field4 + Vol5 * Field5 + Vol6 * Field6 + Vol7 * Field7 +      Vol8 * Field8
+    Vol5 = (Xprob_X0) * (1. - Yprob_Y0) * (1. - Zprob_Z0)
+    Vol6 = (Xprob_X0) * (Yprob_Y0) * (1. - Zprob_Z0)
+    Vol7 = (Xprob_X0) * (Yprob_Y0) * (Zprob_Z0)
+    Vol8 = (Xprob_X0) * (1. - Yprob_Y0) * (Zprob_Z0)
+
+    Field1 = Field_in_grid[INDEX_X, INDEX_Y, INDEX_Z]
+    Field2 = Field_in_grid[INDEX_X, INDEX_Y + 1, INDEX_Z]
+    Field3 = Field_in_grid[INDEX_X, INDEX_Y + 1, INDEX_Z + 1]
+    Field4 = Field_in_grid[INDEX_X, INDEX_Y, INDEX_Z + 1]
+    Field5 = Field_in_grid[INDEX_X + 1, INDEX_Y, INDEX_Z]
+    Field6 = Field_in_grid[INDEX_X + 1, INDEX_Y + 1, INDEX_Z]
+    Field7 = Field_in_grid[INDEX_X + 1, INDEX_Y + 1, INDEX_Z + 1]
+    Field8 = Field_in_grid[INDEX_X + 1, INDEX_Y, INDEX_Z + 1]
+
+    Field_at_the_prob_point = Vol1 * Field1 + Vol2 * Field2 + Vol3 * Field3 + \
+        Vol4 * Field4 + Vol5 * Field5 + Vol6 * Field6 + Vol7 * Field7 + Vol8 * Field8
 
     return Field_at_the_prob_point
 #==============================================================#
 #==============================================================#
 #==============================================================#
-def Interpolate_Lines_Arrays_3D_grid_MCMC( Met_value , Age_value , Ext_value , Grid_Dictionary ):
+
+
+def Interpolate_Lines_Arrays_3D_grid_MCMC(Met_value, Age_value, Ext_value, Grid_Dictionary):
 
     Grid_Line = Grid_Dictionary['grid']
 
@@ -180,70 +189,84 @@ def Interpolate_Lines_Arrays_3D_grid_MCMC( Met_value , Age_value , Ext_value , G
 
     w_Arr = Grid_Dictionary['w_Arr']
 
-    aux_line = Linear_3D_interpolator( Met_value , Age_value , Ext_value , met_Arr_Grid , age_Arr_Grid , ext_Arr_Grid , Grid_Line )
+    aux_line = Linear_3D_interpolator(
+        Met_value, Age_value, Ext_value, met_Arr_Grid, age_Arr_Grid, ext_Arr_Grid, Grid_Line)
 
-    return w_Arr , aux_line
+    return w_Arr, aux_line
 #==============================================================#
 #==============================================================#
 #==============================================================#
+
+
 def Load_BC03_grid_data():
 
-    path = '/Users/sidgurung/Desktop/TAU_PROJECT/BC03_Interpolation/'
+    path = '/home/alberto/LAEs/MyMocks/TAU_PROJECT/BC03_Interpolation/'
 
     name = 'data_from_BC03.npy'
 
     file_name = path + '/' + name
 
-    loaded_model = np.load( file_name , allow_pickle=True , encoding='latin1').item()
+    loaded_model = np.load(file_name, allow_pickle=True,
+                           encoding='latin1').item()
 
     return loaded_model
 #==============================================================#
 #==============================================================#
 #==============================================================#
-def Compute_log_like( model_Arr , stack_Arr , stack_err_Arr ):
+
+
+def Compute_log_like(model_Arr, stack_Arr, stack_err_Arr):
 
     sigma2 = stack_err_Arr**2
 
     cc = 1.0
 
-    log_like = -0.5 * np.sum( cc *( model_Arr - stack_Arr ) ** 2 / sigma2 + np.log(sigma2))
+    log_like = -0.5 * np.sum(cc * (model_Arr - stack_Arr)
+                             ** 2 / sigma2 + np.log(sigma2))
 
     return log_like
 #======================================================#
 #======================================================#
 #======================================================#
-def prior_f( theta ):
 
-    log_AGE , MET , EXT = theta[0] , theta[1] , theta[2] 
+
+def prior_f(theta):
+
+    log_AGE, MET, EXT = theta[0], theta[1], theta[2]
 
     AGE = 10 ** log_AGE
 
-    my_bool = True 
+    my_bool = True
 
-    bool_age = ( AGE     >  10**(-2.55) ) * ( AGE     <  13.00 )
-    bool_met = ( MET     >  22.  ) * ( MET     < 72    )
-    bool_ext = ( EXT     >   0.  ) * ( EXT     <  1.0  )
+    bool_age = (AGE > 10**(-2.55)) * (AGE < 13.00)
+    bool_met = (MET > 22.) * (MET < 72)
+    bool_ext = (EXT > 0.) * (EXT < 1.0)
 
-    return_bool = my_bool * bool_age * bool_met * bool_ext #* bool_cte
+    return_bool = my_bool * bool_age * bool_met * bool_ext  # * bool_cte
 
     return return_bool
 #======================================================#
 #======================================================#
 #======================================================#
-def compute_mask_fit( w_stack_Arr ):
+
+
+def compute_mask_fit(w_stack_Arr):
 
     w_min_fit = 230
     w_max_fit = 1000700
 
-    mask_line = mask_spectrum_from_emission_lines( w_stack_Arr , Dw=20 , w_min=w_min_fit , w_max=w_max_fit )
+    mask_line = mask_spectrum_from_emission_lines(
+        w_stack_Arr, Dw=20, w_min=w_min_fit, w_max=w_max_fit)
 
     Dw_OII = 6.0
 
-    w_OII_Arr = [ 1337.81512605042 , 1416.8067226890757 , 1586.5546218487395 ,1526.5 ]
+    w_OII_Arr = [1337.81512605042, 1416.8067226890757,
+                 1586.5546218487395, 1526.5]
 
-    for w_line in w_OII_Arr :
+    for w_line in w_OII_Arr:
 
-        tmp_mask = ( w_stack_Arr < w_line - 0.5 * Dw_OII ) + (  w_stack_Arr > w_line + 0.5 * Dw_OII )
+        tmp_mask = (w_stack_Arr < w_line - 0.5 * Dw_OII) + \
+            (w_stack_Arr > w_line + 0.5 * Dw_OII)
 
         mask_line = mask_line * tmp_mask
 
@@ -251,76 +274,88 @@ def compute_mask_fit( w_stack_Arr ):
 #======================================================#
 #======================================================#
 #======================================================#
-def normalize_spectrum( w_Arr , flux_Arr , flux_Err=None ):
+
+
+def normalize_spectrum(w_Arr, flux_Arr, flux_Err=None):
 
     w_min_red = 1250
     w_max_red = 3350
 
-    mask_red = ( w_Arr > w_min_red ) * ( w_Arr < w_max_red )
+    mask_red = (w_Arr > w_min_red) * (w_Arr < w_max_red)
 
-    Integral = np.percentile(  flux_Arr[ mask_red ] , 50 ) #np.sum( flux_Arr[ mask_red ] )
+    # np.sum( flux_Arr[ mask_red ] )
+    Integral = np.percentile(flux_Arr[mask_red], 50)
 
     new_flux_Arr = flux_Arr * 1. / Integral
 
-    if flux_Err is None :
+    if flux_Err is None:
 
         return new_flux_Arr
 
-    if not flux_Err is None :
-    
+    if not flux_Err is None:
+
         new_flux_Err = flux_Err * 1. / Integral
 
-        return new_flux_Arr , new_flux_Err
+        return new_flux_Arr, new_flux_Err
 #======================================================#
 #======================================================#
 #======================================================#
-def get_a_fitting_spectrum( w_Arr , Z , AGE , EXT , Grid_Dictionary ):
+
+
+def get_a_fitting_spectrum(w_Arr, Z, AGE, EXT, Grid_Dictionary):
 
     #Grid_Dictionary = Load_BC03_grid_data()
 
-    w_grid_Arr , flux_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC( Z , AGE , EXT , Grid_Dictionary )
+    w_grid_Arr, flux_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC(
+        Z, AGE, EXT, Grid_Dictionary)
 
-    #print('---------------------------------')
+    # print('---------------------------------')
     #print( 'w_Arr' , w_Arr )
     #print( 'w_grid_Arr' , w_grid_Arr )
     #print( 'flux_Arr ' , flux_Arr )
 
-    my_flux_Arr = np.interp( w_Arr , w_grid_Arr , flux_Arr )
+    my_flux_Arr = np.interp(w_Arr, w_grid_Arr, flux_Arr)
 
     #print( 'my_flux_Arr' , my_flux_Arr )
-    #print('---------------------------------')
+    # print('---------------------------------')
 
-    return my_flux_Arr 
+    return my_flux_Arr
 #======================================================#
 #======================================================#
 #======================================================#
-def main_f( theta , w_stack_Arr , stack_Arr , stack_err_Arr , Grid_Dictionary , w_int_min , w_int_max ):
 
-    if not prior_f( theta ) : return -np.inf
+
+def main_f(theta, w_stack_Arr, stack_Arr, stack_err_Arr, Grid_Dictionary, w_int_min, w_int_max):
+
+    if not prior_f(theta):
+        return -np.inf
 
     #print( 'w_stack_Arr' , w_stack_Arr )
 
-    log_AGE , MET , EXT = theta[0] , theta[1] , theta[2] 
+    log_AGE, MET, EXT = theta[0], theta[1], theta[2]
 
     AGE = 10 ** log_AGE
-    
-    mask_w = ( w_stack_Arr > w_int_min ) * ( w_stack_Arr < w_int_max )
 
-    mask_line = compute_mask_fit( w_stack_Arr )
+    mask_w = (w_stack_Arr > w_int_min) * (w_stack_Arr < w_int_max)
+
+    mask_line = compute_mask_fit(w_stack_Arr)
 
     mask_line = mask_line * mask_w
 
     #print( 'w_stack_Arr[mask_line]' , w_stack_Arr[ mask_line ] )
 
-    f_model_RAW_Arr = get_a_fitting_spectrum( w_stack_Arr , MET , AGE , EXT , Grid_Dictionary )
+    f_model_RAW_Arr = get_a_fitting_spectrum(
+        w_stack_Arr, MET, AGE, EXT, Grid_Dictionary)
 
     #print( 'f_model_RAW_Arr' , f_model_RAW_Arr )
 
-    f_obs_Arr , f_err_obs_Arr = normalize_spectrum( w_stack_Arr[mask_line] , stack_Arr[mask_line] , flux_Err=stack_err_Arr[mask_line] )
-    f_model_Arr               = normalize_spectrum( w_stack_Arr[mask_line] , f_model_RAW_Arr[mask_line] )  
+    f_obs_Arr, f_err_obs_Arr = normalize_spectrum(
+        w_stack_Arr[mask_line], stack_Arr[mask_line], flux_Err=stack_err_Arr[mask_line])
+    f_model_Arr = normalize_spectrum(
+        w_stack_Arr[mask_line], f_model_RAW_Arr[mask_line])
 
-    #PLOT=True
-    #if PLOT :
+    # PLOT=True
+    # if PLOT :
 
     #    print( 'AGE , MET , EXT' , AGE , MET , EXT )
     #
@@ -336,20 +371,21 @@ def main_f( theta , w_stack_Arr , stack_Arr , stack_err_Arr , Grid_Dictionary , 
     #    plot( w_stack_Arr[mask_line] , f_obs_Arr , '--' , label='stack' )
     #    legend( loc=0 )
 
-    #    savefig( 'fig_random_' + '.pdf' )  
+    #    savefig( 'fig_random_' + '.pdf' )
     #    clf()
- 
-    ln_like = Compute_log_like( f_model_Arr, f_obs_Arr,  f_err_obs_Arr )
+
+    ln_like = Compute_log_like(f_model_Arr, f_obs_Arr,  f_err_obs_Arr)
 
     return ln_like
 #======================================================#
 #======================================================#
 #======================================================#
 
+
 Grid_Dictionary = Load_BC03_grid_data()
 
-print( Grid_Dictionary.keys() )
-print( Grid_Dictionary['w_Arr'] )
+print(Grid_Dictionary.keys())
+print(Grid_Dictionary['w_Arr'])
 
 #======================================================#
 #======================================================#
@@ -364,9 +400,9 @@ w_int_max = 5375.
 #======================================================#
 #======================================================#
 N_walkers = 100
-N_dim     =  3
-N_steps   = 200
-N_burn    = 200
+N_dim = 3
+N_steps = 200
+N_burn = 200
 #======================================================#
 #======================================================#
 #======================================================#
@@ -376,23 +412,25 @@ MET_LAE = 37.
 AGE_LAE = 1.2
 EXT_LAE = 0.21
 
-print( 'The target MET is' , MET_LAE )
-print( 'The target AGE is' , AGE_LAE )
-print( 'The target EXT is' , EXT_LAE )
+print('The target MET is', MET_LAE)
+print('The target AGE is', AGE_LAE)
+print('The target EXT is', EXT_LAE)
 
-model_w_LAE_Arr , model_f_LAE_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC( MET_LAE , AGE_LAE , EXT_LAE , Grid_Dictionary )
+model_w_LAE_Arr, model_f_LAE_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC(
+    MET_LAE, AGE_LAE, EXT_LAE, Grid_Dictionary)
 
-print( 'model_w_LAE_Arr' , model_w_LAE_Arr )
+print('model_w_LAE_Arr', model_w_LAE_Arr)
 
-print( 'model_f_LAE_Arr' , model_f_LAE_Arr )
+print('model_f_LAE_Arr', model_f_LAE_Arr)
 
 model_f_err_LAE_Arr = 0.1 * model_f_LAE_Arr
 
-plot( model_w_LAE_Arr , model_f_LAE_Arr )
+plot(model_w_LAE_Arr, model_f_LAE_Arr)
 
-fill_between( model_w_LAE_Arr , model_f_LAE_Arr - model_f_err_LAE_Arr , model_f_LAE_Arr + model_f_err_LAE_Arr , alpha=0.3 )
+fill_between(model_w_LAE_Arr, model_f_LAE_Arr - model_f_err_LAE_Arr,
+             model_f_LAE_Arr + model_f_err_LAE_Arr, alpha=0.3)
 
-savefig( 'fig_test_LAE_spec.pdf' )
+savefig('fig_test_LAE_spec.pdf')
 clf()
 #======================================================#
 #======================================================#
@@ -403,16 +441,16 @@ clf()
 #
 #main_f( my_theta , model_w_LAE_Arr , model_f_LAE_Arr , model_f_err_LAE_Arr , Grid_Dictionary , w_int_min , w_int_max )
 #
-#sys.exit()
+# sys.exit()
 #======================================================#
 #======================================================#
 #======================================================#
 # Generating initial positions for MCMC walkers
 
-theta_0 = np.zeros( N_walkers * N_dim ).reshape( N_walkers , N_dim )
+theta_0 = np.zeros(N_walkers * N_dim).reshape(N_walkers, N_dim)
 
-log_AGE_min =  -2.
-log_AGE_max = np.log10( 12.99 )
+log_AGE_min = -2.
+log_AGE_max = np.log10(12.99)
 
 MET_min = 22.
 MET_max = 72.
@@ -420,68 +458,73 @@ MET_max = 72.
 EXT_min = 0.0
 EXT_max = 1.0
 
-theta_0[ : , 0 ] = np.random.rand( N_walkers ) * ( log_AGE_max - log_AGE_min ) + log_AGE_min
-theta_0[ : , 1 ] = np.random.rand( N_walkers ) * (     MET_max -     MET_min ) +     MET_min
-theta_0[ : , 2 ] = np.random.rand( N_walkers ) * (     EXT_max -     EXT_min ) +     EXT_min
+theta_0[:, 0] = np.random.rand(
+    N_walkers) * (log_AGE_max - log_AGE_min) + log_AGE_min
+theta_0[:, 1] = np.random.rand(N_walkers) * (MET_max - MET_min) + MET_min
+theta_0[:, 2] = np.random.rand(N_walkers) * (EXT_max - EXT_min) + EXT_min
 
 #======================================================#
 #======================================================#
 #======================================================#
 
-args = ( model_w_LAE_Arr , model_f_LAE_Arr , model_f_err_LAE_Arr , Grid_Dictionary , w_int_min , w_int_max )
+args = (model_w_LAE_Arr, model_f_LAE_Arr, model_f_err_LAE_Arr,
+        Grid_Dictionary, w_int_min, w_int_max)
 
-sampler = emcee.EnsembleSampler( N_walkers , N_dim, main_f , args=args )
+sampler = emcee.EnsembleSampler(N_walkers, N_dim, main_f, args=args)
 
 ####################################################################
 ####################################################################
 ####################################################################
-state = sampler.run_mcmc( theta_0 , N_burn , progress=True )
+state = sampler.run_mcmc(theta_0, N_burn, progress=True)
 
 sampler.reset()
 
-sampler.run_mcmc( state , N_steps , progress=True )
+sampler.run_mcmc(state, N_steps, progress=True)
 
 chains = sampler.get_chain()
 
-flat_samples = np.zeros( N_walkers * N_steps * N_dim ).reshape( N_walkers * N_steps , N_dim )
+flat_samples = np.zeros(N_walkers * N_steps *
+                        N_dim).reshape(N_walkers * N_steps, N_dim)
 
-for i in range( 0 , N_dim ):
-    flat_samples[ : , i ] = chains[ : , : , i ].ravel()
+for i in range(0, N_dim):
+    flat_samples[:, i] = chains[:, :, i].ravel()
 
-matrix_sol = np.zeros( N_dim )
+matrix_sol = np.zeros(N_dim)
 
-for i in range( 0 , N_dim ):
-    matrix_sol[i] = np.mean( flat_samples[ : , i ] )
+for i in range(0, N_dim):
+    matrix_sol[i] = np.mean(flat_samples[:, i])
 
-my_chains_matrix = np.copy( flat_samples )
+my_chains_matrix = np.copy(flat_samples)
 ####################################################################
 ####################################################################
 ####################################################################
 ax_list = []
 
-label_list = [ r'$\log \; Age \; [Gyr]$' , r'$\rm Metallicity$' , r'$\rm Extintion$' ]
+label_list = [r'$\log \; Age \; [Gyr]$',
+              r'$\rm Metallicity$', r'$\rm Extintion$']
 
-MAIN_VALUE_mean   = np.zeros(N_dim)
+MAIN_VALUE_mean = np.zeros(N_dim)
 MAIN_VALUE_median = np.zeros(N_dim)
-MAIN_VALUE_MAX    = np.zeros(N_dim)
+MAIN_VALUE_MAX = np.zeros(N_dim)
 
-for i in range( 0 , N_dim ):
+for i in range(0, N_dim):
 
-    x_prop = my_chains_matrix[ : , i ]
+    x_prop = my_chains_matrix[:, i]
 
-    x_prop_min = np.percentile( x_prop , 5  )
-    x_prop_50  = np.percentile( x_prop , 50 )
-    x_prop_max = np.percentile( x_prop , 95 )
+    x_prop_min = np.percentile(x_prop, 5)
+    x_prop_50 = np.percentile(x_prop, 50)
+    x_prop_max = np.percentile(x_prop, 95)
 
-    x_min = x_prop_50 - ( x_prop_max - x_prop_min ) * 1.00
-    x_max = x_prop_50 + ( x_prop_max - x_prop_min ) * 1.00
+    x_min = x_prop_50 - (x_prop_max - x_prop_min) * 1.00
+    x_max = x_prop_50 + (x_prop_max - x_prop_min) * 1.00
 
-    mamamask = ( x_prop > x_min ) * ( x_prop < x_max ) 
-    
-    MAIN_VALUE_mean[  i] = np.mean(       x_prop[ mamamask ] )
-    MAIN_VALUE_median[i] = np.percentile( x_prop[ mamamask ] , 50 )
+    mamamask = (x_prop > x_min) * (x_prop < x_max)
 
-    HH , edges_HH = np.histogram( x_prop[ mamamask ] , 100 , range=[ x_prop_min , x_prop_max ] )
+    MAIN_VALUE_mean[i] = np.mean(x_prop[mamamask])
+    MAIN_VALUE_median[i] = np.percentile(x_prop[mamamask], 50)
+
+    HH, edges_HH = np.histogram(x_prop[mamamask], 100, range=[
+                                x_prop_min, x_prop_max])
 
     #MAIN_VALUE_MAX[ i ] = edges_HH[ np.where((HH==np.amax(HH)))]
 ####################################################################
@@ -490,82 +533,88 @@ for i in range( 0 , N_dim ):
 dic_dic = {}
 
 dic_dic['chains'] = my_chains_matrix
-dic_dic['mean'  ] = MAIN_VALUE_mean 
-dic_dic['median'] = MAIN_VALUE_median 
+dic_dic['mean'] = MAIN_VALUE_mean
+dic_dic['median'] = MAIN_VALUE_median
 
-save_name = 'mcmc_chains_LAE_Nw_' + str( N_walkers ) + '_Nd_' + str(N_dim) + '_Ns_' + str( N_steps ) + '_Nb_' + str(N_burn) +'.npy'
+save_name = 'mcmc_chains_LAE_Nw_' + str(N_walkers) + '_Nd_' + str(
+    N_dim) + '_Ns_' + str(N_steps) + '_Nb_' + str(N_burn) + '.npy'
 
-np.save( save_name , dic_dic )
+np.save(save_name, dic_dic)
 ####################################################################
 ####################################################################
 ####################################################################
 
 AGE_LAE_ans = 10**MAIN_VALUE_mean[0]
-MET_LAE_ans =     MAIN_VALUE_mean[1]
-EXT_LAE_ans =     MAIN_VALUE_mean[2]
+MET_LAE_ans = MAIN_VALUE_mean[1]
+EXT_LAE_ans = MAIN_VALUE_mean[2]
 
-answer_w_LAE_Arr , answer_f_LAE_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC( MET_LAE_ans , AGE_LAE_ans , EXT_LAE_ans , Grid_Dictionary )
+answer_w_LAE_Arr, answer_f_LAE_Arr = Interpolate_Lines_Arrays_3D_grid_MCMC(
+    MET_LAE_ans, AGE_LAE_ans, EXT_LAE_ans, Grid_Dictionary)
 
-answe_f_LAE_normed_Arr                          = normalize_spectrum( answer_w_LAE_Arr , answer_f_LAE_Arr )
-model_f_LAE_normed_Arr , model_f_err_normed_Arr = normalize_spectrum(  model_w_LAE_Arr ,  model_f_LAE_Arr , flux_Err = model_f_err_LAE_Arr )
+answe_f_LAE_normed_Arr = normalize_spectrum(answer_w_LAE_Arr, answer_f_LAE_Arr)
+model_f_LAE_normed_Arr, model_f_err_normed_Arr = normalize_spectrum(
+    model_w_LAE_Arr,  model_f_LAE_Arr, flux_Err=model_f_err_LAE_Arr)
 
-semilogy( answer_w_LAE_Arr , answe_f_LAE_normed_Arr , label='answer' )
+semilogy(answer_w_LAE_Arr, answe_f_LAE_normed_Arr, label='answer')
 
-semilogy( model_w_LAE_Arr , model_f_LAE_normed_Arr , label='model' )
+semilogy(model_w_LAE_Arr, model_f_LAE_normed_Arr, label='model')
 
-fill_between( model_w_LAE_Arr , model_f_LAE_normed_Arr - model_f_err_normed_Arr , model_f_LAE_normed_Arr + model_f_err_normed_Arr , alpha=0.3 , label='unvertainty')
+fill_between(model_w_LAE_Arr, model_f_LAE_normed_Arr - model_f_err_normed_Arr,
+             model_f_LAE_normed_Arr + model_f_err_normed_Arr, alpha=0.3, label='unvertainty')
 
-ylim( 1e-6 , 1e5 )
-xlim( w_int_min , w_int_max ) 
+ylim(1e-6, 1e5)
+xlim(w_int_min, w_int_max)
 
-savefig( 'fig_answer.pdf' )
+savefig('fig_answer.pdf')
 ####################################################################
 ####################################################################
 ####################################################################
-figure( figsize=(15,15) )
+figure(figsize=(15, 15))
 
-for i in range( 0 , N_dim ):
+for i in range(0, N_dim):
 
-    y_prop = my_chains_matrix[ : , i ]
+    y_prop = my_chains_matrix[:, i]
 
-    y_prop_min = np.percentile( y_prop , 5  )
-    y_prop_50  = np.percentile( y_prop , 50 )
-    y_prop_max = np.percentile( y_prop , 95 )
+    y_prop_min = np.percentile(y_prop, 5)
+    y_prop_50 = np.percentile(y_prop, 50)
+    y_prop_max = np.percentile(y_prop, 95)
 
-    y_min = y_prop_50 - ( y_prop_max - y_prop_min ) * 1.00
-    y_max = y_prop_50 + ( y_prop_max - y_prop_min ) * 1.00
+    y_min = y_prop_50 - (y_prop_max - y_prop_min) * 1.00
+    y_max = y_prop_50 + (y_prop_max - y_prop_min) * 1.00
 
-    for j in range( 0 , N_dim ):
+    for j in range(0, N_dim):
 
-        if i < j : continue
+        if i < j:
+            continue
 
-        x_prop = my_chains_matrix[ : , j ]
+        x_prop = my_chains_matrix[:, j]
 
-        x_prop_min = np.percentile( x_prop , 5  )
-        x_prop_50  = np.percentile( x_prop , 50 )
-        x_prop_max = np.percentile( x_prop , 95 )
+        x_prop_min = np.percentile(x_prop, 5)
+        x_prop_50 = np.percentile(x_prop, 50)
+        x_prop_max = np.percentile(x_prop, 95)
 
-        x_min = x_prop_50 - ( x_prop_max - x_prop_min ) * 1.00 
-        x_max = x_prop_50 + ( x_prop_max - x_prop_min ) * 1.00
+        x_min = x_prop_50 - (x_prop_max - x_prop_min) * 1.00
+        x_max = x_prop_50 + (x_prop_max - x_prop_min) * 1.00
 
-        ax = plt.subplot2grid( ( N_dim , N_dim ) , (i, j)  )
+        ax = plt.subplot2grid((N_dim, N_dim), (i, j))
 
-        ax_list += [ ax ]
+        ax_list += [ax]
 
         DDX = x_max - x_min
         DDY = y_max - y_min
 
-        if i==j :
+        if i == j:
 
-            H , edges = np.histogram( x_prop , 100 , range=[x_min,x_max] )
+            H, edges = np.histogram(x_prop, 100, range=[x_min, x_max])
 
-            ax.hist( x_prop , 100 , range=[x_min,x_max] , color='cornflowerblue' )
+            ax.hist(x_prop, 100, range=[x_min, x_max], color='cornflowerblue')
 
-            ax.plot( [ MAIN_VALUE_median[i] , MAIN_VALUE_median[i] ] , [ 0.0 , 1e10 ] , 'k--' , lw=2 )
+            ax.plot([MAIN_VALUE_median[i], MAIN_VALUE_median[i]],
+                    [0.0, 1e10], 'k--', lw=2)
 
-            ax.set_ylim( 0 , 1.1 * np.amax(H) )
+            ax.set_ylim(0, 1.1 * np.amax(H))
 
-        else :
+        else:
 
             XX_min = x_min - DDX * 0.2
             XX_max = x_max + DDX * 0.2
@@ -573,68 +622,72 @@ for i in range( 0 , N_dim ):
             YY_min = y_min - DDY * 0.2
             YY_max = y_max + DDY * 0.2
 
-            H , edges_y , edges_x = np.histogram2d( x_prop , y_prop , 100 , range=[[XX_min , XX_max],[YY_min , YY_max]] )
+            H, edges_y, edges_x = np.histogram2d(x_prop, y_prop, 100, range=[
+                                                 [XX_min, XX_max], [YY_min, YY_max]])
 
-            y_centers = 0.5 * ( edges_y[1:] + edges_y[:-1] ) 
-            x_centers = 0.5 * ( edges_x[1:] + edges_x[:-1] ) 
+            y_centers = 0.5 * (edges_y[1:] + edges_y[:-1])
+            x_centers = 0.5 * (edges_x[1:] + edges_x[:-1])
 
-            H_min = np.amin( H )
-            H_max = np.amax( H )
+            H_min = np.amin(H)
+            H_max = np.amax(H)
 
             N_bins = 10000
 
-            H_Arr = np.linspace( H_min , H_max , N_bins )[::-1]
+            H_Arr = np.linspace(H_min, H_max, N_bins)[::-1]
 
-            fact_up_Arr = np.zeros( N_bins )
+            fact_up_Arr = np.zeros(N_bins)
 
-            TOTAL_H = np.sum( H )
+            TOTAL_H = np.sum(H)
 
-            for iii in range( 0 , N_bins ):
- 
+            for iii in range(0, N_bins):
+
                 mask = H > H_Arr[iii]
 
-                fact_up_Arr[iii] = np.sum( H[ mask ] ) / TOTAL_H
+                fact_up_Arr[iii] = np.sum(H[mask]) / TOTAL_H
 
-            H_value_68 = np.interp( 0.680 , fact_up_Arr , H_Arr )
-            H_value_95 = np.interp( 0.950 , fact_up_Arr , H_Arr )
+            H_value_68 = np.interp(0.680, fact_up_Arr, H_Arr)
+            H_value_95 = np.interp(0.950, fact_up_Arr, H_Arr)
 
-            pcolormesh( edges_y , edges_x , H.T , cmap='Blues' )
+            pcolormesh(edges_y, edges_x, H.T, cmap='Blues')
 
-            ax.contour( y_centers, x_centers , H.T , colors='k' , levels=[ H_value_95 ] ) 
-            ax.contour( y_centers, x_centers , H.T , colors='r' , levels=[ H_value_68 ] ) 
+            ax.contour(y_centers, x_centers, H.T,
+                       colors='k', levels=[H_value_95])
+            ax.contour(y_centers, x_centers, H.T,
+                       colors='r', levels=[H_value_68])
 
-            X_VALUE =  MAIN_VALUE_median[j] 
-            Y_VALUE =  MAIN_VALUE_median[i] 
+            X_VALUE = MAIN_VALUE_median[j]
+            Y_VALUE = MAIN_VALUE_median[i]
 
-            plot( [ X_VALUE , X_VALUE ] , [    -100 ,     100 ] , 'k--' , lw=2 )
-            plot( [    -100 ,     100 ] , [ Y_VALUE , Y_VALUE ] , 'k--' , lw=2 )
+            plot([X_VALUE, X_VALUE], [-100,     100], 'k--', lw=2)
+            plot([-100,     100], [Y_VALUE, Y_VALUE], 'k--', lw=2)
 
-            x_plot = [ x_min , x_max , x_max , x_min , x_min ]
-            y_plot = [ y_min , y_min , y_max , y_max , y_min ]
+            x_plot = [x_min, x_max, x_max, x_min, x_min]
+            y_plot = [y_min, y_min, y_max, y_max, y_min]
 
-            ax.plot( x_plot , y_plot , 'w' , lw=2 )
+            ax.plot(x_plot, y_plot, 'w', lw=2)
 
-            ax.set_ylim( y_min-0.05*DDY , y_max+0.05*DDY )
+            ax.set_ylim(y_min-0.05*DDY, y_max+0.05*DDY)
 
-        ax.set_xlim( x_min-0.05*DDX , x_max+0.05*DDX )
+        ax.set_xlim(x_min-0.05*DDX, x_max+0.05*DDX)
 
-        if i==N_dim-1:
-            ax.set_xlabel( label_list[j] , size=20 )
+        if i == N_dim-1:
+            ax.set_xlabel(label_list[j], size=20)
 
-        if j==0 and i!=0 :
-            ax.set_ylabel( label_list[i] , size=20 )
+        if j == 0 and i != 0:
+            ax.set_ylabel(label_list[i], size=20)
 ###################################################################
 ###################################################################
 ###################################################################
-for i in [ 0 , 1 , 2 ] : 
-    plt.setp( ax_list[i].get_xticklabels(), visible=False)
+for i in [0, 1, 2]:
+    plt.setp(ax_list[i].get_xticklabels(), visible=False)
 
-for i in [ 0 , 2 , 4 , 5 ] : 
-    plt.setp( ax_list[i].get_yticklabels(), visible=False)
+for i in [0, 2, 4, 5]:
+    plt.setp(ax_list[i].get_yticklabels(), visible=False)
 
-plt.subplots_adjust( left = 0.085 , bottom = 0.13 , right = 0.96 , top = 0.85 , wspace=0.0 , hspace=0.0 )
+plt.subplots_adjust(left=0.085, bottom=0.13, right=0.96,
+                    top=0.85, wspace=0.0, hspace=0.0)
 
-savefig( 'fig_mcmc_corners_CTE_.pdf' )
+savefig('fig_mcmc_corners_CTE_.pdf')
 clf()
 ####################################################################
 ####################################################################
