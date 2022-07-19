@@ -38,12 +38,9 @@ Thumbs.db
 
 # Specific directories for totoal/LAEs #
 ########################################
-csv
 figures
 Mocks
 MyMocks
-npy
-pkl
 __pycache__
 Source_cats
 miniJPAS_photometry
@@ -51,8 +48,6 @@ miniJPAS_photometry
 .ipynb_checkpoints
 .gitignore
 selected_sources
-fits
 output
 MLmodels
-dask-worker-space
 Luminosity_functions
