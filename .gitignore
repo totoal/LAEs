@@ -51,3 +51,7 @@ output
 MLmodels
 Luminosity_functions
 *.pdf
+npy
+fits
+csv
+pkl
