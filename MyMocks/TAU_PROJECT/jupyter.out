@@ -1,0 +1,9 @@
+TACC: job 297862 execution at: Thu Sep  3 10:27:25 CDT 2020
+TACC: running on node c251-137
+TACC: using jupyter notebook binary /opt/apps/intel18/python3/3.7.0/bin/jupyter-notebook
+TACC: using jupyter command: /opt/apps/intel18/python3/3.7.0/bin/jupyter-notebook --config=/home/00832/envision/tacc-tvp/server/scripts/wrangler/jupyter/jupyter.tvp.config.py
+TACC: got login node jupyter port 53137
+TACC: created reverse ports on Wrangler login
+Your jupyter notebook server is now running!
+Please point your favorite web browser to https://vis.tacc.utexas.edu:53137/?token=c22cbc897cda2b2e0ca5135370a5f3ef93a3395b93c5e185
+slurmstepd: error: *** JOB 297862 ON c251-137 CANCELLED AT 2020-09-03T14:27:21 DUE TO TIME LIMIT ***
