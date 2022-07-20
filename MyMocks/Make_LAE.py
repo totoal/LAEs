@@ -40,7 +40,6 @@ def main(part, survey_name, t_or_t):
     LINE = 'Lya'
 
     # Load LAE LF (Sobral 2016)
-
     phistar = 10 ** -3.45
     Lstar = 10 ** 42.93
     alpha = -1.93
