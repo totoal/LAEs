@@ -100,6 +100,7 @@ def main(part, survey_name, t_or_t):
     mcmc_pathname = '/home/alberto/cosmos/LAEs/MyMocks/TAU_PROJECT/FIT_STACK_SPECTRUM_LAE/output/'
     mcmc = np.load(
         f'{mcmc_pathname}/mcmc_chains_LAE_Nw_800_Nd_3_Ns_400_Nb_100.npy',
+        # f'{mcmc_pathname}/mcmc_chains_LAE_Nw_100_Nd_3_Ns_100_Nb_100.npy',
         allow_pickle=True).item()
 
     # Let's load the data of the gSDSS filter

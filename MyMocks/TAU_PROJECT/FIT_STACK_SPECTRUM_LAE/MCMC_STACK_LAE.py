@@ -502,7 +502,7 @@ my_chains_matrix = np.copy(flat_samples)
 ax_list = []
 
 label_list = [r'$\log \; Age \; [Gyr]$',
-              r'$\rm Metallicity$', r'$\rm Extintion$']
+              r'$\rm Metallicity$', r'$\rm Extinction$']
 
 MAIN_VALUE_mean = np.zeros(N_dim)
 MAIN_VALUE_median = np.zeros(N_dim)
