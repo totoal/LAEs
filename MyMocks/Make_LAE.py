@@ -1,5 +1,7 @@
 #!/home/alberto/miniconda3/bin/python3
 
+import csv
+
 import numpy as np
 from Make_QSO_altered_2 import add_errors
 
@@ -20,7 +22,8 @@ def main(part, survey_name, t_or_t):
 
     # Mock parameters.
     z_lya = [2, 4.25]
-    obs_area = 12.5  # deg**2
+    # obs_area = 12.5  # deg**2
+    obs_area = 0.1
 
     # Wavelength array where to evaluate the spectrum
 
@@ -119,11 +122,11 @@ def main(part, survey_name, t_or_t):
     if not os.path.exists(filename):
         os.mkdir(filename)
 
-    # SED_file = open(filename + f'/SEDs{part}.csv', 'w')
-    # SED_no_line_file = open(filename + f'/SEDs_no_line{part}.csv', 'w')
+    SED_file = open(filename + f'/SEDs{part}.csv', 'w')
+    SED_no_line_file = open(filename + f'/SEDs_no_line{part}.csv', 'w')
 
-    # SED_writer = csv.writer(SED_file)
-    # SED_no_line_writer = csv.writer(SED_no_line_file)
+    SED_writer = csv.writer(SED_file)
+    SED_no_line_writer = csv.writer(SED_no_line_file)
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
     # define a different tcurves only with r and i
@@ -197,8 +200,8 @@ def main(part, survey_name, t_or_t):
         pm_SEDs[:, j] = JPAS_synth_phot(SEDs, w_Arr, tcurves)
         pm_SEDs_no_line[:, j] = JPAS_synth_phot(SEDs_no_line, w_Arr, tcurves)
 
-        # SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
-        # SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
+        SED_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs))
+        SED_no_line_writer.writerow(np.interp(w_Arr_reduced, w_Arr, SEDs_no_line))
 
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
