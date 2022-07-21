@@ -437,7 +437,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
         )
         # EW0 min threshold
         & (
-            pm_flx[:-4] - cont_est > ew_Arr * cont_est / fwhm_Arr
+            pm_flx[:-4] / cont_est > 1 + ew_Arr / fwhm_Arr
         )
         & (
             pm_flx[:-4] > cont_est
