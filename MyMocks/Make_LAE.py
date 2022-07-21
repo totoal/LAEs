@@ -22,8 +22,7 @@ def main(part, survey_name, t_or_t):
 
     # Mock parameters.
     z_lya = [2, 4.25]
-    # obs_area = 12.5  # deg**2
-    obs_area = 0.1
+    obs_area = 12.5  # deg**2
 
     # Wavelength array where to evaluate the spectrum
 
@@ -93,13 +92,9 @@ def main(part, survey_name, t_or_t):
     Grid_Dictionary = Load_BC03_grid_data()
 
     # AGE, MET and EXT parameters
-    # mcmc = np.load('./mcmc_chains/mcmc_chains_Nw_800_Nd_4_Ns_'
-    #             '400_Nb_100_z_1.9_3.0_sn_7.0_g_23.5_p_0.9_pp_50.0.npy',
-    #                 allow_pickle=True).item()
     mcmc_pathname = '/home/alberto/cosmos/LAEs/MyMocks/TAU_PROJECT/FIT_STACK_SPECTRUM_LAE/output/'
     mcmc = np.load(
         f'{mcmc_pathname}/mcmc_chains_LAE_Nw_800_Nd_3_Ns_400_Nb_100.npy',
-        # f'{mcmc_pathname}/mcmc_chains_LAE_Nw_100_Nd_3_Ns_100_Nb_100.npy',
         allow_pickle=True).item()
 
     # Let's load the data of the gSDSS filter
