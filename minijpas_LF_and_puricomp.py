@@ -713,6 +713,9 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LF_raw = np.histogram(L_Arr[nice_lya], bins=bins)[0] / bin_width / volume
     ####################
 
+    ## Initialize dict to save the LFs
+    LFs_dict = {'LF_bins': LF_bins}
+
     fig, ax = plt.subplots(figsize=(7, 5))
 
     # Plot the corrected total LF
@@ -721,14 +724,18 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     yerr_cor_minus = (hist_median + L_LF_err_minus **
                       2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
-    ax.errorbar(LF_bins, hist_median / bin_width / volume,
+    LF_values = hist_median / bin_width / volume
+    ax.errorbar(LF_bins, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
                 marker='s', linestyle='', color='k', capsize=4,
                 label='miniJPAS + J-NEP', zorder=99)
+    LFs_dict['LF_total'] = LF_values
+    LFs_dict['LF_total_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the total raw LF
     ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
             marker='^', markersize=11, zorder=4, label='Raw LF (miniJPAS + J-NEP)')
+    LFs_dict['LF_total_raw'] = LF_raw
 
     # Plot the corrected J-NEP LF
     yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn **
@@ -736,10 +743,13 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn **
                       2) ** 0.5 / bin_width / volume_jn
     xerr = bin_width / 2
-    ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
+    LF_values = hist_median_jn / bin_width / volume_jn
+    ax.errorbar(LF_bins + 0.028, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
                 marker='^', linestyle='', markersize=10, color='C3',
                 label='J-NEP', zorder=3)
+    LFs_dict['LF_jnep'] = LF_values
+    LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the corrected miniJPAS LF
     yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
@@ -747,10 +757,25 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj **
                       2) ** 0.5 / bin_width / volume_mj
     xerr = bin_width / 2
-    ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
+    LF_values = hist_median_mj / bin_width / volume_mj
+    ax.errorbar(LF_bins + 0.014, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
                 marker='^', linestyle='', markersize=10, color='C4',
                 label='miniJPAS', zorder=2)
+    LFs_dict['LF_minijpas'] = LF_values
+    LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
+
+    ## Save the dict
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}'
+    )
+    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    os.makedirs(dirname, exist_ok=True)
+
+    dict_filename = f'{dirname}/LFs.pkl'
+    with open(dict_filename, 'wb') as file:
+        pickle.dump(LFs_dict, file)
 
     # Plot the reference LF curves
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
@@ -800,13 +825,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.set_title(
         fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
     )
-
-    folder_name = (
-        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}'
-    )
-    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    os.makedirs(dirname, exist_ok=True)
 
     plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white',
                 edgecolor='white')
