@@ -254,9 +254,9 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     purity = hg_puri / (hg_puri + hb)
     F1score = 2 * purity * completeness / (purity + completeness)
 
-    ax.plot(b_c, completeness, marker='s', label='Completeness', c='k')
-    ax.plot(b_c, purity, marker='s', label='Purity', c='k')
-    ax.plot(b_c, F1score, marker='s', label='F1 score', zorder=-99, c='dimgray')
+    ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
+    ax.plot(b_c, purity, marker='s', label='Purity', c='C6')
+    ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
 
@@ -264,7 +264,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     ax.set_ylim((0, 1))
     ax.legend()
     ax.set_title(
-        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}')
+        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
+        fontsize=12)
 
     plt.savefig(f'{dirname}/puricomp1d_{survey_name}',
                 bbox_inches='tight', facecolor='white')
