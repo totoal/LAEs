@@ -25,6 +25,27 @@ def flux_to_mag(f, w):
     return -2.5 * np.log10(log_arg) - 48.60
 
 
+def ang_area(DEC0, delta_DEC, delta_RA):
+    '''
+    Input:
+    DEC0: central DEC coordinate
+    delta_DEC, delta_RA: apertures of the box in DEC and RA
+    Returns:
+    Angular area in deg2
+    '''
+    # First convert deg to rad and to spherical coordinates (DEC->azimuth)
+    DEC0 = np.pi * 0.5 - np.deg2rad(DEC0)
+    delta_DEC = np.deg2rad(delta_DEC) / 2
+    delta_RA = np.deg2rad(delta_RA) / 2
+    # define the result of the spherical integral in two parts
+    a = np.cos(DEC0 - delta_DEC) - np.cos(DEC0 + delta_DEC)
+    b = 2 * delta_RA
+    ang_area = a * b
+    # Give the result back in deg
+    ang_area = ang_area * 180**2 / np.pi**2
+    return ang_area
+
+
 def load_filter_tags():
     filepath = './JPAS_Transmission_Curves_20170316/minijpas.Filter.csv'
     filters_tags = []
