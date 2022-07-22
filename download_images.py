@@ -1,5 +1,15 @@
 import requests
 import os
+import getpass
+
+# Get credentials of the CEFCA portal
+user = input('User: ')
+password = getpass.getpass()
+
+session = requests.Session()
+session.auth = (user, password)
+
+auth = session.post('https://archive.cefca.es/')
 
 # miniJPAS
 print('\nminiJPAS\n')
@@ -13,7 +23,7 @@ for tile in tile_ids:
     for filter in filter_ids:
         print(f'Downloading: {tile}-{filter}')
         url = f'http://archive.cefca.es/catalogues/vo/siap/minijpas-pdr201912/get_fits?id={tile}&filter={filter}'
-        response = requests.get(url)
+        response = session.get(url)
         open(f'{foldername}/{tile}-{filter}.fits', 'wb').write(response.content)
 
 # J-NEP
@@ -27,6 +37,6 @@ os.makedirs(foldername, exist_ok=True)
 for tile in tile_ids:
     for filter in filter_ids:
         print(f'Downloading: {tile}-{filter}')
-        url = 'https://archive.cefca.es/catalogues/vo/siap/jnep-pdr202107/get_fits?id={tile}&filter={filter}'
-        response = requests.get(url)
+        url = f'https://archive.cefca.es/catalogues/vo/siap/jnep-pdr202107/get_fits?id={tile}&filter={filter}'
+        response = session.get(url)
         open(f'{foldername}/{tile}-{filter}.fits', 'wb').write(response.content)
