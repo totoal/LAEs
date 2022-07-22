@@ -737,7 +737,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.028, hist_median_jn / bin_width / volume_jn,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, label='J-NEP', zorder=3)
+                marker='^', linestyle='', markersize=10, color='C3',
+                label='J-NEP', zorder=3)
 
     # Plot the corrected miniJPAS LF
     yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
@@ -747,7 +748,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     xerr = bin_width / 2
     ax.errorbar(LF_bins + 0.014, hist_median_mj / bin_width / volume_mj,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, label='miniJPAS', zorder=2)
+                marker='^', linestyle='', markersize=10, color='C4',
+                label='miniJPAS', zorder=2)
 
     # Plot the reference LF curves
     Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
@@ -765,7 +767,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Spinoso2020 (2.2 < z < 3.25)', zorder=1
+        label='Spinoso2020 (2.2 < z < 3.25)', zorder=1,
+        color='C5'
     )
 
     phistar1 = 10 ** -3.41
@@ -782,7 +785,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Zhang2021 (2 < z < 3.2)', zorder=0
+        label='Zhang2021 (2 < z < 3.2)', zorder=0,
+        color='C6'
     )
 
     ax.set_yscale('log')
