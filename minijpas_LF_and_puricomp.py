@@ -262,7 +262,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
-    ax.legend()
+    ax.legend(fontsize=11)
     ax.set_title(
         f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
         fontsize=12)
