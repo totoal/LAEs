@@ -746,8 +746,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LF_values = hist_median_jn / bin_width / volume_jn
     ax.errorbar(LF_bins + 0.028, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, color='C3',
-                label='J-NEP', zorder=3)
+                marker='^', linestyle='', markersize=10, color='g',
+                label='J-NEP', zorder=2)
     LFs_dict['LF_jnep'] = LF_values
     LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
@@ -760,8 +760,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LF_values = hist_median_mj / bin_width / volume_mj
     ax.errorbar(LF_bins + 0.014, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, color='C4',
-                label='miniJPAS', zorder=2)
+                marker='^', linestyle='', markersize=10, color='m',
+                label='miniJPAS', zorder=3)
     LFs_dict['LF_minijpas'] = LF_values
     LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
@@ -794,7 +794,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
         label='Spinoso2020 (2.2 < z < 3.25)', zorder=1,
-        color='C5'
+        color='C6'
     )
 
     phistar1 = 10 ** -3.41
@@ -812,7 +812,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.plot(
         np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
         label='Zhang2021 (2 < z < 3.2)', zorder=0,
-        color='C6'
+        color='C7'
     )
 
     ax.set_yscale('log')
