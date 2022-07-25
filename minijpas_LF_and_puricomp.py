@@ -1,5 +1,7 @@
 #!/home/alberto/miniconda3/bin/python3
 
+import numpy as np
+import pickle
 from scipy.stats import binned_statistic
 
 import os
@@ -15,9 +17,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 13})
 
-import pickle
 
-import numpy as np
 np.seterr(all='ignore')
 
 
@@ -255,20 +255,21 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     F1score = 2 * purity * completeness / (purity + completeness)
 
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
-    ax.plot(b_c, purity, marker='s', label='Purity', c='C6')
-    ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
+    ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
+    # ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
 
     ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
-    ax.legend(fontsize=11)
+    ax.legend(fontsize=10)
     ax.set_title(
         f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
         fontsize=12)
 
     plt.savefig(f'{dirname}/puricomp1d_{survey_name}',
-                bbox_inches='tight', facecolor='white')
+                bbox_inches='tight', facecolor='white', edgecolor='none',
+                transparent=True)
     plt.close()
 
 
@@ -284,6 +285,12 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax0 = fig.add_axes([0, 0, width, height])
     ax1 = fig.add_axes([width + spacing, 0, width, height])
     axc = fig.add_axes([width * 2 + spacing * 2, 0, cbar_width, height])
+
+    # Mask puri and comp where at least one of them is zero or nan
+    mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp)
+                     & (puri > 0) & (comp > 0))
+    puri[mask_puricomp] = np.nan
+    comp[mask_puricomp] = np.nan
 
     # PLOT STUFF
     cmap = 'Spectral'
@@ -322,8 +329,14 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax0.set_title('Purity', fontsize=25)
     ax1.set_title('Completeness', fontsize=25)
 
+    # AXES LABELS
+    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)')
+    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$')
+    ax0.set_ylabel('$r$ (magAB)')
+
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}',
-                bbox_inches='tight', facecolor='white')
+                bbox_inches='tight', facecolor='white',
+                edgecolor='none', transparent=True)
     plt.close()
 
 
@@ -713,10 +726,11 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LF_raw = np.histogram(L_Arr[nice_lya], bins=bins)[0] / bin_width / volume
     ####################
 
-    ## Initialize dict to save the LFs
+    # Initialize dict to save the LFs
     LFs_dict = {'LF_bins': LF_bins}
 
-    fig, ax = plt.subplots(figsize=(7, 5))
+    # fig, ax = plt.subplots(figsize=(7, 5))
+    fig, ax = plt.subplots(figsize=(4, 4))
 
     # Plot the corrected total LF
     yerr_cor_plus = (hist_median + L_LF_err_plus **
@@ -765,7 +779,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LFs_dict['LF_minijpas'] = LF_values
     LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
-    ## Save the dict
+    # Save the dict
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
         f'_{cont_est_m}'
@@ -819,15 +833,16 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
     ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
     ax.set_ylim(1e-8, 5e-3)
-    ax.set_xlim(42, 46)
-    ax.legend(fontsize=8)
+    ax.set_xlim(42.5, 45.5)
+    ax.legend(fontsize=7)
 
     ax.set_title(
         fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
     )
 
-    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight', facecolor='white',
-                edgecolor='white')
+    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight',
+                facecolor='white', edgecolor='none',
+                transparent=True)
     plt.close()
 
     if return_hist:
@@ -841,11 +856,11 @@ if __name__ == '__main__':
 
     LF_parameters = [
         (17, 24, 6, 20, 30, 400, 'nb'),
-        (17, 24, 6, 20, 0, 400, 'nb'),
-        (17, 24, 6, 20, 15, 400, 'nb'),
+        # (17, 24, 6, 20, 0, 400, 'nb'),
+        # (17, 24, 6, 20, 15, 400, 'nb'),
 
-        (17, 24, 15, 22, 30, 400, 'nb'),
-        (17, 24, 5, 14, 30, 400, 'nb'),
+        # (17, 24, 15, 22, 30, 400, 'nb'),
+        # (17, 24, 5, 14, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
