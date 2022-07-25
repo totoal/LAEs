@@ -129,7 +129,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, is_LAE,
                                 zspec, L_lya, dirname, ew_cut, where_hiL, survey_name):
-    fig, ax = plt.subplots(figsize=(4, 4))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
 
@@ -729,8 +729,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     # Initialize dict to save the LFs
     LFs_dict = {'LF_bins': LF_bins}
 
-    # fig, ax = plt.subplots(figsize=(7, 5))
-    fig, ax = plt.subplots(figsize=(4, 4))
+    fig, ax = plt.subplots(figsize=(7, 5))
+    # fig, ax = plt.subplots(figsize=(4, 4))
 
     # Plot the corrected total LF
     yerr_cor_plus = (hist_median + L_LF_err_plus **
