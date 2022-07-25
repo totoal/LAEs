@@ -267,9 +267,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
         f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
         fontsize=12)
 
-    plt.savefig(f'{dirname}/puricomp1d_{survey_name}',
-                bbox_inches='tight', facecolor='white', edgecolor='none',
-                transparent=True)
+    plt.savefig(f'{dirname}/puricomp1d_{survey_name}.pdf',
+                bbox_inches='tight', facecolor='white')
     plt.close()
 
 
@@ -334,9 +333,8 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$')
     ax0.set_ylabel('$r$ (magAB)')
 
-    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}',
-                bbox_inches='tight', facecolor='white',
-                edgecolor='none', transparent=True)
+    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
+                bbox_inches='tight', facecolor='white',)
     plt.close()
 
 
@@ -840,9 +838,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
     )
 
-    plt.savefig(f'{dirname}/LumFunc', bbox_inches='tight',
-                facecolor='white', edgecolor='none',
-                transparent=True)
+    plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
+                facecolor='white')
     plt.close()
 
     if return_hist:
@@ -855,7 +852,8 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 6, 20, 30, 400, 'nb'),
+        (17, 23.5, 6, 20, 30, 400, 'nb'),
+        (17, 23, 6, 20, 30, 400, 'nb'),
         # (17, 24, 6, 20, 0, 400, 'nb'),
         # (17, 24, 6, 20, 15, 400, 'nb'),
 
@@ -865,6 +863,7 @@ if __name__ == '__main__':
 
     for params in LF_parameters:
         print(
-            'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'.format(*params))
+            'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
+            .format(*params))
         make_corrections(params)
         make_the_LF(params)
