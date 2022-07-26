@@ -252,7 +252,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     completeness = hg_comp / totals
     purity = hg_puri / (hg_puri + hb)
-    F1score = 2 * purity * completeness / (purity + completeness)
+    # F1score = 2 * purity * completeness / (purity + completeness)
+    purity[(purity == 0.) | ~np.isfinite(purity)] = 0. 
 
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
@@ -308,8 +309,8 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax0.set_xticklabels(xtick_labels, rotation='vertical')
     ax0.yaxis.set_ticks_position('both')
     ax0.xaxis.set_ticks_position('both')
-    ax0.tick_params(axis='y', direction='in', labelsize=14)
-    ax0.tick_params(axis='x', direction='in', labelsize=14)
+    ax0.tick_params(axis='y', direction='in', labelsize=16)
+    ax0.tick_params(axis='x', direction='in', labelsize=16)
 
     ax1.set_yticks(yticks)
     ax1.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -317,8 +318,8 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.set_xticklabels(xtick_labels, rotation='vertical')
     ax1.yaxis.set_ticks_position('both')
     ax1.xaxis.set_ticks_position('both')
-    ax1.tick_params(axis='y', direction='in', labelsize=14)
-    ax1.tick_params(axis='x', direction='in', labelsize=14)
+    ax1.tick_params(axis='y', direction='in', labelsize=16)
+    ax1.tick_params(axis='x', direction='in', labelsize=16)
 
     # SPINES
     ax0.spines[:].set_visible(True)
@@ -329,9 +330,9 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.set_title('Completeness', fontsize=25)
 
     # AXES LABELS
-    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)')
-    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$')
-    ax0.set_ylabel('$r$ (magAB)')
+    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=20)
+    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=20)
+    ax0.set_ylabel('$r$ (magAB)', fontsize=20)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white',)
