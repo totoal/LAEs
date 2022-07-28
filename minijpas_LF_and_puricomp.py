@@ -129,7 +129,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, ew0_cut, is_gal, is_sf, is_qso, is_LAE,
                                 zspec, L_lya, dirname, ew_cut, where_hiL, survey_name):
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(8, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
 
@@ -263,10 +263,10 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
-    ax.legend(fontsize=10)
-    ax.set_title(
-        f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
-        fontsize=12)
+    ax.legend(fontsize=12)
+    # ax.set_title(
+    #     f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
+    #     fontsize=12)
 
     plt.savefig(f'{dirname}/puricomp1d_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white')
@@ -321,6 +321,8 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.tick_params(axis='y', direction='in', labelsize=16)
     ax1.tick_params(axis='x', direction='in', labelsize=16)
 
+    axc.tick_params(labelsize=16)
+
     # SPINES
     ax0.spines[:].set_visible(True)
     ax1.spines[:].set_visible(True)
@@ -330,9 +332,13 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
     ax1.set_title('Completeness', fontsize=25)
 
     # AXES LABELS
-    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=20)
-    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=20)
-    ax0.set_ylabel('$r$ (magAB)', fontsize=20)
+    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax0.set_ylabel('$r$ (magAB)', fontsize=22)
+
+    # AXES LIMITS
+    ax0.set_xlim(6, 22)
+    ax1.set_xlim(6, 22)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white',)
@@ -577,7 +583,7 @@ def effective_volume(nb_min, nb_max, survey_name):
         try:
             area = float(survey_name)
         except:
-            raise ValueError('Survey name not known')
+            raise ValueError('Survey name not known or invalid area value')
 
     z_min_overlap = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max_overlap = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
@@ -751,30 +757,30 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LFs_dict['LF_total_raw'] = LF_raw
 
     # Plot the corrected J-NEP LF
-    yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn **
-                     2) ** 0.5 / bin_width / volume_jn
-    yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn **
-                      2) ** 0.5 / bin_width / volume_jn
-    xerr = bin_width / 2
-    LF_values = hist_median_jn / bin_width / volume_jn
-    ax.errorbar(LF_bins + 0.028, LF_values,
-                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, color='g',
-                label='J-NEP', zorder=2)
+    # yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn **
+    #                  2) ** 0.5 / bin_width / volume_jn
+    # yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn **
+    #                   2) ** 0.5 / bin_width / volume_jn
+    # xerr = bin_width / 2
+    # LF_values = hist_median_jn / bin_width / volume_jn
+    # ax.errorbar(LF_bins + 0.028, LF_values,
+    #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+    #             marker='^', linestyle='', markersize=10, color='g',
+    #             label='J-NEP', zorder=2)
     LFs_dict['LF_jnep'] = LF_values
     LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the corrected miniJPAS LF
-    yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
-                     2) ** 0.5 / bin_width / volume_mj
-    yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj **
-                      2) ** 0.5 / bin_width / volume_mj
-    xerr = bin_width / 2
-    LF_values = hist_median_mj / bin_width / volume_mj
-    ax.errorbar(LF_bins + 0.014, LF_values,
-                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='^', linestyle='', markersize=10, color='m',
-                label='miniJPAS', zorder=3)
+    # yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
+    #                  2) ** 0.5 / bin_width / volume_mj
+    # yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj **
+    #                   2) ** 0.5 / bin_width / volume_mj
+    # xerr = bin_width / 2
+    # LF_values = hist_median_mj / bin_width / volume_mj
+    # ax.errorbar(LF_bins + 0.014, LF_values,
+    #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+    #             marker='^', linestyle='', markersize=10, color='m',
+    #             label='miniJPAS', zorder=3)
     LFs_dict['LF_minijpas'] = LF_values
     LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
@@ -833,11 +839,11 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
     ax.set_ylim(1e-8, 5e-3)
     ax.set_xlim(42.5, 45.5)
-    ax.legend(fontsize=7)
+    ax.legend(fontsize=9)
 
-    ax.set_title(
-        fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
-    )
+    # ax.set_title(
+    #     fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
+    # )
 
     plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
                 facecolor='white')
@@ -853,13 +859,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 23.5, 6, 20, 30, 400, 'nb'),
-        (17, 23, 6, 20, 30, 400, 'nb'),
-        # (17, 24, 6, 20, 0, 400, 'nb'),
-        # (17, 24, 6, 20, 15, 400, 'nb'),
-
-        # (17, 24, 15, 22, 30, 400, 'nb'),
-        # (17, 24, 5, 14, 30, 400, 'nb'),
+        (17, 23.5, 6, 20, 0, 400, 'nb'),
     ]
 
     for params in LF_parameters:
