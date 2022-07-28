@@ -500,8 +500,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    Lmask = nice_z & nice_lya & (L_lya > 43.2)
     L_Lbin_err, median_L = compute_L_Lbin_err(
-        L_Arr[nice_lya & nice_z], L_lya[nice_z & nice_lya], L_binning
+        L_Arr[Lmask], L_lya[Lmask], L_binning
     )
     np.save('npy/L_nb_err.npy', L_Lbin_err)
     np.save('npy/L_bias.npy', median_L)
@@ -746,14 +747,14 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LF_values = hist_median / bin_width / volume
     ax.errorbar(LF_bins, LF_values,
                 yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='s', linestyle='', color='k', capsize=4,
-                label='miniJPAS + J-NEP', zorder=99)
+                marker='s', linestyle='', color='r', capsize=4,
+                label='miniJPAS + J-NEP (corrected)', zorder=99)
     LFs_dict['LF_total'] = LF_values
     LFs_dict['LF_total_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the total raw LF
     ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
-            marker='^', markersize=11, zorder=4, label='Raw LF (miniJPAS + J-NEP)')
+            marker='^', markersize=11, zorder=4, label='miniJPAS + J-NEP (raw)')
     LFs_dict['LF_total_raw'] = LF_raw
 
     # Plot the corrected J-NEP LF

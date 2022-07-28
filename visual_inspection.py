@@ -47,14 +47,14 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     im_max = np.max([im_r.max(), im_nb.max()])
     im_min = np.min([im_r.min(), im_nb.min()])
 
-    fig = plt.figure(figsize=(7, 6))
+    fig = plt.figure(figsize=(8, 3))
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True)
 
     # Draw line on the selected NB
     ax.axvline(w_central[nb_sel], color='r', linestyle='--')
 
-    wh = 0.23
-    ax1 = fig.add_axes([1 - 2 * wh, 1 - wh - 0.1, wh, wh])
+    wh = 0.25
+    ax1 = fig.add_axes([1 - 1.5 * wh, 1 - wh - 0.1, wh, wh])
     ax2 = fig.add_axes([1 - wh, 1 - wh - 0.1, wh, wh])
 
     ax1.tick_params(axis='both', bottom=False, top=False,
@@ -89,7 +89,7 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     os.makedirs(dirname, exist_ok=True)
     plt.savefig(f'{dirname}/{tile_name}-{src}.png',
                 bbox_inches='tight', facecolor='w',
-                edgecolor='w')
+                edgecolor='w', dpi=500)
     plt.close()
 
 

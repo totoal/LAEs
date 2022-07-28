@@ -58,4 +58,4 @@ npy
 fits
 csv
 pkl
-MyMocks/TAU_PROJECT/FIT_STACK_SPECTRUM_LAE/VUDS_stack_files
+*.out
