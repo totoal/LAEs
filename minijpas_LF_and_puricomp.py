@@ -253,7 +253,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     completeness = hg_comp / totals
     purity = hg_puri / (hg_puri + hb)
     # F1score = 2 * purity * completeness / (purity + completeness)
-    purity[(purity == 0.) | ~np.isfinite(purity)] = 0. 
+    purity[(purity == 0.) | ~np.isfinite(purity)] = 0.
 
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
@@ -288,7 +288,7 @@ def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
 
     # Mask puri and comp where at least one of them is zero or nan
     mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp)
-                     & (puri > 0) & (comp > 0))
+                      & (puri > 0) & (comp > 0))
     puri[mask_puricomp] = np.nan
     comp[mask_puricomp] = np.nan
 
@@ -486,11 +486,16 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ew_cut = EW_lya > ew0_cut
     mag_cut = (mag > mag_min) & (mag < mag_max)
 
+    N_sources = len(nice_lya)
+    snr = np.empty(N_sources)
+    for src in range(N_sources):
+        l = lya_lines[src]
+        snr[src] = pm_flx[l, src] / pm_err[l, src]
+    nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
+
     # Nice lya selection
-    nice_lya = nice_lya_select(
-        lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr
-    )
-    nice_lya = (nice_lya & z_cut_nice & mag_cut)
+    nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
+                               cont_est_lya, z_Arr, mask=nice_lya_mask)
 
     # Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -640,7 +645,12 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
-    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut
+    snr = np.empty(N_sources)
+    for src in range(N_sources):
+        l = lya_lines[src]
+        snr[src] = pm_flx[l, src] / pm_err[l, src]
+
+    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
     nice_lya = nice_lya_select(
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
     )
