@@ -2,12 +2,15 @@
 
 import numpy as np
 import pickle
+
 from scipy.stats import binned_statistic
+from scipy.optimize import curve_fit
 
 import os
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
+from LF_puricomp_corrections import weights_LF
 from load_jpas_catalogs import load_minijpas_jnep
 from load_mocks import ensemble_mock
 from my_functions import *
@@ -42,6 +45,8 @@ hiL_factor = bad_qso_area / hiL_qso_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
+def sch_fit(Lx, Phistar, Lstar, alpha):
+    return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
 
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_qso = 'QSO_100000_0'
@@ -486,7 +491,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ew_cut = EW_lya > ew0_cut
     mag_cut = (mag > mag_min) & (mag < mag_max)
 
-    N_sources = len(nice_lya)
+    N_sources = len(mag_cut)
     snr = np.empty(N_sources)
     for src in range(N_sources):
         l = lya_lines[src]
@@ -860,6 +865,43 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
                 facecolor='white')
     plt.close()
 
+    ### Now compute the Schechter params and parameters errors
+    N_iter = 1000
+    bin_c = np.array([bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)])
+    where_fit = (bin_c > 43.5)
+
+    for k in range(N_iter):
+        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
+        L_perturbed[np.isnan(L_perturbed)] = 0.
+
+        puri, comp = weights_LF(
+            L_perturbed[nice_lya], mag[nice_lya], puri2d_minijpas, comp2d_minijpas,
+            L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id[nice_lya],
+            'minijpas', [0, 2], True
+        )
+
+        w = np.random.rand(len(puri))
+        include_mask = (w < puri)
+        w[:] = 1.
+        w[~include_mask] = 0.
+        w[include_mask] = 1. / comp[include_mask]
+        w[np.isnan(w) | np.isinf(w)] = 0.
+
+        hist_aux, _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+        
+        bins_fit = 10 ** bins[where_fit]
+        LF_fit = hist_aux / bin_width / volume
+        try:
+            popt_aux, _ = curve_fit(sch_fit, bins_fit, LF_fit,
+                                    p0=[1e-6, 1e44, -1.5])
+        except:
+            continue
+        Phi_aux = sch_fit(Lx, *tuple(popt_aux))
+        fit_mat = np.vstack([fit_mat, Phi_aux])
+
+    Phi16, Phi50, Phi84 = np.percentile(fit_mat, [16, 50, 48], axis=0)
+    np.save(f'{dirname}/Sch_fit.npy', np.array([Phi16, Phi50, Phi84]))
+
     if return_hist:
         return hist_median, bins
 
@@ -870,7 +912,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 23.5, 6, 20, 0, 400, 'nb'),
+        (17, 24, 6, 20, 0, 400, 'nb'),
     ]
 
     for params in LF_parameters:
