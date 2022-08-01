@@ -256,10 +256,14 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     totals = totals_sf + totals_qso * good_qso_factor
 
     completeness = hg_comp / totals
+    comp_sf = hg_comp_sf / totals_sf
+    comp_qso = hg_comp_qso / totals_qso
     purity = hg_puri / (hg_puri + hb)
     # F1score = 2 * purity * completeness / (purity + completeness)
     purity[(purity == 0.) | ~np.isfinite(purity)] = 0.
 
+    ax.plot(b_c, comp_sf, color='C1', ls='--', label='Completeness (only SF)')
+    ax.plot(b_c, comp_qso, color='C0', ls='--', label='Completeness (only QSO)')
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
     # ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
@@ -877,7 +881,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         puri, comp = weights_LF(
             L_perturbed[nice_lya], mag[nice_lya], puri2d_minijpas, comp2d_minijpas,
             L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id[nice_lya],
-            'minijpas', [0, 2], True
+            'minijpas', give_puri_comp=True
         )
 
         w = np.random.rand(len(puri))
