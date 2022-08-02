@@ -14,6 +14,7 @@ from LF_puricomp_corrections import weights_LF
 from load_jpas_catalogs import load_minijpas_jnep
 from load_mocks import ensemble_mock
 from my_functions import *
+from add_errors import add_errors
 
 import seaborn as sns
 import matplotlib
@@ -564,9 +565,16 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
 
 def make_corrections(params):
-    for survey_name in ['minijpas', 'jnep']:
+    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003'
+                        'minijpasAEGIS004', 'jnep']
+    for survey_name in survey_name_list:
+        print(f'Making puricomp {survey_name}')
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-            load_mocks('train', survey_name)
+            load_mocks('train', survey_name[:8], add_errs=False)
+                
+        pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
+                                    survey_name=survey_name)
+
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
@@ -714,8 +722,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
 
     volume = effective_volume(nb_min, nb_max, 'both')
-    volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
-    volume_jn = effective_volume(nb_min, nb_max, 'jnep')
+    # volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
+    # volume_jn = effective_volume(nb_min, nb_max, 'jnep')
 
     b = bins
 
@@ -723,15 +731,22 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
-    L_LF_err_percentiles = LF_perturb_err(
-        L_Arr[is_minijpas_source], L_e_Arr[is_minijpas_source], nice_lya[is_minijpas_source],
-        mag[is_minijpas_source], z_Arr[is_minijpas_source], starprob[is_minijpas_source],
-        bins, puri2d_minijpas, comp2d_minijpas, L_bins, r_bins, 'minijpas',
-        tile_id[is_minijpas_source]
-    )
-    L_LF_err_plus_mj = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
-    L_LF_err_minus_mj = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
-    hist_median_mj = L_LF_err_percentiles[1]
+    L_LF_err_plus_mj = np.zeros(bins.shape)
+    L_LF_err_minus_mj = np.zeros(bins.shape)
+    hist_median_mj = np.zeros(bins.shape)
+    
+    tile_id_list = [2241, 2243, 2406, 2470]
+    for i, this_id in enumerate(tile_id_list):
+        this_mask = (tile_id == this_id)
+        L_LF_err_percentiles = LF_perturb_err(
+            L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
+            mag[this_mask], z_Arr[this_mask], starprob[this_mask],
+            bins, puri2d_minijpas, comp2d_minijpas, L_bins, r_bins,
+            f'minijpasAEGIS00{i}', tile_id[this_mask]
+        )
+        L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
+        L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
+        hist_median_mj += L_LF_err_percentiles[1]
 
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
@@ -869,42 +884,42 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
                 facecolor='white')
     plt.close()
 
-    ### Now compute the Schechter params and parameters errors
-    N_iter = 1000
-    bin_c = np.array([bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)])
-    where_fit = (bin_c > 43.5)
+    # ### Now compute the Schechter params and parameters errors
+    # N_iter = 1000
+    # bin_c = np.array([bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)])
+    # where_fit = (bin_c > 43.5)
 
-    for k in range(N_iter):
-        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
-        L_perturbed[np.isnan(L_perturbed)] = 0.
+    # for k in range(N_iter):
+    #     L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
+    #     L_perturbed[np.isnan(L_perturbed)] = 0.
 
-        puri, comp = weights_LF(
-            L_perturbed[nice_lya], mag[nice_lya], puri2d_minijpas, comp2d_minijpas,
-            L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id[nice_lya],
-            'minijpas', give_puri_comp=True
-        )
+    #     puri, comp = weights_LF(
+    #         L_perturbed[nice_lya], mag[nice_lya], puri2d_minijpas, comp2d_minijpas,
+    #         L_bins, r_bins, z_Arr[nice_lya], starprob[nice_lya], tile_id[nice_lya],
+    #         'minijpas', give_puri_comp=True
+    #     )
 
-        w = np.random.rand(len(puri))
-        include_mask = (w < puri)
-        w[:] = 1.
-        w[~include_mask] = 0.
-        w[include_mask] = 1. / comp[include_mask]
-        w[np.isnan(w) | np.isinf(w)] = 0.
+    #     w = np.random.rand(len(puri))
+    #     include_mask = (w < puri)
+    #     w[:] = 1.
+    #     w[~include_mask] = 0.
+    #     w[include_mask] = 1. / comp[include_mask]
+    #     w[np.isnan(w) | np.isinf(w)] = 0.
 
-        hist_aux, _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+    #     hist_aux, _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
         
-        bins_fit = 10 ** bins[where_fit]
-        LF_fit = hist_aux / bin_width / volume
-        try:
-            popt_aux, _ = curve_fit(sch_fit, bins_fit, LF_fit,
-                                    p0=[1e-6, 1e44, -1.5])
-        except:
-            continue
-        Phi_aux = sch_fit(Lx, *tuple(popt_aux))
-        fit_mat = np.vstack([fit_mat, Phi_aux])
+    #     bins_fit = 10 ** bins[where_fit]
+    #     LF_fit = hist_aux / bin_width / volume
+    #     try:
+    #         popt_aux, _ = curve_fit(sch_fit, bins_fit, LF_fit,
+    #                                 p0=[1e-6, 1e44, -1.5])
+    #     except:
+    #         continue
+    #     Phi_aux = sch_fit(Lx, *tuple(popt_aux))
+    #     fit_mat = np.vstack([fit_mat, Phi_aux])
 
-    Phi16, Phi50, Phi84 = np.percentile(fit_mat, [16, 50, 48], axis=0)
-    np.save(f'{dirname}/Sch_fit.npy', np.array([Phi16, Phi50, Phi84]))
+    # Phi16, Phi50, Phi84 = np.percentile(fit_mat, [16, 50, 48], axis=0)
+    # np.save(f'{dirname}/Sch_fit.npy', np.array([Phi16, Phi50, Phi84]))
 
     if return_hist:
         return hist_median, bins
