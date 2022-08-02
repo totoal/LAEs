@@ -70,7 +70,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
 
         i = int(survey_name[-1])
 
-        detec_lim_i = detec_lim[:, i].reshape(-1, 1)
+        detec_lim_i = detec_lim[:, i - 1].reshape(-1, 1)
 
         if i == 1:
             a = err_fit_params_001[:, 0].reshape(-1, 1)
