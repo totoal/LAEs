@@ -66,9 +66,6 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
     elif survey_name[:8] == 'minijpas':
         pm_SEDs_err = np.array([]).reshape(60, 0)
 
-        # Split sources in 4 groups (tiles) randomly
-        N_sources = pm_SEDs.shape[1]
-
         tile_id_Arr = [2241, 2243, 2406, 2470]
 
         i = int(survey_name[-1])

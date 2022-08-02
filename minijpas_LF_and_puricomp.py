@@ -565,7 +565,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
 
 def make_corrections(params):
-    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003'
+    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(f'Making puricomp {survey_name}')
