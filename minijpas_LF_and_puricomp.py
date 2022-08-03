@@ -705,13 +705,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
 
-    L_bins = np.load('npy/puricomp2d_L_bins.npy')
-    r_bins = np.load('npy/puricomp2d_r_bins.npy')
-    puri2d_minijpas = np.load('npy/puri2d_minijpas.npy')
-    comp2d_minijpas = np.load('npy/comp2d_minijpas.npy')
-    puri2d_jnep = np.load('npy/puri2d_jnep.npy')
-    comp2d_jnep = np.load('npy/comp2d_jnep.npy')
-
     bins = np.log10(L_binning)
 
     N_sources = pm_flx.shape[1]
@@ -741,8 +734,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         L_LF_err_percentiles = LF_perturb_err(
             L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
             mag[this_mask], z_Arr[this_mask], starprob[this_mask],
-            bins, puri2d_minijpas, comp2d_minijpas, L_bins, r_bins,
-            f'minijpasAEGIS00{i}', tile_id[this_mask]
+            bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask]
         )
         L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
         L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -751,8 +743,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_percentiles = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, puri2d_jnep, comp2d_jnep, L_bins, r_bins, 'jnep',
-        tile_id[~is_minijpas_source]
+        bins, 'jnep', tile_id[~is_minijpas_source]
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]

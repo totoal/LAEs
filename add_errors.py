@@ -97,7 +97,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
         mags[np.isnan(mags) | np.isinf(mags)] = 99.
 
         # Zero point error
-        tile_id = tile_id_Arr[i]
+        tile_id = tile_id_Arr[i - 1]
         zpt_err = Zero_point_error(
             np.ones(mags.shape[1]) * tile_id, 'minijpas')
 

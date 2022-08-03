@@ -53,12 +53,17 @@ def r_intrinsic_completeness(star_prob, r_Arr, tile_id, survey_name):
 
     return intcomp
 
-def puricomp2d_weights(L_Arr, r_Arr, puri2d, comp2d, L_bins,
-                       r_bins, give_puri_comp=False):
+def puricomp2d_weights(L_Arr, r_Arr, survey_name, give_puri_comp=False):
     '''
     Computes the weight (purity/completeness) of each source based on the selection in 
     mocks.
     '''
+
+    L_bins = np.load('npy/puricomp2d_L_bins.npy')
+    r_bins = np.load('npy/puricomp2d_r_bins.npy')
+    puri2d = np.load(f'npy/puri2d_{survey_name}.npy')
+    comp2d = np.load(f'npy/comp2d_{survey_name}.npy')
+
     w_mat = puri2d / comp2d
     w_mat[np.isnan(w_mat) | np.isinf(w_mat)] = 0.
 
@@ -128,15 +133,14 @@ def Lya_intrisic_completeness(L, z, starprob=None):
 
     return completeness
 
-def weights_LF(L_Arr, mag, puri2d, comp2d, L_bins, rbins,
-               z_Arr, starprob, tile_id, survey_name,
-               which_w=[0, 2], give_puri_comp=False):
+def weights_LF(L_Arr, mag, z_Arr, starprob, tile_id,
+               survey_name, which_w=[0, 2], give_puri_comp=False):
     '''
     Combines the contribution of the 3 above functions.
     '''
-    args1 = (L_Arr, mag, puri2d, comp2d, L_bins, rbins, give_puri_comp)
+    args1 = (L_Arr, mag, survey_name, give_puri_comp)
     args2 = (L_Arr, z_Arr, starprob)
-    args3 = (starprob, mag, tile_id, survey_name)
+    args3 = (starprob, mag, tile_id, survey_name[:8])
 
     w1 = 1.
     w2 = 1.
