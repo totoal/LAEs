@@ -567,7 +567,15 @@ def make_corrections(params):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
-        print(f'Making puricomp {survey_name}')
+        print(survey_name)
+        try:
+            np.load(f'npy/puri2d_{survey_name}.npy')
+            np.load(f'npy/comp2d_{survey_name}.npy')
+        except:
+            print('Making puricomp...')
+        else:
+            print('Loaded.')
+            continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
                 
@@ -723,9 +731,9 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
-    L_LF_err_plus_mj = np.zeros(bins.shape)
-    L_LF_err_minus_mj = np.zeros(bins.shape)
-    hist_median_mj = np.zeros(bins.shape)
+    L_LF_err_plus_mj = np.zeros(len(bins) - 1)
+    L_LF_err_minus_mj = np.zeros(len(bins) - 1)
+    hist_median_mj = np.zeros(len(bins) - 1)
     
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
@@ -892,4 +900,5 @@ if __name__ == '__main__':
             'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
             .format(*params))
         make_corrections(params)
+        print('\nBuilding the LF...')
         make_the_LF(params)
