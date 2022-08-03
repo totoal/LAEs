@@ -59,6 +59,9 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         w[np.isnan(w) | np.isinf(w)] = 0.
 
         hist_i_mat[k], _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+    
+    # Save hist_i_mat for Sch montecarlo fit
+    np.save(f'npy/hist_i_mat_{survey_name}.npy', hist_i_mat)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
     return L_LF_err_percentiles
