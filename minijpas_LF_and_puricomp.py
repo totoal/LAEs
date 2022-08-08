@@ -268,6 +268,12 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
     # ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
 
+    # Save the arrays
+    np.save(f'{dirname}/puri1d_{survey_name}.npy', purity)
+    np.save(f'{dirname}/comp1d_{survey_name}.npy', completeness)
+    np.save(f'{dirname}/comp_sf_{survey_name}.npy', comp_sf)
+    np.save(f'{dirname}/comp_qso_{survey_name}.npy', comp_qso)
+
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
 
     ax.set_xlim((42, 45.5))
