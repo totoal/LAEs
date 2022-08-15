@@ -724,25 +724,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
 
-    # Save the selection
-    selection = {
-        'src': np.where(nice_lya)[0],
-        'tile_id': tile_id[nice_lya],
-        'x_im': x_im[nice_lya],
-        'y_im': y_im[nice_lya],
-        'nb_sel': lya_lines[nice_lya],
-        'SDSS_spCl': spCl[nice_lya],
-        'SDSS_zspec': zsp[nice_lya],
-        'RA': ra[nice_lya],
-        'DEC': dec[nice_lya],
-        'L_lya': L_Arr[nice_lya],
-        'L_lya_err': L_e_Arr[nice_lya],
-        'EW_lya': EW_Arr[nice_lya],
-        'EW_lya_err': EW_Arr_e[nice_lya]
-    }
-    with open('npy/selection.npy', 'wb') as f:
-        pickle.dump(selection, f)
-
     volume = effective_volume(nb_min, nb_max, 'both')
     # volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
     # volume_jn = effective_volume(nb_min, nb_max, 'jnep')
@@ -757,26 +738,33 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_minus_mj = np.zeros(len(bins) - 1)
     hist_median_mj = np.zeros(len(bins) - 1)
     
+    nice_puri_list = np.zeros(count_true(nice_lya))
+    
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
-        L_LF_err_percentiles = LF_perturb_err(
+        L_LF_err_percentiles, this_puri = LF_perturb_err(
             L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
             mag[this_mask], z_Arr[this_mask], starprob[this_mask],
-            bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask]
+            bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
+            return_puri=True
         )
         L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
         L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
         hist_median_mj += L_LF_err_percentiles[1]
 
-    L_LF_err_percentiles = LF_perturb_err(
+        nice_puri_list[this_mask[nice_lya]] = this_puri
+
+    L_LF_err_percentiles, this_puri = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, 'jnep', tile_id[~is_minijpas_source]
+        bins, 'jnep', tile_id[~is_minijpas_source], return_puri=True
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
     hist_median_jn = L_LF_err_percentiles[1]
+
+    nice_puri_list[~is_minijpas_source[nice_lya]] = this_puri
 
     hist_median = hist_median_jn + hist_median_mj
     L_LF_err_plus = L_LF_err_plus_jn + L_LF_err_plus_mj
@@ -785,6 +773,27 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ###### RAW LF ######
     LF_raw = np.histogram(L_Arr[nice_lya], bins=bins)[0] / bin_width / volume
     ####################
+
+    # Save the selection
+    selection = {
+        'src': np.where(nice_lya)[0],
+        'tile_id': tile_id[nice_lya],
+        'x_im': x_im[nice_lya],
+        'y_im': y_im[nice_lya],
+        'nb_sel': lya_lines[nice_lya],
+        'SDSS_spCl': spCl[nice_lya],
+        'SDSS_zspec': zsp[nice_lya],
+        'RA': ra[nice_lya],
+        'DEC': dec[nice_lya],
+        'L_lya': L_Arr[nice_lya],
+        'L_lya_err': L_e_Arr[nice_lya],
+        'EW_lya': EW_Arr[nice_lya],
+        'EW_lya_err': EW_Arr_e[nice_lya],
+        'puri': nice_puri_list
+    }
+    with open('npy/selection.npy', 'wb') as f:
+        pickle.dump(selection, f)
+
 
     # Initialize dict to save the LFs
     LFs_dict = {'LF_bins': LF_bins}
