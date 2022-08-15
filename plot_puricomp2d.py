@@ -3,19 +3,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def puricomp_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
+def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
     fig = plt.figure(figsize=(5, 5))
 
     width = 1
     height = 1
-    spacing = 0.06
     cbar_width = 0.06
 
     # ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])
     axc0 = fig.add_axes([width + 0.02, 0, cbar_width, height])
     ax1 = fig.add_axes([width + 0.02 + 0.15 + cbar_width, 0, width, height], sharey=ax0)
-    axc1 = fig.add_axes([width * 2 + 0.02 + 0.15 + spacing + cbar_width, 0, cbar_width, height])
+    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.15 + cbar_width, 0, cbar_width, height])
 
     # Mask puri and comp where at least one of them is zero or nan
     mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp) & (puri > 0) & (comp > 0))
@@ -79,6 +78,147 @@ def puricomp_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
                 bbox_inches='tight', facecolor='white',)
     plt.close()
 
+def load_puricomp1d(dirname):
+    comp_list = [
+        np.load(f'{dirname}/comp1d_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp1d_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp1d_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp1d_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp1d_jnep.npy'),
+    ]
+    comp_den_list = [
+        np.load(f'{dirname}/comp_denominator_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp_denominator_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp_denominator_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp_denominator_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp_denominator_jnep.npy'),
+    ]
+
+    comp_qso_list = [
+        np.load(f'{dirname}/comp_qso_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp_qso_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp_qso_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp_qso_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp_qso_jnep.npy')
+    ]
+    comp_den_qso_list = [
+        np.load(f'{dirname}/comp_qso_denominator_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp_qso_denominator_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp_qso_denominator_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp_qso_denominator_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp_qso_denominator_jnep.npy'),
+    ]
+
+    comp_sf_list = [
+        np.load(f'{dirname}/comp_sf_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp_sf_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp_sf_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp_sf_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp_sf_jnep.npy')
+    ]
+    comp_den_sf_list = [
+        np.load(f'{dirname}/comp_sf_denominator_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/comp_sf_denominator_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/comp_sf_denominator_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/comp_sf_denominator_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/comp_sf_denominator_jnep.npy'),
+    ]
+
+    puri_list = [
+        np.load(f'{dirname}/puri1d_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/puri1d_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/puri1d_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/puri1d_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/puri1d_jnep.npy')
+    ]
+    puri_den_list = [
+        np.load(f'{dirname}/puri_denominator_minijpasAEGIS001.npy'),
+        np.load(f'{dirname}/puri_denominator_minijpasAEGIS002.npy'),
+        np.load(f'{dirname}/puri_denominator_minijpasAEGIS003.npy'),
+        np.load(f'{dirname}/puri_denominator_minijpasAEGIS004.npy'),
+        np.load(f'{dirname}/puri_denominator_jnep.npy'),
+    ]
+
+    puricomp_bins = np.load(f'{dirname}/puricomp_bins.npy')
+
+    return comp_list, comp_qso_list, comp_sf_list, puri_list,\
+        comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins
+
+def puricomp1d_plot(dirname, save_dirname):
+    comp_list, comp_qso_list, comp_sf_list, puri_list,\
+        comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins = \
+            load_puricomp1d(dirname)
+
+    # Define the survey list in order
+    survey_list = [f'AEGIS00{i}' for i in range(1, 4 + 1)] + ['J-NEP']
+
+    # Bin centers
+    bc = [puricomp_bins[i : i + 2].sum() * 0.5 for i in range(len(puricomp_bins) - 1)]
+
+    fig, ax = plt.subplots(figsize=(5, 4))
+    
+    # Plot the individual comps
+    for i, comp in enumerate(comp_list):
+        ax.plot(bc, comp, ls=':', alpha=0.6, marker='^', markersize=10,
+                color=f'C{i + 2}', label=survey_list[i])
+
+    # Total comp
+    total_comp_num = (np.array(comp_list) * np.array(comp_den_list)).sum(axis=0)
+    total_comp_den = np.array(comp_den_list).sum(axis=0)
+    total_comp = total_comp_num / total_comp_den
+    ax.plot(bc, total_comp, ls='-', marker='s', color='black', label='Total')
+
+    # Total SF and QSO comps
+    # total_comp_num = (np.array(comp_qso_list) * np.array(comp_den_qso_list)).sum(axis=0)
+    # total_comp_den = np.array(comp_den_qso_list).sum(axis=0)
+    # total_qso_comp = total_comp_num / total_comp_den
+    # ax.plot(bc, total_qso_comp, ls='--', color='C0', linewidth=2,
+    #         label='Only QSO')
+    # total_comp_num = (np.array(comp_sf_list) * np.array(comp_den_sf_list)).sum(axis=0)
+    # total_comp_den = np.array(comp_den_sf_list).sum(axis=0)
+    # total_sf_comp = total_comp_num / total_comp_den
+    # ax.plot(bc, total_sf_comp, ls='--', color='C1', linewidth=2,
+    #         label='Only SF')
+
+    # Fraction sf/qso
+    # total_comp_num_qso = (np.array(comp_qso_list) * np.array(comp_den_qso_list)).sum(axis=0)
+    # total_comp_num_sf = (np.array(comp_sf_list) * np.array(comp_den_sf_list)).sum(axis=0)
+    # sf_qso_frac = total_comp_num_sf / total_comp_num_qso
+    # sf_qso_frac[~np.isfinite(sf_qso_frac)] = 0
+    # ax.plot(bc, sf_qso_frac, color='m', label='SF / QSO')
+
+    ax.legend(loc=0, fontsize=10)
+    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=12)
+    ax.set_ylabel('Completeness', fontsize=12)
+
+    ax.set_ylim(0, 1)
+
+    plt.savefig(f'{save_dirname}/Comp1D.pdf',
+                bbox_inches='tight', facecolor='white',)
+
+    fig, ax = plt.subplots(figsize=(5, 4))
+
+    # Plot the individual puris
+    for i, puri in enumerate(puri_list):
+        ax.plot(bc, puri, ls='--', alpha=0.6, marker='s', label=survey_list[i])
+
+    # Total puri
+    total_puri_num = (np.array(puri_list) * np.array(puri_den_list)).sum(axis=0)
+    total_puri_den = np.array(puri_den_list).sum(axis=0)
+    total_puri = total_puri_num / total_puri_den
+    total_puri[~np.isfinite(total_puri)] = 0.
+    ax.plot(bc, total_puri, ls='-', marker='s', color='black', label='Total')
+
+    ax.legend(loc=0, fontsize=10)
+    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=12)
+    ax.set_ylabel('Purity', fontsize=12)
+
+    ax.set_ylim(0, 1)
+
+    plt.savefig(f'{save_dirname}/Puri1D.pdf',
+                bbox_inches='tight', facecolor='white',)
+
+
 
 survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
@@ -93,8 +233,9 @@ if __name__ == '__main__':
         puri2d = np.load(f'npy/puri2d_{survey_name}.npy')
         comp2d = np.load(f'npy/comp2d_{survey_name}.npy')
 
-        puricomp_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
+        puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
 
     # PURICOMP 1D
     dirname = './Luminosity_functions/LF_r17-24_z2.5-3.8_ew15_ewoth400_nb'
-    
+    save_dirname = './figures'
+    puricomp1d_plot(dirname, save_dirname)

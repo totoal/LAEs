@@ -270,9 +270,14 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     # Save the arrays
     np.save(f'{dirname}/puri1d_{survey_name}.npy', purity)
+    np.save(f'{dirname}/puri_denominator_{survey_name}.npy', (hg_puri + hb))
     np.save(f'{dirname}/comp1d_{survey_name}.npy', completeness)
     np.save(f'{dirname}/comp_sf_{survey_name}.npy', comp_sf)
     np.save(f'{dirname}/comp_qso_{survey_name}.npy', comp_qso)
+    np.save(f'{dirname}/comp_denominator_{survey_name}.npy', totals)
+    np.save(f'{dirname}/comp_qso_denominator_{survey_name}.npy', totals_qso)
+    np.save(f'{dirname}/comp_sf_denominator_{survey_name}.npy', totals_sf)
+    np.save(f'{dirname}/puricomp_bins.npy', bins2)
 
     ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)')
 
@@ -898,8 +903,6 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 6, 20, 0, 400, 'nb'),
-        (17, 24, 6, 20, 30, 400, 'nb'),
         (17, 24, 6, 20, 15, 400, 'nb'),
     ]
 
