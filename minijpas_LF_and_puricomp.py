@@ -579,14 +579,14 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        # try:
-        #     np.load(f'npy/puri2d_{survey_name}.npy')
-        #     np.load(f'npy/comp2d_{survey_name}.npy')
-        # except:
-        #     print('Making puricomp...')
-        # else:
-        #     print('Loaded.')
-        #     continue
+        try:
+            np.load(f'npy/puri2d_{survey_name}.npy')
+            np.load(f'npy/comp2d_{survey_name}.npy')
+        except:
+            print('Making puricomp...')
+        else:
+            print('Loaded.')
+            continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
                 
@@ -648,8 +648,10 @@ def effective_volume(nb_min, nb_max, survey_name):
 def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
-    pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _, _,\
-        _, _, _, _, N_minijpas, x_im, y_im = load_minijpas_jnep(cat_list)
+    pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
+        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im,\
+            ra, dec =\
+                load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -689,19 +691,9 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     nice_lya = nice_lya_select(
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
     )
-    # Save the selection
-    selection = {
-        'src': np.where(nice_lya)[0],
-        'tile_id': tile_id[nice_lya],
-        'x_im': x_im[nice_lya],
-        'y_im': y_im[nice_lya],
-        'nb_sel': lya_lines[nice_lya]
-    }
-    with open('npy/selection.npy', 'wb') as f:
-        pickle.dump(selection, f)
 
     # Estimate Luminosity
-    _, _, L_Arr, _, _, _ = EW_L_NB(
+    EW_Arr, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
@@ -731,6 +723,25 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
+
+    # Save the selection
+    selection = {
+        'src': np.where(nice_lya)[0],
+        'tile_id': tile_id[nice_lya],
+        'x_im': x_im[nice_lya],
+        'y_im': y_im[nice_lya],
+        'nb_sel': lya_lines[nice_lya],
+        'SDSS_spCl': spCl[nice_lya],
+        'SDSS_zspec': zsp[nice_lya],
+        'RA': ra[nice_lya],
+        'DEC': dec[nice_lya],
+        'L_lya': L_Arr[nice_lya],
+        'L_lya_err': L_e_Arr[nice_lya],
+        'EW_lya': EW_Arr[nice_lya],
+        'EW_lya_err': EW_Arr_e[nice_lya]
+    }
+    with open('npy/selection.npy', 'wb') as f:
+        pickle.dump(selection, f)
 
     volume = effective_volume(nb_min, nb_max, 'both')
     # volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
