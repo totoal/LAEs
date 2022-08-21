@@ -579,14 +579,14 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        try:
-            np.load(f'npy/puri2d_{survey_name}.npy')
-            np.load(f'npy/comp2d_{survey_name}.npy')
-        except:
-            print('Making puricomp...')
-        else:
-            print('Loaded.')
-            continue
+        # try:
+        #     np.load(f'npy/puri2d_{survey_name}.npy')
+        #     np.load(f'npy/comp2d_{survey_name}.npy')
+        # except:
+        #     print('Making puricomp...')
+        # else:
+        #     print('Loaded.')
+        #     continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
                 
