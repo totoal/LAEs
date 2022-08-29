@@ -217,7 +217,48 @@ def puricomp1d_plot(dirname, save_dirname):
 
     plt.savefig(f'{save_dirname}/Puri1D.pdf',
                 bbox_inches='tight', facecolor='white',)
+    plt.close()
 
+
+    ### Combined plot PuriComp1D ###
+
+    fig, axs = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+    fig.subplots_adjust(hspace=0.1)
+
+    for i, puri in enumerate(puri_list):
+        axs[0].plot(bc, puri, ls='--', alpha=0.6, marker='s', markersize=10,
+                    color=f'C{i + 2}', label=survey_list[i])
+
+    for i, comp in enumerate(comp_list):
+        axs[1].plot(bc, comp, ls='--', alpha=0.6, marker='s', markersize=10,
+                    color=f'C{i + 2}')
+
+    axs[0].plot(bc, total_puri, ls='-', marker='s', color='black',
+                markersize=10, label='Total')
+    axs[1].plot(bc, total_comp, ls='-', marker='s', color='black',
+                markersize=10)
+
+    #Font size
+    fs = 15
+
+    axs[0].legend(loc=0, fontsize=14)
+
+    axs[1].set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=20)
+    axs[0].set_ylabel('Purity', fontsize=20)
+    axs[1].set_ylabel('Completeness', fontsize=20)
+
+    for ax in axs:
+        ax.set_ylim(0, 1)
+        ax.set_xlim(42.25, 45.5)
+        ax.tick_params(labelsize=fs, direction='in', length=6)
+        ax.yaxis.set_ticks_position('both')
+        ax.xaxis.set_ticks_position('both')
+
+    # fig.tight_layout()
+
+    plt.savefig(f'{save_dirname}/PuriComp1D.pdf',
+                bbox_inches='tight', facecolor='white',)
+    plt.close()
 
 
 survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
