@@ -4,7 +4,6 @@ import numpy as np
 import pickle
 
 from scipy.stats import binned_statistic
-from scipy.optimize import curve_fit
 
 import os
 
@@ -579,14 +578,14 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        # try:
-        #     np.load(f'npy/puri2d_{survey_name}.npy')
-        #     np.load(f'npy/comp2d_{survey_name}.npy')
-        # except:
-        #     print('Making puricomp...')
-        # else:
-        #     print('Loaded.')
-        #     continue
+        try:
+            np.load(f'npy/puri2d_{survey_name}.npy')
+            np.load(f'npy/comp2d_{survey_name}.npy')
+        except:
+            print('Making puricomp...')
+        else:
+            print('Loaded.')
+            continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
                 
@@ -693,7 +692,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     )
 
     # Estimate Luminosity
-    EW_Arr, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
+    _, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
@@ -720,6 +719,13 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     N_sources = pm_flx.shape[1]
     is_minijpas_source = np.ones(N_sources).astype(bool)
     is_minijpas_source[N_minijpas:] = False
+
+    # Compute EW_Arr
+    EW_Arr = np.empty(L_Arr.shape)
+    for src in range(N_sources):
+        l = lya_lines[src]
+        EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] - 1) * nb_fwhm_Arr[l]
+    EW_Arr /= z_Arr
 
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
