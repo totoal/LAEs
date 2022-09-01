@@ -144,7 +144,7 @@ def load_puricomp1d(dirname):
     return comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins
 
-def puricomp1d_plot(dirname, save_dirname):
+def puricomp1d_plot(dirname, save_dirname, surname):
     comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins = \
             load_puricomp1d(dirname)
@@ -256,7 +256,7 @@ def puricomp1d_plot(dirname, save_dirname):
 
     # fig.tight_layout()
 
-    plt.savefig(f'{save_dirname}/PuriComp1D.pdf',
+    plt.savefig(f'{save_dirname}/PuriComp1D{surname}.pdf',
                 bbox_inches='tight', facecolor='white',)
     plt.close()
 

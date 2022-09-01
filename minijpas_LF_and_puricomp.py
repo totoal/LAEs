@@ -789,7 +789,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'L_lya_err': L_e_Arr[nice_lya],
         'EW_lya': EW_Arr[nice_lya],
         'EW_lya_err': EW_Arr_e[nice_lya],
-        'puri': nice_puri_list
+        'puri': nice_puri_list,
+        'r': mag[nice_lya]
     }
     with open('npy/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
@@ -923,11 +924,7 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 6, 6, 15, 400, 'nb'),
-        (17, 24, 15, 15, 15, 400, 'nb'),
-        (17, 24, 20, 20, 15, 400, 'nb'),
-        (17, 24, 22, 22, 15, 400, 'nb'),
-        (17, 24, 23, 23, 15, 400, 'nb'),
+        (17, 24, 6, 20, 15, 400, 'nb'),
     ]
 
     for params in LF_parameters:
