@@ -489,7 +489,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     # Make the directory if it doesn't exist
     folder_name = (
-        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
         f'_{cont_est_m}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
@@ -578,14 +578,14 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        try:
-            np.load(f'npy/puri2d_{survey_name}.npy')
-            np.load(f'npy/comp2d_{survey_name}.npy')
-        except:
-            print('Making puricomp...')
-        else:
-            print('Loaded.')
-            continue
+        # try:
+        #     np.load(f'npy/puri2d_{survey_name}.npy')
+        #     np.load(f'npy/comp2d_{survey_name}.npy')
+        # except:
+        #     print('Making puricomp...')
+        # else:
+        #     print('Loaded.')
+        #     continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
                 
@@ -798,7 +798,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'puri': nice_puri_list,
         'r': mag[nice_lya]
     }
-    with open('npy/selection.npy', 'wb') as f:
+    with open(f'{folder_name}/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
 
 
@@ -857,7 +857,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     # Save the dict
     folder_name = (
-        f'LF_r{mag_min}-{mag_max}_z{z_min:0.1f}-{z_max:0.1f}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
         f'_{cont_est_m}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
@@ -929,9 +929,11 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
 
-    LF_parameters = [
-        (17, 24, 6, 20, 15, 400, 'nb'),
-    ]
+    # LF_parameters = [
+    #     (17, 24, 1, 25, 15, 400, 'nb'),
+    # ]
+    LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
+    LF_parameters += [(17, 24, 1, 25, 15, 400, 'nb')]
 
     for params in LF_parameters:
         print(
