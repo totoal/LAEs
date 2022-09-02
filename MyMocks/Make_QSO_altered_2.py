@@ -316,7 +316,8 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     mjd = mjd.astype(int)
     fiber = fiber.astype(int)
     for src in range(N_sources):
-        print(f'{src} / {N_sources}', end='\r')
+        if src % 500 == 0:
+            print(f'{src} / {N_sources}', end='\r')
 
         spec_name = fits_dir + f'spec-{plate[src]:04d}-{mjd[src]:05d}-{fiber[src]:04d}.fits'
 
