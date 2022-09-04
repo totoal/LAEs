@@ -798,7 +798,14 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'puri': nice_puri_list,
         'r': mag[nice_lya]
     }
-    with open(f'{folder_name}/selection.npy', 'wb') as f:
+
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}'
+    )
+    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    os.makedirs(dirname, exist_ok=True)
+    with open(f'{dirname}/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
 
 
@@ -856,10 +863,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Save the dict
-    folder_name = (
-        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}'
-    )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
