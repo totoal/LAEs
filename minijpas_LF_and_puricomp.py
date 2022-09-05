@@ -845,8 +845,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
     #             marker='^', linestyle='', markersize=10, color='g',
     #             label='J-NEP', zorder=2)
-    LFs_dict['LF_jnep'] = LF_values
-    LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
+    # LFs_dict['LF_jnep'] = LF_values
+    # LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the corrected miniJPAS LF
     # yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
@@ -859,8 +859,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
     #             marker='^', linestyle='', markersize=10, color='m',
     #             label='miniJPAS', zorder=3)
-    LFs_dict['LF_minijpas'] = LF_values
-    LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
+    # LFs_dict['LF_minijpas'] = LF_values
+    # LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Save the dict
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
