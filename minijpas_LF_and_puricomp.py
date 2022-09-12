@@ -18,6 +18,7 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 13})
+matplotlib.use('Agg')
 
 
 np.seterr(all='ignore')
@@ -932,11 +933,16 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
 
-    # LF_parameters = [
-    #     (17, 24, 1, 25, 15, 400, 'nb'),
-    # ]
-    LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
-    LF_parameters += [(17, 24, 1, 25, 15, 400, 'nb')]
+    LF_parameters = [
+        (17, 24, 1, 5, 15, 400, 'nb'),
+        (17, 24, 5, 10, 15, 400, 'nb'),
+        (17, 24, 10, 15, 15, 400, 'nb'),
+        (17, 24, 15, 20, 15, 400, 'nb'),
+        (17, 24, 20, 25, 15, 400, 'nb'),
+        (17, 24, 1, 25, 15, 400, 'nb'),
+    ]
+    # LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
+    # LF_parameters += [(17, 24, 1, 25, 15, 400, 'nb')]
 
     for params in LF_parameters:
         print(

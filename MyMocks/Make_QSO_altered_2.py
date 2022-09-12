@@ -15,14 +15,19 @@ from my_utilities import *
 
 w_lya = 1215.67
 
+
 def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
     if survey_name == 'jnep':
         err_fit_params_jnep = np.load('../npy/err_fit_params_jnep.npy')
     elif survey_name == 'minijpas':
-        err_fit_params_001 = np.load('../npy/err_fit_params_minijpas_AEGIS001.npy')
-        err_fit_params_002 = np.load('../npy/err_fit_params_minijpas_AEGIS002.npy')
-        err_fit_params_003 = np.load('../npy/err_fit_params_minijpas_AEGIS003.npy')
-        err_fit_params_004 = np.load('../npy/err_fit_params_minijpas_AEGIS004.npy')
+        err_fit_params_001 = np.load(
+            '../npy/err_fit_params_minijpas_AEGIS001.npy')
+        err_fit_params_002 = np.load(
+            '../npy/err_fit_params_minijpas_AEGIS002.npy')
+        err_fit_params_003 = np.load(
+            '../npy/err_fit_params_minijpas_AEGIS003.npy')
+        err_fit_params_004 = np.load(
+            '../npy/err_fit_params_minijpas_AEGIS004.npy')
     else:
         raise ValueError('Survey name not known')
 
@@ -52,7 +57,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
         a = err_fit_params_jnep[:, 0].reshape(-1, 1)
         b = err_fit_params_jnep[:, 1].reshape(-1, 1)
         c = err_fit_params_jnep[:, 2].reshape(-1, 1)
-        expfit = lambda x: a * np.exp(b * x + c)
+        def expfit(x): return a * np.exp(b * x + c)
 
         w_central = central_wavelength().reshape(-1, 1)
 
@@ -69,7 +74,8 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
 
         mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
 
-        pm_SEDs_err = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+        pm_SEDs_err = mag_to_flux(
+            mags - mag_err, w_central) - mag_to_flux(mags, w_central)
     elif survey_name[:8] == 'minijpas':
         pm_SEDs_err = np.array([]).reshape(60, 0)
 
@@ -100,8 +106,9 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
             a = err_fit_params_004[:, 0].reshape(-1, 1)
             b = err_fit_params_004[:, 1].reshape(-1, 1)
             c = err_fit_params_004[:, 2].reshape(-1, 1)
-        expfit = lambda x: a * np.exp(b * x + c)
-        
+
+        def expfit(x): return a * np.exp(b * x + c)
+
         w_central = central_wavelength().reshape(-1, 1)
 
         mags = flux_to_mag(pm_SEDs, w_central)
@@ -109,7 +116,8 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
 
         # Zero point error
         tile_id = tile_id_Arr[i]
-        zpt_err = Zero_point_error(np.ones(mags.shape[1]) * tile_id, 'minijpas')
+        zpt_err = Zero_point_error(
+            np.ones(mags.shape[1]) * tile_id, 'minijpas')
 
         mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
         where_himag = np.where(mags > detec_lim_i)
@@ -118,7 +126,8 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
 
         mags[where_himag] = detec_lim_i[where_himag[0]].reshape(-1,)
 
-        pm_SEDs_err_i = mag_to_flux(mags - mag_err, w_central) - mag_to_flux(mags, w_central)
+        pm_SEDs_err_i = mag_to_flux(
+            mags - mag_err, w_central) - mag_to_flux(mags, w_central)
 
         pm_SEDs_err = np.hstack((pm_SEDs_err, pm_SEDs_err_i))
     else:
@@ -129,6 +138,7 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
         pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
 
     return pm_SEDs, pm_SEDs_err
+
 
 def source_f_cont(mjd, plate, fiber):
     try:
@@ -154,14 +164,14 @@ def source_f_cont(mjd, plate, fiber):
             & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
             & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
         )
-        
+
         # Some sources are repeated, so we take the first occurence
         where = where[0][0]
 
-        EW[src] = np.abs(Lya_fts['LyaEW'][where]) # Obs frame EW by now
+        EW[src] = np.abs(Lya_fts['LyaEW'][where])  # Obs frame EW by now
         Flambda[src] = Lya_fts['LyaF'][where]
 
-    Flambda *= 1e-17 # Correct units & apply correction
+    Flambda *= 1e-17  # Correct units & apply correction
 
     # From the EW formula:
     f_cont = Flambda / EW
@@ -170,11 +180,12 @@ def source_f_cont(mjd, plate, fiber):
 
     return f_cont
 
+
 def load_QSO_prior_mock():
     filename = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
 
-    format_string4 = lambda x: '{:04d}'.format(int(x))
-    format_string5 = lambda x: '{:05d}'.format(int(x))
+    def format_string4(x): return '{:04d}'.format(int(x))
+    def format_string5(x): return '{:05d}'.format(int(x))
     convert_dict = {
         122: format_string4,
         123: format_string5,
@@ -189,11 +200,13 @@ def load_QSO_prior_mock():
 
     return plate_mjd_fiber
 
+
 def schechter(L, phistar, Lstar, alpha):
     '''
     Just the regular Schechter function
     '''
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
+
 
 def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     volume = z_volume(z_min, z_max, area)
@@ -220,7 +233,7 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     print(f'N_new_sources = {N_sources_LAE}')
     LF_p_cum = np.cumsum(np.interp(LF_p_cum_x, log_Lx, Phi))
     LF_p_cum /= np.max(LF_p_cum)
-    
+
     # L_Arr is the L_lya distribution for our mock
     my_L_Arr = np.interp(np.random.rand(N_sources_LAE), LF_p_cum, LF_p_cum_x)
 
@@ -234,7 +247,8 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
     PD_counts_cum /= PD_counts_cum.max()
 
-    my_z_Arr = np.interp(np.random.rand(N_sources_LAE), PD_counts_cum, PD_z_cum_x)
+    my_z_Arr = np.interp(np.random.rand(N_sources_LAE),
+                         PD_counts_cum, PD_z_cum_x)
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
@@ -267,7 +281,8 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
 
         # Then, within the closest in z, we choose the 5 closest in L
         # Or don't select by L proximity (uncomment one)
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+        closest_L_Arr = np.abs(
+            L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
         # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
@@ -285,12 +300,13 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     # and finally multiplying its flux by L_factor
     return idx_closest, w_factor, L_factor, old_z_Arr[idx_closest]
 
+
 def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     '''
     Computes correct Arr and saves it to a .csv if it dont exist
     '''
-    lya_band_res = 1000 # Resolution of the Lya band
-    lya_band_hw = 150 # Half width of the Lya band in Angstroms
+    lya_band_res = 1000  # Resolution of the Lya band
+    lya_band_hw = 150  # Half width of the Lya band in Angstroms
 
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
@@ -319,7 +335,8 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         if src % 500 == 0:
             print(f'{src} / {N_sources}', end='\r')
 
-        spec_name = fits_dir + f'spec-{plate[src]:04d}-{mjd[src]:05d}-{fiber[src]:04d}.fits'
+        spec_name = fits_dir + \
+            f'spec-{plate[src]:04d}-{mjd[src]:05d}-{fiber[src]:04d}.fits'
 
         spec = Table.read(spec_name, hdu=1, format='fits')
         spzline = Table.read(spec_name, hdu=3, format='fits')
@@ -358,8 +375,9 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     os.makedirs(correct_dir, exist_ok=True)
     np.save(f'{correct_dir}z_arr_{t_or_t}_dr16', z)
     np.save(f'{correct_dir}lya_band_arr_{t_or_t}_dr16', lya_band)
-        
+
     return z, lya_band, lya_band_hw
+
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
     dirname = '/home/alberto/almacen/Source_cats'
@@ -377,7 +395,8 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    z, lya_band, lya_band_hw = lya_band_z(fits_dir, plate, mjd, fiber, train_or_test)
+    z, lya_band, lya_band_hw = lya_band_z(
+        fits_dir, plate, mjd, fiber, train_or_test)
 
     f_cont = source_f_cont(mjd, plate, fiber)
 
@@ -409,7 +428,8 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs, pm_SEDs_err = add_errors(pm_SEDs, apply_err=False, survey_name=survey_name)
+    pm_SEDs, pm_SEDs_err = add_errors(
+        pm_SEDs, apply_err=False, survey_name=survey_name)
 
     pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
@@ -420,7 +440,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         + ['z', 'EW0', 'L_lya', 'F_line', 'F_line_err']
     )
 
-    ## Let's remove the sources with very low r magnitudes
+    # Let's remove the sources with very low r magnitudes
     low_r_mask = (pm_SEDs[-2] > 4e-19)
     print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
 
@@ -428,38 +448,48 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         data=np.hstack(
             (
                 pm_SEDs.T[low_r_mask], pm_SEDs_err.T[low_r_mask],
-                new_z[low_r_mask].reshape(-1, 1), new_EW0[low_r_mask].reshape(-1, 1),
-                new_L[low_r_mask].reshape(-1, 1), new_F_line[low_r_mask].reshape(-1, 1),
+                new_z[low_r_mask].reshape(-1,
+                                          1), new_EW0[low_r_mask].reshape(-1, 1),
+                new_L[low_r_mask].reshape(-1,
+                                          1), new_F_line[low_r_mask].reshape(-1, 1),
                 new_F_line_err[low_r_mask].reshape(-1, 1)
             )
         )
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
 
+
 if __name__ == '__main__':
-    t0 = time.time()
+    # t0 = time.time()
     part = sys.argv[1]
 
-    z_min = 2
-    z_max = 4.25
-    L_min = 42
-    L_max = 46
-    area = 400 / (16 * 2) # We have to do 2 runs of 16 parallel processes
+    # z_min = 2
+    # z_max = 4.25
+    # L_min = 42
+    # L_max = 46
+    # area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
-    for survey_name in ['minijpas', 'jnep']:
-        for train_or_test in ['test', 'train']:
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'D_')
+    # for survey_name in ['minijpas', 'jnep']:
+    #     for train_or_test in ['test', 'train']:
+    #         main(part, area, z_min, z_max, L_min, L_max,
+    #              survey_name, train_or_test, 'D_')
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+    # print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
+    #     *divmod(time.time() - t0, 60)))
 
     t0 = time.time()
-    z_min = 2
-    z_max = 4.25
     L_min = 44
     L_max = 46
-    area = 4000 / (16 * 2) # We have to do 2 runs of 12 parallel processes
+    area = 40000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
 
-    for survey_name in ['minijpas', 'jnep']:
-        for train_or_test in ['test', 'train']:
-            main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, 'highL2_D_')
+    survey_name = 'minijpas'
+    train_or_test = 'train'
+        
+    z_min_list = np.array([2, 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4])
+    z_max_list = z_min_list + 0.5
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+    for z_min, z_max in zip(z_min_list, z_max_list):
+        main(part, area, z_min, z_max, L_min, L_max, survey_name,
+                train_or_test, f'z{z_min}-{z_max}_highL2_D_')
+
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
+        *divmod(time.time() - t0, 60)))

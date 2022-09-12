@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
+def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
+                    L_Arr=None, L_Arr_e=None, mag=None):
     fig = plt.figure(figsize=(5, 5))
 
     width = 1
@@ -13,11 +14,14 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
     # ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])
     axc0 = fig.add_axes([width + 0.02, 0, cbar_width, height])
-    ax1 = fig.add_axes([width + 0.02 + 0.15 + cbar_width, 0, width, height], sharey=ax0)
-    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.15 + cbar_width, 0, cbar_width, height])
+    ax1 = fig.add_axes([width + 0.02 + 0.15 + cbar_width,
+                       0, width, height], sharey=ax0)
+    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.15 +
+                        cbar_width, 0, cbar_width, height])
 
     # Mask puri and comp where at least one of them is zero or nan
-    mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp) & (puri > 0) & (comp > 0))
+    mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp)
+                      & (puri > 0) & (comp > 0))
     puri[mask_puricomp] = np.nan
     comp[mask_puricomp] = np.nan
 
@@ -25,6 +29,21 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
     cmap = 'Spectral'
     sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc0, cmap=cmap)
     sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=5, cbar_ax=axc1, cmap=cmap)
+
+    # If L_Arr is not None, plot the selected sources
+    if (L_Arr is not None) and (L_Arr_e is not None) and (mag is not None):
+        # Change units to plot:
+        def L_to_bins(L_Arr):
+            return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
+        def r_to_bins(L_Arr):
+            return np.interp(mag, r_bins, np.arange(len(r_bins)))
+
+        L_Arr_b = L_to_bins(L_Arr)
+        mag_b = r_to_bins(mag)
+
+        for ax in [ax0, ax1]:
+            ax.errorbar(L_Arr_b, mag_b, xerr=L_Arr_e, fmt='s',
+                        color='k', capsize=3, linestyle='')
 
     # TICKS
     xticks = range(len(L_bins))[1::2]  # Only odd xticks
@@ -77,6 +96,7 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name):
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white',)
     plt.close()
+
 
 def load_puricomp1d(dirname):
     comp_list = [
@@ -144,26 +164,28 @@ def load_puricomp1d(dirname):
     return comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins
 
+
 def puricomp1d_plot(dirname, save_dirname, surname):
     comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins = \
-            load_puricomp1d(dirname)
+        load_puricomp1d(dirname)
 
     # Define the survey list in order
     survey_list = [f'AEGIS00{i}' for i in range(1, 4 + 1)] + ['J-NEP']
 
     # Bin centers
-    bc = [puricomp_bins[i : i + 2].sum() * 0.5 for i in range(len(puricomp_bins) - 1)]
+    bc = [puricomp_bins[i: i + 2].sum() * 0.5 for i in range(len(puricomp_bins) - 1)]
 
     fig, ax = plt.subplots(figsize=(5, 4))
-    
+
     # Plot the individual comps
     for i, comp in enumerate(comp_list):
         ax.plot(bc, comp, ls=':', alpha=0.6, marker='^', markersize=10,
                 color=f'C{i + 2}', label=survey_list[i])
 
     # Total comp
-    total_comp_num = (np.array(comp_list) * np.array(comp_den_list)).sum(axis=0)
+    total_comp_num = (np.array(comp_list) *
+                      np.array(comp_den_list)).sum(axis=0)
     total_comp_den = np.array(comp_den_list).sum(axis=0)
     total_comp = total_comp_num / total_comp_den
     ax.plot(bc, total_comp, ls='-', marker='s', color='black', label='Total')
@@ -203,7 +225,8 @@ def puricomp1d_plot(dirname, save_dirname, surname):
         ax.plot(bc, puri, ls='--', alpha=0.6, marker='s', label=survey_list[i])
 
     # Total puri
-    total_puri_num = (np.array(puri_list) * np.array(puri_den_list)).sum(axis=0)
+    total_puri_num = (np.array(puri_list) *
+                      np.array(puri_den_list)).sum(axis=0)
     total_puri_den = np.array(puri_den_list).sum(axis=0)
     total_puri = total_puri_num / total_puri_den
     total_puri[~np.isfinite(total_puri)] = 0.
@@ -218,7 +241,6 @@ def puricomp1d_plot(dirname, save_dirname, surname):
     plt.savefig(f'{save_dirname}/Puri1D.pdf',
                 bbox_inches='tight', facecolor='white',)
     plt.close()
-
 
     ### Combined plot PuriComp1D ###
 
@@ -238,7 +260,7 @@ def puricomp1d_plot(dirname, save_dirname, surname):
     axs[1].plot(bc, total_comp, ls='-', marker='s', color='black',
                 markersize=10)
 
-    #Font size
+    # Font size
     fs = 15
 
     axs[0].legend(loc=0, fontsize=14)
