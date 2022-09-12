@@ -2,7 +2,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
-from my_functions import central_wavelength, nb_fwhm, plot_JPAS_source, load_filter_tags
+from my_functions import *
 from load_jpas_catalogs import load_minijpas_jnep
 import os
 
@@ -30,6 +30,18 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     else:
         survey_name = 'minijpas'
 
+    # Lya redshift
+    z_src = z_NB(nb_sel)[0]
+
+    # Relevant spectral features
+    spec_fts = {
+        'Ly lim': 912 * (1 + z_src),
+        'CIV': 1549.48 * (1 + z_src),
+        r'Ly $\beta$': 1025.18 * (1 + z_src),
+        'CIII': 1908.73 * (1 + z_src),
+        'MgII': 2799.12 * (1 + z_src)
+    }
+
     filenamer = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{59}.fits'
     filenamenb = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{nb_sel + 1}.fits'
 
@@ -50,8 +62,21 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     fig = plt.figure(figsize=(8, 3))
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True)
 
+    text_h = pm_flx.max() * 1e17
+
     # Draw line on the selected NB
     ax.axvline(w_central[nb_sel], color='r', linestyle='--')
+    ax.text(w_central[nb_sel] + 0.1, text_h,
+            r'Ly$\alpha$', fontsize=8, color='dimgray')
+    # Draw other important features
+    for name, w_value in spec_fts.items():
+        if w_value > 9500:
+            continue
+        ax.axvline(w_value, color='dimgray', linestyle=':')
+        ax.text(w_value + 0.1, text_h, name,
+                color='dimgray', fontsize=8, in_layout=True)
+
+    ax.set_xlim(3000, 9600)
 
     wh = 0.25
     ax1 = fig.add_axes([1 - 1.5 * wh, 1 - wh - 0.1, wh, wh])
@@ -72,14 +97,14 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src):
     # Add circumference showing aperture 3arcsec diameter
     aper_r_px = 1.5 / 0.23
     circ1 = plt.Circle((box_side, box_side),
-                       radius=aper_r_px, ec='r', fc='none')
+                       radius=aper_r_px, ec='yellow', fc='none')
     circ2 = plt.Circle((box_side, box_side),
-                       radius=aper_r_px, ec='r', fc='none')
+                       radius=aper_r_px, ec='yellow', fc='none')
     ax1.add_patch(circ1)
     ax2.add_patch(circ2)
 
     tile_name = tile_dict[tile_id]
-    title = f'{tile_name}-{src}'
+    title = f'{tile_name}-{src}  z = {z_src:0.2f}'
     ax.set_title(title, fontsize=15, loc='left')
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
