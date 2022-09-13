@@ -34,8 +34,6 @@ gal_area = 5.54
 bad_qso_area = 200
 good_qso_area = 400
 hiL_qso_area = 4000
-# good_qso_area = 200
-# hiL_qso_area = 2000
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1
@@ -45,8 +43,10 @@ hiL_factor = bad_qso_area / hiL_qso_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
+
 def sch_fit(Lx, Phistar, Lstar, alpha):
     return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
+
 
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_qso = 'QSO_100000_0'
@@ -142,83 +142,6 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     this_mag_cut = (mag < mag_max) & (mag > mag_min)
 
-    # for nb in nbs_to_consider:
-    #     nb_mask = (lya_lines == nb)
-
-    #     z_min = (w_central[nb] - nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
-    #     z_max = (w_central[nb] + nb_fwhm_Arr[nb] * 0.5) / w_lya - 1
-
-    #     this_zspec_cut = (z_min < zspec) & (zspec < z_max)
-    #     totals_mask = this_zspec_cut & this_mag_cut & ew_cut
-
-    #     goodh_puri_sf = L_Arr[nice_lya & nice_z &
-    #                           is_sf & ew_cut & this_mag_cut & nb_mask]
-    #     goodh_puri_qso_hiL = L_Arr[nice_lya & nice_z &
-    #                                is_qso & ew_cut & this_mag_cut & nb_mask & where_hiL]
-    #     goodh_puri_qso_loL = L_Arr[nice_lya & nice_z & is_qso &
-    #                                ew_cut & this_mag_cut & nb_mask & ~where_hiL]
-    #     goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
-    #     goodh_comp_qso_hiL = L_lya[nice_lya &
-    #                                nice_z & is_qso & totals_mask & where_hiL]
-    #     goodh_comp_qso_loL = L_lya[nice_lya &
-    #                                nice_z & is_qso & totals_mask & ~where_hiL]
-    #     badh_qso_hiL = L_Arr[nice_lya & ~nice_z & is_qso &
-    #                          is_LAE & nb_mask & this_mag_cut & where_hiL]
-    #     badh_qso_loL = L_Arr[nice_lya & ~nice_z & is_qso &
-    #                          is_LAE & nb_mask & this_mag_cut & ~where_hiL]
-    #     badh_normal = L_Arr[nice_lya & ~nice_z & (
-    #         is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
-    #     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
-
-    #     hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
-    #     hg_puri_qso_hiL, _ = np.histogram(goodh_puri_qso_hiL, bins=bins2)
-    #     hg_puri_qso_loL, _ = np.histogram(goodh_puri_qso_loL, bins=bins2)
-    #     hg_comp_sf, _ = np.histogram(goodh_comp_sf, bins=bins2)
-    #     hg_comp_qso_hiL, _ = np.histogram(goodh_comp_qso_hiL, bins=bins2)
-    #     hg_comp_qso_loL, _ = np.histogram(goodh_comp_qso_loL, bins=bins2)
-    #     hb_qso_hiL, _ = np.histogram(badh_qso_hiL, bins=bins2)
-    #     hb_qso_loL, _ = np.histogram(badh_qso_loL, bins=bins2)
-    #     hb_normal, _ = np.histogram(badh_normal, bins=bins2)
-    #     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
-
-    #     hg_puri = (
-    #         hg_puri_sf
-    #         + hg_puri_qso_loL * good_qso_factor
-    #         + hg_puri_qso_hiL * hiL_factor
-    #     )
-    #     hg_comp = (
-    #         hg_comp_sf
-    #         + hg_comp_qso_loL * good_qso_factor
-    #         + hg_comp_qso_hiL * hiL_factor
-    #     )
-    #     hb = (
-    #         hb_normal
-    #         + hb_qso_loL * good_qso_factor
-    #         + hb_qso_hiL * hiL_factor
-    #         + hb_gal * gal_factor
-    #     )
-    #     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
-    #     totals_qso_loL, _ = np.histogram(
-    #         L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
-    #     totals_qso_hiL, _ = np.histogram(
-    #         L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
-    #     totals = (
-    #         totals_sf
-    #         + totals_qso_loL * good_qso_factor
-    #         + totals_qso_hiL * hiL_factor
-    #     )
-
-    # if which_one == 'Completeness':
-    #     ax.plot(
-    #         b_c, hg_comp / totals, marker='s',
-    #         label=filter_tags[nb], zorder=99, alpha=0.5
-    #     )
-    # if which_one == 'Purity':
-    #     ax.plot(
-    #         b_c, hg_puri / (hg_puri + hb), marker='s',
-    #         label=filter_tags[nb], zorder=99, alpha=0.5
-    #     )
-
     nb_min = nbs_to_consider[0]
     nb_max = nbs_to_consider[-1]
     nb_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
@@ -230,40 +153,55 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 
     goodh_puri_sf = L_Arr[nice_lya & nice_z &
                           is_sf & ew_cut & this_mag_cut & nb_mask]
-    goodh_puri_qso = L_Arr[nice_lya & nice_z &
-                           is_qso & ew_cut & this_mag_cut & nb_mask]
+    goodh_puri_qso_loL = L_Arr[nice_lya & nice_z &
+                               is_qso & ~where_hiL & ew_cut & this_mag_cut & nb_mask]
+    goodh_puri_qso_hiL = L_Arr[nice_lya & nice_z &
+                               is_qso & where_hiL & ew_cut & this_mag_cut & nb_mask]
     goodh_comp_sf = L_lya[nice_lya & nice_z & is_sf & totals_mask]
-    goodh_comp_qso = L_lya[nice_lya & nice_z & is_qso & totals_mask]
+    goodh_comp_qso_loL = L_lya[nice_lya & nice_z &
+                               is_qso & ~where_hiL & totals_mask]
+    goodh_comp_qso_hiL = L_lya[nice_lya &
+                               nice_z & is_qso & where_hiL & totals_mask]
     badh_to_corr = L_Arr[nice_lya & ~nice_z & (
-        is_qso & is_LAE) & nb_mask & this_mag_cut]
+        is_qso & is_LAE & ~where_hiL) & nb_mask & this_mag_cut]
     badh_normal = L_Arr[nice_lya & ~nice_z & (
         is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
     hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
-    hg_puri_qso, _ = np.histogram(goodh_puri_qso, bins=bins2)
+    hg_puri_qso_loL, _ = np.histogram(goodh_puri_qso_loL, bins=bins2)
+    hg_puri_qso_hiL, _ = np.histogram(goodh_puri_qso_hiL, bins=bins2)
     hg_comp_sf, _ = np.histogram(goodh_comp_sf, bins=bins2)
-    hg_comp_qso, _ = np.histogram(goodh_comp_qso, bins=bins2)
+    hg_comp_qso_loL, _ = np.histogram(goodh_comp_qso_loL, bins=bins2)
+    hg_comp_qso_hiL, _ = np.histogram(goodh_comp_qso_hiL, bins=bins2)
     hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
     hb_normal, _ = np.histogram(badh_normal, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
 
-    hg_puri = hg_puri_sf + hg_puri_qso * good_qso_factor
-    hg_comp = hg_comp_sf + hg_comp_qso * good_qso_factor
+    hg_puri = hg_puri_sf + hg_puri_qso_loL * \
+        good_qso_factor + hg_puri_qso_hiL * hiL_factor
+    hg_comp = hg_comp_sf + hg_comp_qso_loL * \
+        good_qso_factor + hg_comp_qso_hiL * hiL_factor
     hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
-    totals_qso, _ = np.histogram(L_lya[totals_mask & is_qso], bins=bins2)
-    totals = totals_sf + totals_qso * good_qso_factor
+    totals_qso_loL, _ = np.histogram(
+        L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
+    totals_qso_hiL, _ = np.histogram(
+        L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
+    totals = totals_sf + totals_qso_loL * \
+        good_qso_factor + totals_qso_hiL * hiL_factor
 
     completeness = hg_comp / totals
     comp_sf = hg_comp_sf / totals_sf
-    comp_qso = hg_comp_qso / totals_qso
+    comp_qso = (hg_comp_qso_loL * good_qso_factor + hg_comp_qso_hiL * hiL_factor) / \
+        (totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor)
     purity = hg_puri / (hg_puri + hb)
     # F1score = 2 * purity * completeness / (purity + completeness)
     purity[(purity == 0.) | ~np.isfinite(purity)] = 0.
 
     ax.plot(b_c, comp_sf, color='C1', ls='--', label='Completeness (only SF)')
-    ax.plot(b_c, comp_qso, color='C0', ls='--', label='Completeness (only QSO)')
+    ax.plot(b_c, comp_qso, color='C0', ls='--',
+            label='Completeness (only QSO)')
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
     # ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
@@ -579,17 +517,17 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        # try:
-        #     np.load(f'npy/puri2d_{survey_name}.npy')
-        #     np.load(f'npy/comp2d_{survey_name}.npy')
-        # except:
-        #     print('Making puricomp...')
-        # else:
-        #     print('Loaded.')
-        #     continue
+        try:
+            np.load(f'npy/puri2d_{survey_name}.npy')
+            np.load(f'npy/comp2d_{survey_name}.npy')
+        except:
+            print('Making puricomp...')
+        else:
+            print('Loaded.')
+            continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
-                
+
         pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
                                     survey_name=survey_name)
 
@@ -650,8 +588,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
         spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im,\
-            ra, dec =\
-                load_minijpas_jnep(cat_list)
+        ra, dec =\
+        load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
@@ -725,7 +663,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     EW_Arr = np.empty(L_Arr.shape)
     for src in range(N_sources):
         l = lya_lines[src]
-        EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] - 1) * nb_fwhm_Arr[l]
+        EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] -
+                       1) * nb_fwhm_Arr[l]
     EW_Arr /= z_Arr
 
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
@@ -744,9 +683,9 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_plus_mj = np.zeros(len(bins) - 1)
     L_LF_err_minus_mj = np.zeros(len(bins) - 1)
     hist_median_mj = np.zeros(len(bins) - 1)
-    
+
     nice_puri_list = np.zeros(count_true(nice_lya))
-    
+
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
@@ -808,7 +747,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     os.makedirs(dirname, exist_ok=True)
     with open(f'{dirname}/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
-
 
     # Initialize dict to save the LFs
     LFs_dict = {'LF_bins': LF_bins}
@@ -934,11 +872,11 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 1, 5, 15, 400, 'nb'),
-        (17, 24, 5, 10, 15, 400, 'nb'),
-        (17, 24, 10, 15, 15, 400, 'nb'),
-        (17, 24, 15, 20, 15, 400, 'nb'),
-        (17, 24, 20, 25, 15, 400, 'nb'),
+        # (17, 24, 1, 5, 15, 400, 'nb'),
+        # (17, 24, 5, 10, 15, 400, 'nb'),
+        # (17, 24, 10, 15, 15, 400, 'nb'),
+        # (17, 24, 15, 20, 15, 400, 'nb'),
+        # (17, 24, 20, 25, 15, 400, 'nb'),
         (17, 24, 1, 25, 15, 400, 'nb'),
     ]
     # LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
