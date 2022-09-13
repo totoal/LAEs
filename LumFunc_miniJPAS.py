@@ -38,8 +38,10 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, survey_name, tile_id, which_w=[0, 2], return_puri=False):
     N_bins = len(bins) - 1
 
-    N_iter = 500
+    N_iter = 1000
     hist_i_mat = np.zeros((N_iter, N_bins))
+
+    puri_list = []
 
     for k in range(N_iter):
         L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
@@ -59,6 +61,9 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         w[np.isnan(w) | np.isinf(w)] = 0.
 
         hist_i_mat[k], _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+        puri_list.append(puri)
+    
+    puri = np.mean(puri_list, axis=0)
     
     # Save hist_i_mat for Sch montecarlo fit
     np.save(f'npy/hist_i_mat_{survey_name}.npy', hist_i_mat)

@@ -190,6 +190,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
         L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
     totals = totals_sf + totals_qso_loL * \
         good_qso_factor + totals_qso_hiL * hiL_factor
+    totals_qso = totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor
 
     completeness = hg_comp / totals
     comp_sf = hg_comp_sf / totals_sf
@@ -517,14 +518,14 @@ def make_corrections(params):
                         'minijpasAEGIS004', 'jnep']
     for survey_name in survey_name_list:
         print(survey_name)
-        try:
-            np.load(f'npy/puri2d_{survey_name}.npy')
-            np.load(f'npy/comp2d_{survey_name}.npy')
-        except:
-            print('Making puricomp...')
-        else:
-            print('Loaded.')
-            continue
+        # try:
+        #     np.load(f'npy/puri2d_{survey_name}.npy')
+        #     np.load(f'npy/comp2d_{survey_name}.npy')
+        # except:
+        #     print('Making puricomp...')
+        # else:
+        #     print('Loaded.')
+        #     continue
         pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
             load_mocks('train', survey_name[:8], add_errs=False)
 
@@ -616,9 +617,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     z_Arr = np.zeros(N_sources)
     z_Arr[np.where(np.array(lya_lines) != -1)] =\
         z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
-
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
     snr = np.empty(N_sources)
     for src in range(N_sources):
