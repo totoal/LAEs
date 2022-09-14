@@ -6,6 +6,7 @@ import pickle
 from scipy.stats import binned_statistic
 
 import os
+import time
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
@@ -870,17 +871,19 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 1, 5, 15, 400, 'nb'),
-        (17, 24, 5, 10, 15, 400, 'nb'),
-        (17, 24, 10, 15, 15, 400, 'nb'),
-        (17, 24, 15, 20, 15, 400, 'nb'),
-        (17, 24, 20, 25, 15, 400, 'nb'),
+        (17, 24, 1, 4, 15, 400, 'nb'),
+        (17, 24, 4, 8, 15, 400, 'nb'),
+        (17, 24, 8, 12, 15, 400, 'nb'),
+        (17, 24, 12, 16, 15, 400, 'nb'),
+        (17, 24, 16, 20, 15, 400, 'nb'),
+        (17, 24, 20, 24, 15, 400, 'nb'),
         (17, 24, 1, 25, 15, 400, 'nb'),
     ]
     # LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
     # LF_parameters += [(17, 24, 1, 25, 15, 400, 'nb')]
 
     for params in LF_parameters:
+        t0 = time.time()
         print(
             'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
             .format(*params))
@@ -888,3 +891,5 @@ if __name__ == '__main__':
         print('\nBuilding the LF...')
         make_the_LF(params)
         print('\n\n')
+        m, s = divmod(int(time.time() - t0), 60)
+        print('Elapsed: {}m {}s'.format(m, s))
