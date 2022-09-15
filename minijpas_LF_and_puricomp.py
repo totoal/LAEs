@@ -7,6 +7,7 @@ from scipy.stats import binned_statistic
 
 import os
 import time
+import threading
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
@@ -514,10 +515,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                                 ew_cut, where_hiL, survey_name)
 
 
-def make_corrections(params):
-    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
-                        'minijpasAEGIS004', 'jnep']
-    for survey_name in survey_name_list:
+def parallel_corrections(survey_name, params):
         print(survey_name)
         # try:
         #     np.load(f'npy/puri2d_{survey_name}.npy')
@@ -538,6 +536,20 @@ def make_corrections(params):
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
             hiL_factor, good_qso_factor, gal_factor
         )
+
+def make_corrections(params):
+    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
+                        'minijpasAEGIS004', 'jnep']
+    
+
+    # Make corrections for the 5 fields in parallel
+    initial_count = threading.activeCount()
+    for survey_name in survey_name_list:
+        args = (survey_name, params)
+        threading.Thread(target=parallel_corrections, args=args).start()
+    # Sleep until all the threads are done
+    while threading.activeCount() > initial_count:
+        time.sleep(1)
 
 
 def effective_volume(nb_min, nb_max, survey_name):
