@@ -550,7 +550,7 @@ def make_corrections(params):
         
         # Max 2 threads active at a time because of memory issues
         thread_count = threading.activeCount() - initial_count
-        while thread_count > 1:
+        while thread_count > 0:
             time.sleep(1)
     # Sleep until all the threads are done
     while threading.activeCount() > initial_count:
