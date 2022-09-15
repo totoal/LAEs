@@ -547,6 +547,11 @@ def make_corrections(params):
     for survey_name in survey_name_list:
         args = (survey_name, params)
         threading.Thread(target=parallel_corrections, args=args).start()
+        
+        # Max 2 threads active at a time because of memory issues
+        thread_count = threading.activeCount() - initial_count
+        while thread_count > 1:
+            time.sleep(1)
     # Sleep until all the threads are done
     while threading.activeCount() > initial_count:
         time.sleep(1)
