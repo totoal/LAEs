@@ -7,7 +7,6 @@ from scipy.stats import binned_statistic
 
 import os
 import time
-import threading
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
@@ -54,7 +53,7 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
-    name_gal = f'GAL_LC_{survey_name}_0'
+    name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
@@ -515,7 +514,12 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                                 ew_cut, where_hiL, survey_name)
 
 
-def parallel_corrections(survey_name, params):
+def make_corrections(params):
+    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
+                        'minijpasAEGIS004', 'jnep']
+    
+
+    for survey_name in survey_name_list:
         print(survey_name)
         # try:
         #     np.load(f'npy/puri2d_{survey_name}.npy')
@@ -536,25 +540,6 @@ def parallel_corrections(survey_name, params):
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
             hiL_factor, good_qso_factor, gal_factor
         )
-
-def make_corrections(params):
-    survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
-                        'minijpasAEGIS004', 'jnep']
-    
-
-    # Make corrections for the 5 fields in parallel
-    initial_count = threading.activeCount()
-    for survey_name in survey_name_list:
-        args = (survey_name, params)
-        threading.Thread(target=parallel_corrections, args=args).start()
-        
-        # Max 2 threads active at a time because of memory issues
-        thread_count = threading.activeCount() - initial_count
-        while thread_count > 0:
-            time.sleep(1)
-    # Sleep until all the threads are done
-    while threading.activeCount() > initial_count:
-        time.sleep(1)
 
 
 def effective_volume(nb_min, nb_max, survey_name):
@@ -888,15 +873,16 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        # (17, 24, 1, 4, 15, 400, 'nb'),
-        # (17, 24, 4, 8, 15, 400, 'nb'),
-        # (17, 24, 8, 12, 15, 400, 'nb'),
-        # (17, 24, 12, 16, 15, 400, 'nb'),
-        # (17, 24, 16, 20, 15, 400, 'nb'),
-        # (17, 24, 20, 24, 15, 400, 'nb'),
-        # (17, 24, 1, 25, 15, 400, 'nb'),
+        (17, 24, 1, 4, 30, 400, 'nb'),
+        (17, 24, 4, 8, 30, 400, 'nb'),
+        (17, 24, 8, 12, 30, 400, 'nb'),
+        (17, 24, 12, 16, 30, 400, 'nb'),
+        (17, 24, 16, 20, 30, 400, 'nb'),
+        (17, 24, 20, 24, 30, 400, 'nb'),
+        (17, 24, 1, 25, 30, 400, 'nb'),
         (17, 24, 1, 25, 0, 400, 'nb'),
         (17, 24, 1, 25, 30, 400, 'nb'),
+        (17, 24, 1, 25, 50, 400, 'nb'),
     ]
     # LF_parameters = [(17, 24, nb, nb, 15, 400, 'nb') for nb in np.arange(1, 25 + 1)]
     # LF_parameters += [(17, 24, 1, 25, 15, 400, 'nb')]
