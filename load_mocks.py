@@ -1,10 +1,13 @@
 import glob
-from certifi import where
 import pandas as pd
 import numpy as np
 
+from my_functions import flux_to_mag, central_wavelength, count_true
+
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
+
+w_central = central_wavelength()
 
 
 def load_QSO_mock(name, add_errs=True, how_many=-1):
@@ -88,6 +91,13 @@ def load_GAL_mock(name, add_errs=True):
 
     gal_zspec = data_gal['z'].to_numpy().astype(float)
 
+    i = flux_to_mag(gal_flx[-1], w_central[-1])
+    r = flux_to_mag(gal_flx[-2], w_central[-2])
+    g = flux_to_mag(gal_flx[-3], w_central[-3])
+    gr = g - r
+    ri = r - i
+    color_aux2 = (-1.5 * ri + 1.7 > gr)
+
     # Remove bad sources
     good_src = []
     for src in range(gal_err.shape[1]):
@@ -96,6 +106,7 @@ def load_GAL_mock(name, add_errs=True):
             # & np.all(gal_flx[:, src] == 0)
             # | (gal_zspec[src] > 2)
             (gal_zspec[src] > 2)
+            & color_aux2[src]
         )
         if bad_src:
             continue
