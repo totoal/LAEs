@@ -494,8 +494,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     g = flux_to_mag(pm_flx[-3], w_central[-3])
     gr = g - r
     ri = r - i
-    color_aux1 = gr * ri
-    color_aux2 = (-1.5 * ri + 1.7 > gr)
+    color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.5)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -506,24 +505,22 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
         w_obs_CIII = (1 + z_src) * w_CIII
-        # w_obs_MgII = (1 + z_src) * w_MgII
 
         this_nice = True
         for l in other_lines[src]:
             # Ignore very red and very blue NBs
-            if (l > 46) | (l < 3):
+            if (l > 46) | (l < 1):
                 continue
 
             w_obs_l = w_central[l]
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 2)
-                # | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 2)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
                 | (w_obs_l > w_obs_CIII + fwhm)
             )
 
@@ -536,8 +533,6 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            # good_colors = (color_aux1[src] < 0.25)
-            # good_colors = (color_aux1[src] > -99)
             good_colors = color_aux2[src]
             if ~good_colors:
                 this_nice = False
