@@ -117,6 +117,6 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
 
     # Perturb according to the error
     if apply_err:
-        pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
+        pm_SEDs = pm_SEDs + np.random.normal(size=mags.shape) * pm_SEDs_err
 
     return pm_SEDs, pm_SEDs_err

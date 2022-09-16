@@ -61,6 +61,15 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
                                              name_qso_bad, name_qso_hiL, add_errs,
                                              qso_LAE_frac)
 
+    N_gal = count_true(is_gal)
+    N_qso_cont = count_true(is_qso & ~is_LAE)
+    N_qso_loL = count_true(is_qso & ~where_hiL)
+    N_qso_hiL = count_true(is_qso & where_hiL)
+    N_sf = count_true(is_sf)
+    print(f'\nMock length: {len(L_lya)}')
+    print(f'N_gal = {N_gal}, N_qso_cont = {N_qso_cont}, N_qso_loL = {N_qso_loL}, '
+          f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
+
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
 
 
@@ -312,7 +321,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     r_bins = np.linspace(mag_min, mag_max, 10 + 1)
 
     # Perturb L
-    N_iter = 1000
+    N_iter = 500
     h2d_nice_qso_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -518,6 +527,8 @@ def make_corrections(params):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
+    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
+        load_mocks('train', 'minijpas', add_errs=False)
 
     for survey_name in survey_name_list:
         print(survey_name)
@@ -529,10 +540,8 @@ def make_corrections(params):
         # else:
         #     print('Loaded.')
         #     continue
-        pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-            load_mocks('train', survey_name[:8], add_errs=False)
 
-        pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
+        pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
 
         all_corrections(
