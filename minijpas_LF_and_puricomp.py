@@ -541,8 +541,9 @@ def make_corrections(params):
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
         load_mocks('train', 'minijpas', add_errs=False)
 
+    print()
     for survey_name in survey_name_list:
-        print('\n' + survey_name)
+        print(survey_name)
         # try:
         #     np.load(f'npy/puri2d_{survey_name}.npy')
         #     np.load(f'npy/comp2d_{survey_name}.npy')

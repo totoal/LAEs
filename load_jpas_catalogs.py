@@ -31,7 +31,6 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
             5: sum_flags})
 
         cat = cat[np.array([len(x) for x in cat['FLUX_APER_3_0']]) != 0] # Drop bad rows due to bad query
-        print(f'Flagged drop: {count_true((cat.FLAGS == 0) & (cat.MASK_FLAGS == 0))}')
         cat = cat[(cat.FLAGS == 0) & (cat.MASK_FLAGS == 0)] # Drop flagged
         cat = cat.reset_index()
 
