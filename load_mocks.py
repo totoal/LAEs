@@ -33,20 +33,28 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
     EW_qso = data_qso['EW0'].to_numpy()
     qso_zspec = data_qso['z'].to_numpy()
 
+    i = flux_to_mag(qso_flx[-1], w_central[-1])
+    r = flux_to_mag(qso_flx[-2], w_central[-2])
+    g = flux_to_mag(qso_flx[-3], w_central[-3])
+    gr = g - r
+    ri = r - i
+    color_aux2 = (-1.5 * ri + 1.7 < gr)
+
     # Remove bad sources
     good_src = []
     for src in range(qso_err.shape[1]):
         bad_src = (
             np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1)
             | np.all(qso_flx[:, src] == 0)
-            | ((qso_L[src] > 0) & ((EW_qso[src] == 0) | (~np.isfinite(EW_qso[src]))))
-            | (qso_zspec[src] > 2) & ~np.isfinite(EW_qso[src])
+            | color_aux2[src]
+            | (r[src] > 24) | (r[src] < 17)
         )
         if bad_src:
             continue
         else:
             good_src.append(src)
     good_src = np.array(good_src)
+    print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
 
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.
@@ -96,23 +104,22 @@ def load_GAL_mock(name, add_errs=True):
     g = flux_to_mag(gal_flx[-3], w_central[-3])
     gr = g - r
     ri = r - i
-    color_aux2 = (-1.5 * ri + 1.7 > gr)
+    color_aux2 = (-1.5 * ri + 1.7 < gr)
 
     # Remove bad sources
     good_src = []
     for src in range(gal_err.shape[1]):
         bad_src = (
-            # np.any(gal_err[1:55, src] > 1) | np.any(gal_err[-3:, src] > 1)
-            # & np.all(gal_flx[:, src] == 0)
-            # | (gal_zspec[src] > 2)
             (gal_zspec[src] > 2)
-            & color_aux2[src]
+            | color_aux2[src]
+            | (r[src] > 24) | (r[src] < 17)
         )
         if bad_src:
             continue
         else:
             good_src.append(src)
     good_src = np.array(good_src)
+    print(f'Bad GAL removed: {len(gal_zspec) - len(good_src)}')
 
     gal_flx[gal_err > 1] = 0.
 
@@ -155,6 +162,32 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
     EW_sf = data['EW0'].to_numpy().astype(float)
     sf_zspec = data['z'].to_numpy().astype(float)
     sf_L = data['L_lya'].to_numpy().astype(float)
+
+    i = flux_to_mag(sf_flx[-1], w_central[-1])
+    r = flux_to_mag(sf_flx[-2], w_central[-2])
+    g = flux_to_mag(sf_flx[-3], w_central[-3])
+    gr = g - r
+    ri = r - i
+    color_aux2 = (-1.5 * ri + 1.7 < gr)
+
+    # Remove bad sources
+    good_src = []
+    for src in range(sf_err.shape[1]):
+        bad_src = (
+            color_aux2[src]
+            | (r[src] > 24) | (r[src] < 17)
+        )
+        if bad_src:
+            continue
+        else:
+            good_src.append(src)
+    good_src = np.array(good_src)
+
+    sf_flx = sf_flx[:, good_src].astype(float)
+    sf_err = sf_err[:, good_src].astype(float)
+    sf_zspec = sf_zspec[good_src]
+    EW_sf = EW_sf[good_src]
+    sf_L = sf_L[good_src]
 
     return sf_flx, sf_err, sf_zspec, EW_sf, sf_L
 
