@@ -35,12 +35,14 @@ gal_area = 5.54
 bad_qso_area = 200
 good_qso_area = 400
 hiL_qso_area = 4000
+sf_area = 200
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1
 gal_factor = bad_qso_area / gal_area
 good_qso_factor = bad_qso_area / good_qso_area
 hiL_factor = bad_qso_area / hiL_qso_area
+sf_factor = bad_qso_area / sf_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -56,10 +58,11 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
 
+    sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac)
+                                             qso_LAE_frac, sf_frac)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -174,8 +177,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                nice_z & is_qso & where_hiL & totals_mask]
     badh_to_corr = L_Arr[nice_lya & ~nice_z & (
         is_qso & is_LAE & ~where_hiL) & nb_mask & this_mag_cut]
-    badh_normal = L_Arr[nice_lya & ~nice_z & (
-        is_sf | (is_qso & ~is_LAE)) & nb_mask & this_mag_cut]
+    badh_normal_qso = L_Arr[nice_lya & ~nice_z & (is_qso & ~is_LAE) & nb_mask & this_mag_cut]
+    badh_sf = L_Arr[nice_lya & ~nice_z & is_sf & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
     hg_puri_sf, _ = np.histogram(goodh_puri_sf, bins=bins2)
@@ -185,25 +188,26 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     hg_comp_qso_loL, _ = np.histogram(goodh_comp_qso_loL, bins=bins2)
     hg_comp_qso_hiL, _ = np.histogram(goodh_comp_qso_hiL, bins=bins2)
     hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
-    hb_normal, _ = np.histogram(badh_normal, bins=bins2)
+    hb_normal_qso, _ = np.histogram(badh_normal_qso, bins=bins2)
+    hb_sf, _ = np.histogram(badh_sf, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
 
-    hg_puri = hg_puri_sf + hg_puri_qso_loL * \
+    hg_puri = hg_puri_sf * sf_factor + hg_puri_qso_loL * \
         good_qso_factor + hg_puri_qso_hiL * hiL_factor
-    hg_comp = hg_comp_sf + hg_comp_qso_loL * \
+    hg_comp = hg_comp_sf * sf_factor + hg_comp_qso_loL * \
         good_qso_factor + hg_comp_qso_hiL * hiL_factor
-    hb = hb_normal + hb_to_corr * good_qso_factor + hb_gal * gal_factor
+    hb = hb_normal_qso + hb_sf * sf_factor + hb_to_corr * good_qso_factor + hb_gal * gal_factor
     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
     totals_qso_loL, _ = np.histogram(
         L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
     totals_qso_hiL, _ = np.histogram(
         L_lya[totals_mask & is_qso & where_hiL], bins=bins2)
-    totals = totals_sf + totals_qso_loL * \
+    totals = totals_sf * sf_factor + totals_qso_loL * \
         good_qso_factor + totals_qso_hiL * hiL_factor
     totals_qso = totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor
 
     completeness = hg_comp / totals
-    comp_sf = hg_comp_sf / totals_sf
+    comp_sf = (hg_comp_sf * sf_factor) / totals_sf
     comp_qso = (hg_comp_qso_loL * good_qso_factor + hg_comp_qso_hiL * hiL_factor) / \
         (totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor)
     purity = hg_puri / (hg_puri + hb)
@@ -326,6 +330,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_sel_normal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
+    h2d_sel_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_sel_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_sel_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -352,10 +357,14 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
             bins=[L_bins, r_bins]
         )
 
-        h2d_sel_normal_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut &
-                        (is_sf | (is_qso & ~is_LAE))],
+        h2d_sel_sf_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & ~is_gal & z_cut & is_sf],
             mag[nice_lya & ~is_gal & z_cut & (is_sf | (is_qso & ~is_LAE))],
+            bins=[L_bins, r_bins]
+        )
+        h2d_sel_normal_i[..., k], _, _ = np.histogram2d(
+            L_perturbed[nice_lya & ~is_gal & z_cut & is_sf],
+            mag[nice_lya & ~is_gal & z_cut & (is_qso & ~is_LAE)],
             bins=[L_bins, r_bins]
         )
 
@@ -384,6 +393,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_nice_qso_loL = np.median(h2d_nice_qso_loL_i, axis=2)
     h2d_nice_sf = np.median(h2d_nice_sf_i, axis=2)
     h2d_sel_normal = np.median(h2d_sel_normal_i, axis=2)
+    h2d_sel_sf = np.median(h2d_sel_sf_i, axis=2)
     h2d_sel_qso_hiL = np.median(h2d_sel_hiL_i, axis=2)
     h2d_sel_qso_loL = np.median(h2d_sel_loL_i, axis=2)
     h2d_sel_gal = np.median(h2d_sel_gal_i, axis=2)
@@ -403,17 +413,18 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         bins=[L_bins, r_bins]
     )
     h2d_parent = (
-        h2d_parent_sf
+        h2d_parent_sf * sf_factor
         + h2d_parent_qso_loL * good_qso_factor
         + h2d_parent_qso_hiL * hiL_factor
     )
     h2d_nice = (
         h2d_nice_qso_hiL * hiL_factor
         + h2d_nice_qso_loL * good_qso_factor
-        + h2d_nice_sf
+        + h2d_nice_sf * sf_factor
     )
     h2d_sel = (
         h2d_sel_normal
+        + h2d_sel_sf * sf_factor
         + h2d_sel_qso_hiL * hiL_factor
         + h2d_sel_qso_loL * good_qso_factor
         + h2d_sel_gal * gal_factor
@@ -531,7 +542,7 @@ def make_corrections(params):
         load_mocks('train', 'minijpas', add_errs=False)
 
     for survey_name in survey_name_list:
-        print(survey_name)
+        print('\n' + survey_name)
         # try:
         #     np.load(f'npy/puri2d_{survey_name}.npy')
         #     np.load(f'npy/comp2d_{survey_name}.npy')
@@ -746,7 +757,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'EW_lya': EW_Arr[nice_lya],
         'EW_lya_err': EW_Arr_e[nice_lya],
         'puri': nice_puri_list,
-        'r': mag[nice_lya]
+        'r': mag[nice_lya],
+        'other_lines': [other_lines[idx] for idx in np.where(nice_lya)[0]]
     }
 
     folder_name = (
@@ -907,3 +919,4 @@ if __name__ == '__main__':
         print('\n\n')
         m, s = divmod(int(time.time() - t0), 60)
         print('Elapsed: {}m {}s'.format(m, s))
+        print('\n ########################## \n')
