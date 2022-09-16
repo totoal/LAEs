@@ -47,7 +47,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
             np.any(qso_err[1:55, src] > 1) | np.any(qso_err[-3:, src] > 1)
             | np.all(qso_flx[:, src] == 0)
             | color_aux2[src]
-            | (r[src] > 24) | (r[src] < 17)
+            | (r[src] > 24.25) | (r[src] < 17)
         )
         if bad_src:
             continue
@@ -112,7 +112,7 @@ def load_GAL_mock(name, add_errs=True):
         bad_src = (
             (gal_zspec[src] > 2)
             | color_aux2[src]
-            | (r[src] > 24) | (r[src] < 17)
+            | (r[src] > 24.25) | (r[src] < 17)
         )
         if bad_src:
             continue
@@ -175,7 +175,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
     for src in range(sf_err.shape[1]):
         bad_src = (
             color_aux2[src]
-            | (r[src] > 24) | (r[src] < 17)
+            | (r[src] > 24.25) | (r[src] < 17)
         )
         if bad_src:
             continue
