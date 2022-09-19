@@ -69,7 +69,7 @@ def search_LAEs(ew0_cut, ew_other, nb_min, nb_max, pm_flx, pm_err, zspec):
         lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=nice_lya_mask
     )
 
-    return nice_lya, nice_z, lya_lines
+    return nice_lya, z_Arr, lya_lines
 
 
 def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
@@ -161,10 +161,6 @@ if __name__ == '__main__':
     mag[np.isnan(mag)] = 99.
 
     N_sources = pm_flx.shape[1]
-    N_sources
-    print(f'qso {count_true(is_qso)}')
-    print(f'sf {count_true(is_sf)}')
-    print(f'gal {count_true(is_gal)}')
 
     params = [
         (0, 400, 1, 10),
@@ -179,4 +175,11 @@ if __name__ == '__main__':
     for params_set in params:
         (ew0_cut, ew_other, nb_min, nb_max) = params_set
         print(params_set)
-        search_LAEs(ew0_cut, ew_other, nb_min, nb_max, pm_flx, pm_err, zspec)
+        nice_lya, z_Arr, lya_lines =\
+            search_LAEs(ew0_cut, ew_other, nb_min, nb_max, pm_flx, pm_err, zspec)
+
+        z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+        z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
+
+        z_cut = (z_min < z_Arr) & (z_Arr < z_max)
+        make_hist_plot(nice_lya, z_cut, lya_lines)
