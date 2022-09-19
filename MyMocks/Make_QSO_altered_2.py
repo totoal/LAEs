@@ -19,7 +19,7 @@ w_lya = 1215.67
 def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
     if survey_name == 'jnep':
         err_fit_params_jnep = np.load('../npy/err_fit_params_jnep.npy')
-    elif survey_name == 'minijpas':
+    elif survey_name[:8] == 'minijpas':
         err_fit_params_001 = np.load(
             '../npy/err_fit_params_minijpas_AEGIS001.npy')
         err_fit_params_002 = np.load(
