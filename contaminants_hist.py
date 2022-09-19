@@ -167,15 +167,16 @@ if __name__ == '__main__':
     print(f'gal {count_true(is_gal)}')
 
     params = [
-        (0, 400, 1, 10)
-        (15, 400, 1, 10)
-        (30, 400, 1, 10)
-        (50, 400, 1, 10)
-        (30, 400, 1, 4)
-        (30, 400, 4, 8)
-        (30, 400, 8, 12)
+        (0, 400, 1, 10),
+        (15, 400, 1, 10),
+        (30, 400, 1, 10),
+        (50, 400, 1, 10),
+        (30, 400, 1, 4),
+        (30, 400, 4, 8),
+        (30, 400, 8, 12),
     ]
     
     for params_set in params:
-        ew0_cut, ew_other, nb_min, nb_max = params_set
+        (ew0_cut, ew_other, nb_min, nb_max) = params_set
+        print(params_set)
         search_LAEs(ew0_cut, ew_other, nb_min, nb_max, pm_flx, pm_err, zspec)
