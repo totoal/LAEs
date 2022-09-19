@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 import numpy as np
 
-from my_functions import flux_to_mag, central_wavelength, count_true
+from my_functions import flux_to_mag, central_wavelength
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
@@ -42,7 +42,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
         else:
             good_src.append(src)
     good_src = np.array(good_src)
-    print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
+    # print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
 
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.
@@ -107,7 +107,7 @@ def load_GAL_mock(name, add_errs=True):
         else:
             good_src.append(src)
     good_src = np.array(good_src)
-    print(f'Bad GAL removed: {len(gal_zspec) - len(good_src)}')
+    # print(f'Bad GAL removed: {len(gal_zspec) - len(good_src)}')
 
     gal_flx[gal_err > 1] = 0.
 
@@ -160,7 +160,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
         else:
             good_src.append(src)
     good_src = np.array(good_src)
-    print(f'Bad SF removed: {len(sf_zspec) - len(good_src)}')
+    # print(f'Bad SF removed: {len(sf_zspec) - len(good_src)}')
 
     sf_flx = sf_flx[:, good_src].astype(float)
     sf_err = sf_err[:, good_src].astype(float)
