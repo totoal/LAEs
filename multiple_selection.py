@@ -84,7 +84,7 @@ if __name__ == '__main__':
     ###############
 
     N_parallel = 5
-    N_iter = 100
+    N_iter = 200
 
     print('\nSelection start\n')
     t0 = time.time()

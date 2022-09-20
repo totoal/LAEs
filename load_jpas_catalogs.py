@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from my_functions import Zero_point_error, count_true
+from my_functions import Zero_point_error
 
 def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
     pm_flx = np.array([]).reshape(60, 0)

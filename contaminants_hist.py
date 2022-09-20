@@ -147,8 +147,8 @@ if __name__ == '__main__':
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_0'
 
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, _ = ensemble_mock(
-        name_qso, name_gal, name_sf, name_qso_bad, add_errs=False)
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, _ =\
+        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, add_errs=False)
 
     pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
                                 survey_name='minijpasAEGIS001')
@@ -159,13 +159,7 @@ if __name__ == '__main__':
     N_sources = pm_flx.shape[1]
 
     params = [
-        (0, 400, 1, 10),
-        (15, 400, 1, 10),
-        (30, 400, 1, 10),
-        (50, 400, 1, 10),
-        (30, 400, 1, 4),
-        (30, 400, 4, 8),
-        (30, 400, 8, 12),
+        (30, 400, 12, 20),
     ]
     
     for params_set in params:
