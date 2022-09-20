@@ -11,7 +11,9 @@ w_central = central_wavelength()
 nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 
-def this_selection(pm_flx, pm_err, zspec, ew0_cut=30, ew_other=400, nb_min=4, nb_max=16):
+
+def this_selection(pm_flx, pm_err, zspec, times_selected, times_nicez,
+                   ew0_cut=30, ew_other=400, nb_min=4, nb_max=16):
     N_sources = pm_flx.shape[1]
     # Lya search
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True,
@@ -56,18 +58,25 @@ def this_selection(pm_flx, pm_err, zspec, ew0_cut=30, ew_other=400, nb_min=4, nb
 
     times_selected += this_nice_lya.astype(int)
     times_nicez += nice_z.astype(int)
+    # tmp
+    print(times_selected[this_nice_lya])
 
 if __name__ == '__main__':
+    print('Loading mock...')
     field_name = 'minijpasAEGIS001'
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_train_minijpas_DR16_D_0'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_0'
 
-    print('Loading mock...')
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, _ =\
-        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, add_errs=False)
+    ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad,
+                    add_errs=False, sf_frac=0.5)
     N_sources = len(zspec)
+
+    # Initialize output arrays
+    times_selected = np.zeros(N_sources).astype(int) # Arr with the number counts
+    times_nicez = np.copy(times_selected)
 
     print('Adding errors...')
     pm_flx_0, pm_err = add_errors(pm_flx, apply_err=True, survey_name='minijpasAEGIS001')
@@ -75,23 +84,21 @@ if __name__ == '__main__':
     ###############
 
     N_parallel = 5
-    N_iter = 250
+    N_iter = 100
 
-    # Initialize output arrays
-    times_selected = np.zeros(N_sources).astype(int) # Arr with the number counts
-    times_nicez = np.copy(times_selected)
-
+    print('\nSelection start\n')
+    t0 = time.time()
     initial_count = threading.activeCount()
     for i in range(N_iter):
-        thread_count = threading.activeCount() - initial_count
-        while thread_count > N_parallel:
+        while threading.activeCount() - initial_count >= N_parallel:
             time.sleep(1)
         
-        print(f'{i + 1} / {N_iter}', end='\r')
+        print(f'{i + 1} / {N_iter}')
 
         this_pm_flx = pm_flx + pm_err * np.random.normal(size=pm_err.shape)
-        args = (this_pm_flx, pm_err, zspec)
-        threading.Thread(target=this_selection, args=args)
+        args = (this_pm_flx, pm_err, zspec, times_selected, times_nicez)
+        this_thread = threading.Thread(target=this_selection, args=args)
+        this_thread.start()
 
     # Wait until the last thread is finished
     while threading.activeCount() - initial_count != 0:
@@ -106,3 +113,5 @@ if __name__ == '__main__':
     np.save('tmp/is_sf.npy', is_sf)
     np.save('tmp/is_gal.npy', is_gal)
     np.save('tmp/where_hiL.npy', where_hiL)
+
+    print('\nDone in {0}m {1:0.1f}s'.format(*divmod(time.time() - t0, 60)))
