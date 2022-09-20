@@ -116,7 +116,7 @@ def nb_fwhm(nb_ind, give_fwhm=True):
 
 
 def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
-                       only_right=False, N_nb_min=0, N_nb_max=56):
+                       only_right=False, N_nb_min=0, N_nb_max=47):
     '''
     Returns a matrix with the continuum estimate at any NB in all sources.
     '''
@@ -232,26 +232,6 @@ def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
     Returns the IGM transmission associated with the Lya Break.
     '''
     return np.exp(A * (w_Arr / 1215.67)**B)
-
-
-def conf_matrix(line_Arr, z_Arr, nb_c):
-    '''
-    Confusion matrix of selection.
-    Inputs: Bool array of selection (line_Arr), Array with the real redshifts of all
-    the lines, nb_c.
-    '''
-    tcurves = load_tcurves(load_filter_tags())
-    w_in = list(nb_fwhm(nb_c, give_fwhm=False, tcurves=tcurves))
-    w_in.sort()
-    w_in += np.array([-10, 10])
-    z_in = np.array([w / 1215.67 - 1 for w in w_in])
-
-    TP = len(np.where(line_Arr & ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    FP = len(np.where(line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    TN = len(np.where(~line_Arr & ~((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-    FN = len(np.where(~line_Arr & ((z_in[0] < z_Arr) & (z_Arr < z_in[1])))[0])
-
-    return np.array([[TP, FP], [FN, TN]])
 
 
 def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
@@ -430,9 +410,6 @@ def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
     '''
     Masks sources with significant proper motion measurement in Gaia
     '''
-    # parallax_sn = np.abs(cat['parallax'] / cat['parallax_error'])
-    # pmra_sn = np.abs(cat['pmra'] / cat['pmra_error'])
-    # pmdec_sn = np.abs(cat['pmdec'] / cat['pmdec_error'])
     mask = (
         (np.sqrt(parallax_sn ** 2 + pmra_sn ** 2 + pmdec_sn**2) < 27 ** 0.5)
         | (np.isnan(parallax_sn) | np.isnan(pmra_sn) | np.isnan(pmdec_sn))
@@ -463,10 +440,6 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
         & (
             pm_flx[:-4] > cont_est
         )
-        # # S/N > 5
-        # & (
-        #     pm_flx[:-4] / pm_err[:-4] > 5.
-        # )
         # Masks
         & (
             mask
@@ -550,7 +523,7 @@ def count_true(arr):
     '''
     Counts how many True values in bool array
     '''
-    return len(np.where(arr)[0])
+    return sum(arr)
 
 
 def schechter(L, phistar, Lstar, alpha):

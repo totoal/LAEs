@@ -47,8 +47,6 @@ def search_LAEs(ew0_cut, ew_other, nb_min, nb_max, pm_flx, pm_err, zspec):
     z_Arr[np.where(np.array(lya_lines) != -1)] =\
         z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
 
-    nice_z = np.abs(z_Arr - zspec) < 0.16
-
     mag_min = 17
     mag_max = 24
 
@@ -84,7 +82,7 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     bins_c = [bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)]
 
     hist, _ = np.histogram(w0, bins)
-    ax.fill_between(bins_c, hist * gal_factor / 200,
+    ax.fill_between(bins_c, hist / gal_area,
                     step='pre', color='dimgray')
 
     gal_line_w = [2799, 4861, 3727, 5008, 2326]
@@ -105,7 +103,6 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     fig.tight_layout()
     fig.savefig(f'figures/GAL_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
                 bbox_inches='tight', facecolor='w', edgecolor='w')
-    plt.show()
 
     fig, ax = plt.subplots(figsize=(8, 4))
 
@@ -120,7 +117,7 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     hgood, _ = np.histogram(w0, bins)
 
     ax.fill_between(bins_c, (hbad + hgood * 0.5) /
-                    200, step='pre', color='dimgray')
+                    bad_qso_area, step='pre', color='dimgray')
 
     qso_line_w = [1549.48, 1908.73, 2799.12, 2326.00, 1215.67, 1025, 1399.8]
     qso_line_name = ['CIV', 'CIII', 'MgII', 'CII',
@@ -141,7 +138,6 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     fig.tight_layout()
     fig.savefig(f'figures/QSO_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
                 bbox_inches='tight', facecolor='w', edgecolor='w')
-    plt.show()
 
 
 if __name__ == '__main__':
@@ -182,4 +178,4 @@ if __name__ == '__main__':
         z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
         z_cut = (z_min < z_Arr) & (z_Arr < z_max)
-        make_hist_plot(nice_lya, z_cut, lya_lines)
+        make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max)
