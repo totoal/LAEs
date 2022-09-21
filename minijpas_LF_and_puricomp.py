@@ -97,7 +97,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
-    lya_lines, lya_cont_lines, _ = identify_lines(
+    lya_lines, _, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
 
@@ -451,7 +451,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m)
 
     # Nice lya selection
-    nice_lya, z_Arr = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
+    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
 
     z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
@@ -598,46 +598,28 @@ def effective_volume(nb_min, nb_max, survey_name):
 def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
+    # TODO: fix this
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
-        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im,\
+        spCl, zsp, _, _, _, N_minijpas, x_im, y_im,\
         ra, dec =\
         load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
-    mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
+    pm_mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
-    cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
+    cont_est_lya, cont_err_lya, lya_lines, other_lines =\
+        search_lines(pm_flx, pm_err, ew0_cut, None, cont_est_m)
 
-    # Lya search
-    line = is_there_line(pm_flx, pm_err, cont_est_lya,
-                         cont_err_lya, ew0_cut, mask=mask)
-    lya_lines, lya_cont_lines, _ = identify_lines(
-        line, pm_flx, cont_est_lya, first=True, return_line_width=True
-    )
-    lya_lines = np.array(lya_lines)
+    # Nice lya selection
+    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
 
-    # Other lines
-    line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_oth, obs=True, mask=mask)
-    other_lines = identify_lines(line_other, pm_flx, cont_est_other)
+    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
+    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
 
-    N_sources = pm_flx.shape[1]
-
+    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     mag_cut = (mag > mag_min) & (mag < mag_max)
+    nice_lya_mask = z_cut & mag_cut
 
-    z_Arr = np.zeros(N_sources)
-    z_Arr[np.where(np.array(lya_lines) != -1)] =\
-        z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
-
-    snr = np.empty(N_sources)
-    for src in range(N_sources):
-        l = lya_lines[src]
-        snr[src] = pm_flx[l, src] / pm_err[l, src]
-
-    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
-    nice_lya = nice_lya_select(
-        lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
-    )
+    nice_lya = nice_lya & nice_lya_mask & pm_mask
 
     # Estimate Luminosity
     _, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
@@ -863,10 +845,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     ax.set_ylim(1e-8, 5e-3)
     ax.set_xlim(42.5, 45.5)
     ax.legend(fontsize=9)
-
-    # ax.set_title(
-    #     fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
-    # )
 
     plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
                 facecolor='white')

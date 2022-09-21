@@ -451,6 +451,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     fwhm_Arr = nb_fwhm(range(56))
     nice_lya = np.zeros(N_sources).astype(bool)
     z_Arr = np.ones(N_sources) * -1.
+    new_lya_lines = np.ones(N_sources) * -1.
 
     # Line rest-frame wavelengths (Angstroms)
     w_lyb = 1025.7220
@@ -517,12 +518,13 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
             if this_nice:
                 nice_lya[src] = True
                 z_Arr[src] = z_src
+                new_lya_lines[src] = l_candidate
                 break
 
     if mask is None:
-        return nice_lya, z_Arr
+        return nice_lya, z_Arr, new_lya_lines
     else:
-        return nice_lya & mask, z_Arr
+        return nice_lya & mask, z_Arr, new_lya_lines
 
 
 def count_true(arr):
