@@ -464,7 +464,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     gr = g - r
     ri = r - i
     # For z > 3
-    color_aux1 = (-1.5 * ri + 1.7 > gr) & (ri < 1.)
+    color_aux1 = (-1.5 * ri + 2.5 > gr) & (ri < 1.) & (ri > -1.)
     # For z < 3
     color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.)
 

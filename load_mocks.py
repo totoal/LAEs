@@ -92,7 +92,7 @@ def load_GAL_mock(name, add_errs=True):
     g = flux_to_mag(gal_flx[-3], w_central[-3])
     gr = g - r
     ri = r - i
-    color_aux2 = (-1.5 * ri + 1.95 > gr) & (ri > 1.25) & (gr > 1.75)
+    color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri > 1.25) & (gr > 1.75)
 
     # Remove bad sources
     good_src = []
