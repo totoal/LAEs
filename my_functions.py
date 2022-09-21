@@ -188,9 +188,6 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
                 NB_err[nb_idx + 2:]
             ))
 
-        # Conver errors to relative errors for the weights
-        # NBs_rel_errs = NBs_errs / NBs_to_avg
-        # NBs_rel_errs[NBs_rel_errs < 0] = 99.
         w = NBs_errs ** -2
 
         cont_est[nb_idx] = np.average(NBs_to_avg, weights=w, axis=0)
@@ -451,7 +448,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     fwhm_Arr = nb_fwhm(range(56))
     nice_lya = np.zeros(N_sources).astype(bool)
     z_Arr = np.ones(N_sources) * -1.
-    new_lya_lines = np.ones(N_sources) * -1.
+    new_lya_lines = np.ones(N_sources).astype(int) * -1
 
     # Line rest-frame wavelengths (Angstroms)
     w_lyb = 1025.7220
@@ -471,8 +468,14 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     # For z < 3
     color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.)
 
+    snr = pm_flx / pm_err
+
     for src in range(N_sources):
         for l_candidate in lya_lines[src]:
+            if snr[l_candidate, src] < 6:
+                this_nice = False
+                break
+
             z_src = w_central[l_candidate] / w_lya - 1
 
             w_obs_lya = (1 + z_src) * w_lya

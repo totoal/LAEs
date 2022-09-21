@@ -51,7 +51,7 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
     return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
 
 
-def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
+def load_mocks(train_or_test, survey_name, add_errs=True):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
@@ -59,16 +59,17 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
 
     sf_frac = 0.5
+    qso_LAE_frac = 1.
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
                                              qso_LAE_frac, sf_frac)
 
-    N_gal = count_true(is_gal)
-    N_qso_cont = count_true(is_qso & ~is_LAE)
-    N_qso_loL = count_true(is_qso & ~where_hiL)
-    N_qso_hiL = count_true(is_qso & where_hiL)
-    N_sf = count_true(is_sf)
+    N_gal = sum(is_gal)
+    N_qso_cont = sum(is_qso & ~is_LAE)
+    N_qso_loL = sum(is_qso & ~where_hiL)
+    N_qso_hiL = sum(is_qso & where_hiL)
+    N_sf = sum(is_sf)
     print(f'\nMock length: {len(L_lya)}')
     print(f'N_gal = {N_gal}, N_qso_cont = {N_qso_cont}, N_qso_loL = {N_qso_loL}, '
           f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
@@ -120,7 +121,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     for i in range(len(L_binning) - 1):
         in_bin = (10 ** L_Arr >= L_binning[i]
                   ) & (10 ** L_Arr < L_binning[i + 1])
-        if count_true(in_bin) == 0:
+        if sum(in_bin) == 0:
             L_Lbin_err_plus[i] = last[0]
             L_Lbin_err_minus[i] = last[1]
             continue
@@ -658,8 +659,8 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
                        1) * nb_fwhm_Arr[l]
     EW_Arr /= z_Arr
 
-    print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
-    print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
+    print(f'nice miniJPAS = {sum(nice_lya & is_minijpas_source)}')
+    print(f'nice J-NEP = {sum(nice_lya & ~is_minijpas_source)}')
 
     volume = effective_volume(nb_min, nb_max, 'both')
     # volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
@@ -675,7 +676,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_minus_mj = np.zeros(len(bins) - 1)
     hist_median_mj = np.zeros(len(bins) - 1)
 
-    nice_puri_list = np.zeros(count_true(nice_lya))
+    nice_puri_list = np.zeros(sum(nice_lya))
 
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
@@ -860,13 +861,13 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        # (17, 24, 4, 16, 0, 400, 'nb'),
-        # (17, 24, 4, 16, 10, 400, 'nb'),
-        # (17, 24, 4, 16, 20, 400, 'nb'),
+        (17, 24, 4, 16, 0, 400, 'nb'),
+        (17, 24, 4, 16, 10, 400, 'nb'),
+        (17, 24, 4, 16, 20, 400, 'nb'),
         (17, 24, 4, 16, 30, 400, 'nb'),
-        # (17, 24, 4, 16, 40, 400, 'nb'),
-        # (17, 24, 4, 16, 50, 400, 'nb'),
-        # (17, 24, 1, 25, 30, 400, 'nb'),
+        (17, 24, 4, 16, 40, 400, 'nb'),
+        (17, 24, 4, 16, 50, 400, 'nb'),
+        (17, 24, 1, 25, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
