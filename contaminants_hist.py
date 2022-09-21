@@ -114,7 +114,9 @@ if __name__ == '__main__':
     N_sources = pm_flx.shape[1]
 
     params = [
-        (30, 400, 12, 20),
+        (30, 400, 1, 8),
+        (30, 400, 8, 16),
+        (30, 400, 16, 24),
     ]
     
     for params_set in params:
