@@ -98,7 +98,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
     lya_lines, lya_cont_lines, _ = identify_lines(
-        line, pm_flx, cont_est_lya, first=True, return_line_width=True
+        line, pm_flx, cont_est_lya, first=True, return_line_width=True, qso_err=pm_err
     )
     lya_lines = np.array(lya_lines)
 
@@ -895,13 +895,13 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 4, 16, 0, 400, 'nb'),
-        (17, 24, 4, 16, 10, 400, 'nb'),
-        (17, 24, 4, 16, 20, 400, 'nb'),
+        # (17, 24, 4, 16, 0, 400, 'nb'),
+        # (17, 24, 4, 16, 10, 400, 'nb'),
+        # (17, 24, 4, 16, 20, 400, 'nb'),
         (17, 24, 4, 16, 30, 400, 'nb'),
-        (17, 24, 4, 16, 40, 400, 'nb'),
-        (17, 24, 4, 16, 50, 400, 'nb'),
-        (17, 24, 1, 25, 30, 400, 'nb'),
+        # (17, 24, 4, 16, 40, 400, 'nb'),
+        # (17, 24, 4, 16, 50, 400, 'nb'),
+        # (17, 24, 1, 25, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:

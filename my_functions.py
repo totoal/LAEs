@@ -308,6 +308,7 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
         fil = 0
         this_src_lines = []  # The list of lines
         this_cont_lines = []  # The list of continuum indices of lines
+        this_src_line_flx = [] # The list of lengths of this src lines
 
         while fil < N_fil:
             this_line = []  # The list of contiguous indices of this line
@@ -338,11 +339,16 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
             this_src_lines.append(
                 np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
             )
+            this_src_line_flx.append(qso_flx[np.array(this_line) + nb_min, src].sum())
 
         if first:  # If first=True,
             try:
+                # idx = np.argmax(
+                #     qso_flx[np.array(this_src_lines), src]
+                #     - cont_flx[np.array(this_src_lines), src]
+                # )
                 idx = np.argmax(
-                    qso_flx[np.array(this_src_lines), src]
+                    np.array(this_src_line_flx)
                     - cont_flx[np.array(this_src_lines), src]
                 )
 
@@ -467,6 +473,9 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     g = flux_to_mag(pm_flx[-3], w_central[-3])
     gr = g - r
     ri = r - i
+    # For z > 3
+    color_aux1 = (-1.5 * ri + 1.7 > gr) & (ri < 1.)
+    # For z < 3
     color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
@@ -506,7 +515,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            good_colors = color_aux2[src]
+            if z_src < 3.:
+                good_colors = color_aux2[src]
+            else:
+                good_colors = color_aux1[src]
             if ~good_colors:
                 this_nice = False
 
