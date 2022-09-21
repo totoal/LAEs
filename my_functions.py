@@ -343,20 +343,11 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
 
         if first:  # If first=True,
             try:
-                # idx = np.argmax(
-                #     qso_flx[np.array(this_src_lines), src]
-                #     - cont_flx[np.array(this_src_lines), src]
-                # )
-                idx = np.argmax(
-                    np.array(this_src_line_flx)
-                    - cont_flx[np.array(this_src_lines), src]
-                )
-
-                line_list.append(this_src_lines[idx])
+                line_list.append(this_src_lines)
                 line_len_list.append(this_src_lines)
-                line_cont_list.append(this_cont_lines[idx])
+                line_cont_list.append(this_cont_lines)
             except:
-                line_list.append(-1)
+                line_list.append([])
                 line_len_list.append([-1])
                 line_cont_list.append(-1)
 
@@ -454,11 +445,12 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     return line
 
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
     nice_lya = np.zeros(N_sources).astype(bool)
+    z_Arr = np.ones(N_sources) * -1.
 
     # Line rest-frame wavelengths (Angstroms)
     w_lyb = 1025.7220
@@ -478,57 +470,59 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     # For z < 3
     color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.)
 
-    for src in np.where(np.array(lya_lines) != -1)[0]:
-        # l_lya = lya_lines[src]
-        z_src = z_Arr[src]
+    for src in range(N_sources):
+        for l_candidate in lya_lines[src]:
+            z_src = w_central[l_candidate] / w_lya - 1
 
-        w_obs_lya = (1 + z_src) * w_lya
-        w_obs_lyb = (1 + z_src) * w_lyb
-        w_obs_SiIV = (1 + z_src) * w_SiIV
-        w_obs_CIV = (1 + z_src) * w_CIV
-        w_obs_CIII = (1 + z_src) * w_CIII
+            w_obs_lya = (1 + z_src) * w_lya
+            w_obs_lyb = (1 + z_src) * w_lyb
+            w_obs_SiIV = (1 + z_src) * w_SiIV
+            w_obs_CIV = (1 + z_src) * w_CIV
+            w_obs_CIII = (1 + z_src) * w_CIII
 
-        this_nice = True
-        for l in other_lines[src]:
-            # Ignore very red and very blue NBs
-            if (l > 50) | (l < 1):
+            this_nice = True
+            for l in other_lines[src]:
+                # Ignore very red and very blue NBs
+                if (l > 50) | (l < 1):
+                    continue
+
+                w_obs_l = w_central[l]
+                fwhm = fwhm_Arr[l]
+
+                good_l = (
+                    (np.abs(w_obs_l - w_obs_lya) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
+                    | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
+                    | (w_obs_l > w_obs_CIII + fwhm)
+                )
+
+                if ~good_l:
+                    this_nice = False
+                    break
+
+            if not this_nice:
                 continue
+            elif len(other_lines[src]) > 1:
+                pass
+            else:
+                if z_src < 3.:
+                    good_colors = color_aux2[src]
+                else:
+                    good_colors = color_aux1[src]
+                if ~good_colors:
+                    this_nice = False
 
-            w_obs_l = w_central[l]
-            fwhm = fwhm_Arr[l]
-
-            good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
-                | (w_obs_l > w_obs_CIII + fwhm)
-            )
-
-            if ~good_l:
-                this_nice = False
+            if this_nice:
+                nice_lya[src] = True
+                z_Arr[src] = z_src
                 break
 
-        if not this_nice:
-            continue
-        elif len(other_lines[src]) > 1:
-            pass
-        else:
-            if z_src < 3.:
-                good_colors = color_aux2[src]
-            else:
-                good_colors = color_aux1[src]
-            if ~good_colors:
-                this_nice = False
-
-        if this_nice:
-            nice_lya[src] = True
-
     if mask is None:
-        return nice_lya
+        return nice_lya, z_Arr
     else:
-        return nice_lya & mask
+        return nice_lya & mask, z_Arr
 
 
 def count_true(arr):

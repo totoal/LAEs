@@ -98,25 +98,15 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
     lya_lines, lya_cont_lines, _ = identify_lines(
-        line, pm_flx, cont_est_lya, first=True, return_line_width=True, qso_err=pm_err
+        line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
-    lya_lines = np.array(lya_lines)
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
                                400, obs=True)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
-    N_sources = pm_flx.shape[1]
-
-    # Compute z
-    z_Arr = np.zeros(N_sources)
-    z_Arr[np.where(np.array(lya_lines) != -1)] =\
-        z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
-
-    nice_z = np.abs(z_Arr - zspec) < 0.16
-
-    return cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z
+    return cont_est_lya, cont_err_lya, lya_lines, other_lines
 
 
 def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
@@ -457,25 +447,22 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     os.makedirs(dirname, exist_ok=True)
 
     # Estimate continuum, search lines
-    cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
+    cont_est_lya, cont_err_lya, lya_lines, other_lines =\
         search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m)
+
+    # Nice lya selection
+    nice_lya, z_Arr = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
 
     z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
     ew_cut = EW_lya > ew0_cut
     mag_cut = (mag > mag_min) & (mag < mag_max)
+    nice_lya_mask = z_cut_nice & mag_cut
 
-    N_sources = len(mag_cut)
-    snr = np.empty(N_sources)
-    for src in range(N_sources):
-        l = lya_lines[src]
-        snr[src] = pm_flx[l, src] / pm_err[l, src]
-    nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
+    nice_lya = nice_lya & nice_lya_mask
 
-    # Nice lya selection
-    nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
-                               cont_est_lya, z_Arr, mask=nice_lya_mask)
+    nice_z = np.abs(z_Arr - zspec) < 0.16
 
     # Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
