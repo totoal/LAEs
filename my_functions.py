@@ -300,12 +300,13 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
     line_list = []
     line_len_list = []
     line_cont_list = []
+    line_flx_list = []
 
     for src in range(N_src):
         fil = 0
         this_src_lines = []  # The list of lines
         this_cont_lines = []  # The list of continuum indices of lines
-        this_src_line_flx = [] # The list of lengths of this src lines
+        this_src_line_flx = []
 
         while fil < N_fil:
             this_line = []  # The list of contiguous indices of this line
@@ -339,24 +340,26 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
             )
             this_src_line_flx.append(qso_flx[np.array(this_line) + nb_min, src].sum())
 
-        if first:  # If first=True,
+        if first:
             try:
                 line_list.append(this_src_lines)
                 line_len_list.append(this_src_lines)
                 line_cont_list.append(this_cont_lines)
+                line_flx_list.append(this_src_line_flx)
             except:
                 line_list.append([])
                 line_len_list.append([-1])
                 line_cont_list.append(-1)
+                line_flx_list.append([])
 
         if not first:
             line_list.append(this_src_lines)
 
     if first:
         if return_line_width:
-            return line_list, line_cont_list, line_len_list
+            return line_list, line_cont_list, line_len_list, line_flx_list
         else:
-            return line_list, line_cont_list
+            return line_list, line_cont_list, line_flx_list
     return line_list
 
 
@@ -443,7 +446,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     return line
 
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, mask=None):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -474,6 +477,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     for src in range(N_sources):
         highest_flux = None
         for l_candidate in lya_lines[src]:
+            this_line_flux = pm_flx[l_candidate, src]
             if snr[l_candidate, src] < 6:
                 this_nice = False
                 break
@@ -521,14 +525,13 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
                     this_nice = False
 
             if this_nice:
-                this_flux = pm_flx[l_candidate, src]
                 if highest_flux is None:
                     nice_lya[src] = True
                     z_Arr[src] = z_src
                     new_lya_lines[src] = l_candidate
-                    highest_flux = this_flux
+                    highest_flux = this_line_flux
                 else:
-                    if this_flux > highest_flux:
+                    if this_line_flux > highest_flux:
                         nice_lya[src] = True
                         z_Arr[src] = z_src
                         new_lya_lines[src] = l_candidate

@@ -92,19 +92,19 @@ def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
     return est_lya, err_lya, est_oth, err_oth
 
 
-def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
+def search_lines(pm_flx, pm_err, ew0_cut, ew_obs, cont_est_m):
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
         nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
-    lya_lines, _, _ = identify_lines(
+    lya_lines, _, _, line_flxs = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               400, obs=True)
+                               ew_obs, obs=True)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     return cont_est_lya, cont_err_lya, lya_lines, other_lines
@@ -452,7 +452,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m)
 
     # Nice lya selection
-    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
+    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err)
 
     z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
@@ -599,7 +599,6 @@ def effective_volume(nb_min, nb_max, survey_name):
 def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
-    # TODO: fix this
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
         spCl, zsp, _, _, _, N_minijpas, x_im, y_im,\
         ra, dec =\
@@ -611,16 +610,12 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         search_lines(pm_flx, pm_err, ew0_cut, None, cont_est_m)
 
     # Nice lya selection
-    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est_lya)
+    nice_lya, z_Arr, lya_lines = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err)
 
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1
-
-    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     mag_cut = (mag > mag_min) & (mag < mag_max)
-    nice_lya_mask = z_cut & mag_cut
+    nice_lya_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & pm_mask
 
-    nice_lya = nice_lya & nice_lya_mask & pm_mask
+    nice_lya = nice_lya & nice_lya_mask
 
     # Estimate Luminosity
     _, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
@@ -861,13 +856,13 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 4, 16, 0, 400, 'nb'),
-        (17, 24, 4, 16, 10, 400, 'nb'),
-        (17, 24, 4, 16, 20, 400, 'nb'),
+        # (17, 24, 4, 16, 0, 400, 'nb'),
+        # (17, 24, 4, 16, 10, 400, 'nb'),
+        # (17, 24, 4, 16, 20, 400, 'nb'),
         (17, 24, 4, 16, 30, 400, 'nb'),
-        (17, 24, 4, 16, 40, 400, 'nb'),
-        (17, 24, 4, 16, 50, 400, 'nb'),
-        (17, 24, 1, 25, 30, 400, 'nb'),
+        # (17, 24, 4, 16, 40, 400, 'nb'),
+        # (17, 24, 4, 16, 50, 400, 'nb'),
+        # (17, 24, 1, 25, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:
