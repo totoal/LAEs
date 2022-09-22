@@ -334,7 +334,8 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
                 )
             # Append index of the max flux of this line to the list
             this_src_lines.append(
-                np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
+                # np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
+                this_line[0] + nb_min
             )
             this_src_line_flx.append(qso_flx[np.array(this_line) + nb_min, src].sum())
 
@@ -471,6 +472,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
     snr = pm_flx / pm_err
 
     for src in range(N_sources):
+        highest_flux = None
         for l_candidate in lya_lines[src]:
             if snr[l_candidate, src] < 6:
                 this_nice = False
@@ -519,10 +521,18 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, mask=None)
                     this_nice = False
 
             if this_nice:
-                nice_lya[src] = True
-                z_Arr[src] = z_src
-                new_lya_lines[src] = l_candidate
-                break
+                this_flux = pm_flx[l_candidate, src]
+                if highest_flux is None:
+                    nice_lya[src] = True
+                    z_Arr[src] = z_src
+                    new_lya_lines[src] = l_candidate
+                    highest_flux = this_flux
+                else:
+                    if this_flux > highest_flux:
+                        nice_lya[src] = True
+                        z_Arr[src] = z_src
+                        new_lya_lines[src] = l_candidate
+
 
     if mask is None:
         return nice_lya, z_Arr, new_lya_lines
