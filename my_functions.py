@@ -476,7 +476,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     # For z > 3
     color_aux1 = (-1.5 * ri + 1.7 > gr) & (ri < 1.)
     # For z < 3
-    color_aux2 = (-1.5 * ri + 1.7 > gr) & (ri < 1.) & (gr < 1.)
+    color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri < 1.)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
