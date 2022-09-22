@@ -108,6 +108,7 @@ if __name__ == '__main__':
     np.save('tmp/times_selected.npy', times_selected)
     np.save('tmp/times_nicez.npy', times_nicez)
     np.save('tmp/L_lya.npy', L_lya)
+    np.save('tmp/EW_lya.npy', EW_lya)
     np.save('tmp/zspec.npy', zspec)
     np.save('tmp/is_qso.npy', is_qso)
     np.save('tmp/is_sf.npy', is_sf)
