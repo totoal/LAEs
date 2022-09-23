@@ -21,9 +21,7 @@ import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 13})
 matplotlib.use('Agg')
 
-
 np.seterr(all='ignore')
-
 
 # Useful definitions
 w_central = central_wavelength()
@@ -91,7 +89,7 @@ def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
     return est_lya, err_lya, est_oth, err_oth
 
 
-def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
+def search_lines(pm_flx, pm_err, ew0_cut, ew_obs, zspec, cont_est_m):
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
         nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
@@ -103,7 +101,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m):
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               400, obs=True)
+                               ew_obs, obs=True)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -457,7 +455,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     # Estimate continuum, search lines
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
-        search_lines(pm_flx, pm_err, ew0_cut, zspec, cont_est_m)
+        search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
 
     z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
@@ -543,6 +541,8 @@ def make_corrections(params):
     print()
     for survey_name in survey_name_list:
         print(survey_name)
+
+        # # Comment this section if you don't want to recompute corrections
         # try:
         #     np.load(f'npy/puri2d_{survey_name}.npy')
         #     np.load(f'npy/comp2d_{survey_name}.npy')
@@ -894,14 +894,16 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 4, 16, 0, 400, 'nb'),
-        (17, 24, 4, 16, 15, 400, 'nb'),
-        (17, 24, 4, 16, 30, 400, 'nb'),
-        (17, 24, 4, 8, 45, 400, 'nb'),
-        (17, 24, 4, 16, 30, 100, 'nb'),
-        (17, 24, 4, 16, 30, 200, 'nb'),
-        (17, 24, 4, 16, 30, 300, 'nb'),
-        (17, 24, 4, 16, 30, 400, 'nb'),
+        # (17, 24, 1, 4, 30, 400, 'nb'),
+        # (17, 24, 4, 8, 30, 400, 'nb'),
+        # (17, 24, 8, 12, 30, 400, 'nb'),
+        # (17, 24, 12, 16, 30, 400, 'nb'),
+        # (17, 24, 16, 20, 30, 400, 'nb'),
+        # (17, 24, 20, 24, 30, 400, 'nb'),
+        # (17, 24, 1, 24, 30, 400, 'nb'),
+        # (17, 22, 1, 24, 30, 400, 'nb'),
+        # (22, 24, 1, 24, 30, 400, 'nb'),
+        (17, 24, 1, 24, 30, 400, 'nb')
     ]
 
     for params in LF_parameters:

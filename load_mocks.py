@@ -100,7 +100,7 @@ def load_GAL_mock(name, add_errs=True):
         bad_src = (
             (gal_zspec[src] > 2)
             | color_aux2[src]
-            | (r[src] > 24.25) | (r[src] < 17)
+            | (r[src] > 24.25) | (r[src] < 16)
         )
         if bad_src:
             continue

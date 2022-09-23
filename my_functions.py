@@ -473,10 +473,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     g = flux_to_mag(pm_flx[-3], w_central[-3])
     gr = g - r
     ri = r - i
-    # For z > 3
+    # For z > 2.5
     # color_aux1 = (-1.5 * ri + 1.7 > gr)
-    color_aux1 = (ri < 1.) & (gr < 1.)
-    # For z < 3
+    color_aux1 = (ri < 0.9) & (gr < 0.9)
+    # For z < 2.5
     # color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri < 1.)
     color_aux2 = np.ones(g.shape).astype(bool)
 
@@ -520,7 +520,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            if z_src < 3.:
+            if z_src < 2.5:
                 good_colors = color_aux2[src]
             else:
                 good_colors = color_aux1[src]

@@ -165,7 +165,7 @@ def load_puricomp1d(dirname):
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins
 
 
-def puricomp1d_plot(dirname, save_dirname, surname):
+def puricomp1d_plot(dirname, save_dirname, surname=''):
     comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins = \
         load_puricomp1d(dirname)
@@ -299,6 +299,6 @@ if __name__ == '__main__':
         puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
 
     # PURICOMP 1D
-    dirname = './Luminosity_functions/LF_r17-24_z2.5-3.8_ew15_ewoth400_nb'
+    dirname = './Luminosity_functions/LF_r17-24_nb1-25_ew30_ewoth400_nb'
     save_dirname = './figures'
     puricomp1d_plot(dirname, save_dirname)
