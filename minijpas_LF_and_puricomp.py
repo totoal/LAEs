@@ -29,10 +29,12 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 
+qso_LF_factor = 0.3
+
 gal_area = 5.54
 bad_qso_area = 200
-good_qso_area = 400
-hiL_qso_area = 4000
+good_qso_area = 400 / qso_LF_factor
+hiL_qso_area = 4000 / qso_LF_factor
 sf_area = 200
 
 # the proportional factors are made in relation to bad_qso
@@ -894,16 +896,15 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        # (17, 24, 1, 4, 30, 400, 'nb'),
-        # (17, 24, 4, 8, 30, 400, 'nb'),
-        # (17, 24, 8, 12, 30, 400, 'nb'),
-        # (17, 24, 12, 16, 30, 400, 'nb'),
-        # (17, 24, 16, 20, 30, 400, 'nb'),
-        # (17, 24, 20, 24, 30, 400, 'nb'),
-        # (17, 24, 1, 24, 30, 400, 'nb'),
-        # (17, 22, 1, 24, 30, 400, 'nb'),
-        # (22, 24, 1, 24, 30, 400, 'nb'),
-        (17, 24, 1, 24, 30, 400, 'nb')
+        (17, 24, 1, 4, 30, 400, 'nb'),
+        (17, 24, 4, 8, 30, 400, 'nb'),
+        (17, 24, 8, 12, 30, 400, 'nb'),
+        (17, 24, 12, 16, 30, 400, 'nb'),
+        (17, 24, 16, 20, 30, 400, 'nb'),
+        (17, 24, 20, 24, 30, 400, 'nb'),
+        (17, 24, 1, 24, 30, 400, 'nb'),
+        (17, 22, 1, 24, 30, 400, 'nb'),
+        (22, 24, 1, 24, 30, 400, 'nb'),
     ]
 
     for params in LF_parameters:

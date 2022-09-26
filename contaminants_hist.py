@@ -9,10 +9,11 @@ np.seterr(all='ignore')
 matplotlib.rcParams.update({'font.size': 13})
 matplotlib.use('TkAgg')
 
+qso_LAEs_frac = 0.3
 
 gal_area = 5.54
 bad_qso_area = 200
-good_qso_area = 400
+good_qso_area = 400 / qso_LAEs_frac
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1
