@@ -29,20 +29,18 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 
-qso_LF_factor = 0.3
+# gal_area = 5.54
+# bad_qso_area = 200
+# good_qso_area = 400
+# hiL_qso_area = 4000
+# sf_area = 200
 
-gal_area = 5.54
-bad_qso_area = 200
-good_qso_area = 400 / qso_LF_factor
-hiL_qso_area = 4000 / qso_LF_factor
-sf_area = 200
-
-# the proportional factors are made in relation to bad_qso
-# so bad_qso_factor = 1
-gal_factor = bad_qso_area / gal_area
-good_qso_factor = bad_qso_area / good_qso_area
-hiL_factor = bad_qso_area / hiL_qso_area
-sf_factor = bad_qso_area / sf_area
+# # the proportional factors are made in relation to bad_qso
+# # so bad_qso_factor = 1
+# gal_factor = bad_qso_area / gal_area
+# good_qso_factor = bad_qso_area / good_qso_area
+# hiL_factor = bad_qso_area / hiL_qso_area
+# sf_factor = bad_qso_area / sf_area
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -450,7 +448,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Make the directory if it doesn't exist
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}'
+        f'_{cont_est_m}_{qso_frac}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
@@ -909,8 +907,23 @@ if __name__ == '__main__':
         (17, 24, 17, 21, 30, 400, 'nb'),
         (17, 24, 21, 25, 30, 400, 'nb'),
     ]
+    
+    params = (17, 24, 1, 24, 30, 400, 'nb')
 
-    for params in LF_parameters:
+    for qso_frac in [0.3, 0.4]:
+        gal_area = 5.54
+        bad_qso_area = 200
+        good_qso_area = 400 / qso_frac
+        hiL_qso_area = 4000 / qso_frac
+        sf_area = 200
+
+        # the proportional factors are made in relation to bad_qso
+        # so bad_qso_factor = 1
+        gal_factor = bad_qso_area / gal_area
+        good_qso_factor = bad_qso_area / good_qso_area
+        hiL_factor = bad_qso_area / hiL_qso_area
+        sf_factor = bad_qso_area / sf_area
+
         t0 = time.time()
         print(
             'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
