@@ -299,6 +299,6 @@ if __name__ == '__main__':
         puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
 
     # PURICOMP 1D
-    dirname = './Luminosity_functions/LF_r17-24_nb1-25_ew30_ewoth400_nb'
+    dirname = './Luminosity_functions/LF_r17-24_nb4-8_ew30_ewoth400_nb'
     save_dirname = './figures'
     puricomp1d_plot(dirname, save_dirname)
