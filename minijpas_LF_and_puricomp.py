@@ -29,19 +29,6 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 
-# gal_area = 5.54
-# bad_qso_area = 200
-# good_qso_area = 400
-# hiL_qso_area = 4000
-# sf_area = 200
-
-# # the proportional factors are made in relation to bad_qso
-# # so bad_qso_factor = 1
-# gal_factor = bad_qso_area / gal_area
-# good_qso_factor = bad_qso_area / good_qso_area
-# hiL_factor = bad_qso_area / hiL_qso_area
-# sf_factor = bad_qso_area / sf_area
-
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 
@@ -895,43 +882,34 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
 
     LF_parameters = [
-        (17, 24, 5, 9, 50, 400, 'nb'),
-        (17, 24, 5, 9, 20, 400, 'nb'),
-        (17, 24, 5, 9, 30, 200, 'nb'),
-        (17, 24, 5, 9, 30, 100, 'nb'),
-
-        (17, 24, 1, 5, 30, 400, 'nb'),
-        (17, 24, 5, 9, 30, 400, 'nb'),
-        (17, 24, 9, 13, 30, 400, 'nb'),
-        (17, 24, 13, 17, 30, 400, 'nb'),
-        (17, 24, 17, 21, 30, 400, 'nb'),
-        (17, 24, 21, 25, 30, 400, 'nb'),
+        (17, 24, 4, 8, 30, 400, 'nb'),
+        (17, 24, 8, 12, 30, 400, 'nb'),
     ]
     
-    params = (17, 24, 1, 24, 30, 400, 'nb')
 
-    for qso_frac in [0.3, 0.4]:
-        gal_area = 5.54
-        bad_qso_area = 200
-        good_qso_area = 400 / qso_frac
-        hiL_qso_area = 4000 / qso_frac
-        sf_area = 200
+    for params in LF_parameters:
+        for qso_frac in [0.3, 0.5, 1.]:
+            gal_area = 5.54
+            bad_qso_area = 200
+            good_qso_area = 400 / qso_frac
+            hiL_qso_area = 4000 / qso_frac
+            sf_area = 200
 
-        # the proportional factors are made in relation to bad_qso
-        # so bad_qso_factor = 1
-        gal_factor = bad_qso_area / gal_area
-        good_qso_factor = bad_qso_area / good_qso_area
-        hiL_factor = bad_qso_area / hiL_qso_area
-        sf_factor = bad_qso_area / sf_area
+            # the proportional factors are made in relation to bad_qso
+            # so bad_qso_factor = 1
+            gal_factor = bad_qso_area / gal_area
+            good_qso_factor = bad_qso_area / good_qso_area
+            hiL_factor = bad_qso_area / hiL_qso_area
+            sf_factor = bad_qso_area / sf_area
 
-        t0 = time.time()
-        print(
-            'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
-            .format(*params))
-        make_corrections(params)
-        print('\nBuilding the LF...')
-        make_the_LF(params)
-        print('\n\n')
-        m, s = divmod(int(time.time() - t0), 60)
-        print('Elapsed: {}m {}s'.format(m, s))
-        print('\n ########################## \n')
+            t0 = time.time()
+            print(
+                'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
+                .format(*params))
+            make_corrections(params)
+            print('\nBuilding the LF...')
+            make_the_LF(params)
+            print('\n\n')
+            m, s = divmod(int(time.time() - t0), 60)
+            print('Elapsed: {}m {}s'.format(m, s))
+            print('\n ########################## \n')
