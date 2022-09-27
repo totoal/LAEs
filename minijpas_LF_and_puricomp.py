@@ -709,6 +709,13 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     nice_puri_list = np.zeros(count_true(nice_lya))
 
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}'
+    )
+    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    os.makedirs(dirname, exist_ok=True)
+
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
@@ -716,7 +723,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
             L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
             mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
-            return_puri=True
+            return_puri=True, dirname=dirname
         )
         L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
         L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -727,7 +734,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
     L_LF_err_percentiles, this_puri = LF_perturb_err(
         L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, 'jnep', tile_id[~is_minijpas_source], return_puri=True
+        bins, 'jnep', tile_id[~is_minijpas_source], return_puri=True, dirname=dirname
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -763,12 +770,6 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
         'other_lines': [other_lines[idx] for idx in np.where(nice_lya)[0]]
     }
 
-    folder_name = (
-        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}'
-    )
-    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    os.makedirs(dirname, exist_ok=True)
     with open(f'{dirname}/selection.npy', 'wb') as f:
         pickle.dump(selection, f)
 

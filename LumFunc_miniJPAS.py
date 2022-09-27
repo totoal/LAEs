@@ -35,7 +35,8 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
     return bin_centers, hist, volume, bin_width
 
 def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
-                   bins, survey_name, tile_id, which_w=[0, 2], return_puri=False):
+                   bins, survey_name, tile_id, which_w=[0, 2],
+                   return_puri=False, dirname=''):
     N_bins = len(bins) - 1
 
     N_iter = 1000
@@ -66,7 +67,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     puri = np.mean(puri_list, axis=0)
     
     # Save hist_i_mat for Sch montecarlo fit
-    np.save(f'npy/hist_i_mat_{survey_name}.npy', hist_i_mat)
+    np.save(f'{dirname}/hist_i_mat_{survey_name}.npy', hist_i_mat)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
     if not return_puri:
