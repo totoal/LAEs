@@ -229,7 +229,7 @@ def z_volume(z_min, z_max, area):
 
 def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
     '''
-    Returns the IGM transmission associated with the Lya Break.
+    Returns the IGM transmission associated to the Lya Break.
     '''
     return np.exp(A * (w_Arr / 1215.67)**B)
 
