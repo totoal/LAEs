@@ -441,7 +441,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     )
 
     # Let's remove the sources with very low r magnitudes
-    low_r_mask = (pm_SEDs[-2] > 4e-19)
+    low_r_mask = (pm_SEDs[-2] > 1e-19)
     print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
 
     pd.DataFrame(
@@ -459,37 +459,36 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
 
 
 if __name__ == '__main__':
-    # t0 = time.time()
+    t0 = time.time()
     part = sys.argv[1]
 
-    # z_min = 2
-    # z_max = 4.25
-    # L_min = 42
-    # L_max = 46
-    # area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+    z_min = 2
+    z_max = 4.25
+    L_min = 42
+    L_max = 46
+    area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
-    # for survey_name in ['minijpas', 'jnep']:
-    #     for train_or_test in ['test', 'train']:
-    #         main(part, area, z_min, z_max, L_min, L_max,
-    #              survey_name, train_or_test, 'D_')
+    for survey_name in ['minijpas']:
+        for train_or_test in ['train']:
+            main(part, area, z_min, z_max, L_min, L_max,
+                 survey_name, train_or_test, 'D_deep_')
 
-    # print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
-    #     *divmod(time.time() - t0, 60)))
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
+        *divmod(time.time() - t0, 60)))
 
     t0 = time.time()
     L_min = 44
     L_max = 46
-    area = 40000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
+
+    z_min, z_max = 2, 4.25
+
+    area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
 
     survey_name = 'minijpas'
     train_or_test = 'train'
         
-    z_min_list = np.array([2, 2.25, 2.5, 2.75, 3., 3.25, 3.5, 3.75, 4])
-    z_max_list = z_min_list + 0.5
-
-    for z_min, z_max in zip(z_min_list, z_max_list):
-        main(part, area, z_min, z_max, L_min, L_max, survey_name,
-                train_or_test, f'z{z_min}-{z_max}_highL2_D_')
+    main(part, area, z_min, z_max, L_min, L_max, survey_name,
+            train_or_test, 'highL2_D_deep_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))

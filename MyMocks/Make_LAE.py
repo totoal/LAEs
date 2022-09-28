@@ -35,7 +35,7 @@ def main(part, survey_name, t_or_t):
     # Specific LAE parameters
     w_in = [5, 5.1]  # Line width interval
     s_in = [-31., -30.]  # Logarithmic uncertainty in flux density #
-    L_in = [41.75, 45]
+    L_in = [42.5, 46]
     LINE = 'Lya'
 
     # Load LAE LF (Sobral 2016)
@@ -112,7 +112,7 @@ def main(part, survey_name, t_or_t):
 
     dirname = '/home/alberto/almacen/Source_cats'
     filename =\
-        f'{dirname}/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_{t_or_t}_{survey_name}_VUDS_0'
+        f'{dirname}/LAE_{obs_area}deg_z{z_lya[0]}-{z_lya[1]}_{t_or_t}_{survey_name}_VUDS_deep_0'
 
     if not os.path.exists(filename):
         os.mkdir(filename)
@@ -140,7 +140,7 @@ def main(part, survey_name, t_or_t):
     z_out_Arr = []
     EW_out_Arr = []
 
-    good = np.where(g_Arr > 2e-19)[0]
+    good = np.where(g_Arr > 1e-19)[0]
     N_good_sources = len(good)
 
     pm_SEDs = np.zeros((60, N_good_sources))
@@ -188,7 +188,7 @@ def main(part, survey_name, t_or_t):
                 break
 
         # mag r < 24 cut
-        if aux_pm[2] < 6e-19:
+        if aux_pm[2] < 1e-19:
             good2[j] = False
             continue
 
@@ -223,7 +223,7 @@ def main(part, survey_name, t_or_t):
 if __name__ == '__main__':
     t0 = time()
 
-    for survey_name in ['minijpas', 'jnep']:
+    for survey_name in ['minijpas']:
         for t_or_t in ['train']:
             main(sys.argv[1], survey_name, t_or_t)
 

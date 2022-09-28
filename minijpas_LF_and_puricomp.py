@@ -880,43 +880,6 @@ if __name__ == '__main__':
     # Parameters of the LF:
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
-
-    LF_parameters = [
-        (17, 24, 4, 8, 30, 400, 'nb'),
-        (17, 24, 8, 12, 30, 400, 'nb'),
-    ]
-    
-
-    for params in LF_parameters:
-        for qso_frac in [0.3, 0.5, 1.]:
-            gal_area = 5.54
-            bad_qso_area = 200
-            good_qso_area = 400 / qso_frac
-            hiL_qso_area = 4000 / qso_frac
-            sf_area = 200
-
-            # the proportional factors are made in relation to bad_qso
-            # so bad_qso_factor = 1
-            gal_factor = bad_qso_area / gal_area
-            good_qso_factor = bad_qso_area / good_qso_area
-            hiL_factor = bad_qso_area / hiL_qso_area
-            sf_factor = bad_qso_area / sf_area
-
-            t0 = time.time()
-            print(
-                'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
-                .format(*params))
-            make_corrections(params)
-            print('\nBuilding the LF...')
-            make_the_LF(params)
-            print('\n\n')
-            m, s = divmod(int(time.time() - t0), 60)
-            print('Elapsed: {}m {}s'.format(m, s))
-            print('\n ########################## \n')
-
-    print('OOOOOOOOOOOKKKKKKK')
-
-
     LF_parameters = [
         (17, 24, 1, 4, 30, 400, 'nb'),
         (17, 24, 4, 8, 30, 400, 'nb'),
@@ -927,7 +890,7 @@ if __name__ == '__main__':
     ]
     
     for params in LF_parameters:
-        for qso_frac in [1.]:
+        for qso_frac in [0.5]:
             gal_area = 5.54
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
