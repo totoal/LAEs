@@ -324,20 +324,20 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & zspec_cut & is_sf],
-            mag[nice_lya & nice_z & zspec_cut & is_sf],
+            L_perturbed[nice_lya & nice_z & z_cut & is_sf],
+            mag[nice_lya & nice_z & z_cut & is_sf],
             bins=[L_bins, r_bins]
         )
 
         h2d_nice_qso_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & zspec_cut & is_qso & ~where_hiL],
-            mag[nice_lya & nice_z & zspec_cut & is_qso & ~where_hiL],
+            L_perturbed[nice_lya & nice_z & z_cut & is_qso & ~where_hiL],
+            mag[nice_lya & nice_z & z_cut & is_qso & ~where_hiL],
             bins=[L_bins, r_bins]
         )
 
         h2d_nice_qso_hiL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & zspec_cut & is_qso & where_hiL],
-            mag[nice_lya & nice_z & zspec_cut & is_qso & where_hiL],
+            L_perturbed[nice_lya & nice_z & z_cut & is_qso & where_hiL],
+            mag[nice_lya & nice_z & z_cut & is_qso & where_hiL],
             bins=[L_bins, r_bins]
         )
 
@@ -353,16 +353,16 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
 
         h2d_sel_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut &
+            L_perturbed[nice_lya & z_cut &
                         is_qso & is_LAE & ~where_hiL],
-            mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & ~where_hiL],
+            mag[nice_lya & z_cut & is_qso & is_LAE & ~where_hiL],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_hiL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & ~is_gal & z_cut &
+            L_perturbed[nice_lya & z_cut &
                         is_qso & is_LAE & where_hiL],
-            mag[nice_lya & ~is_gal & z_cut & is_qso & is_LAE & where_hiL],
+            mag[nice_lya & z_cut & is_qso & is_LAE & where_hiL],
             bins=[L_bins, r_bins]
         )
 
@@ -381,6 +381,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_qso_hiL = np.median(h2d_sel_hiL_i, axis=2)
     h2d_sel_qso_loL = np.median(h2d_sel_loL_i, axis=2)
     h2d_sel_gal = np.median(h2d_sel_gal_i, axis=2)
+
     h2d_parent_sf, _, _ = np.histogram2d(
         L_lya[zspec_cut & mag_cut & ew_cut & is_sf],
         mag[zspec_cut & mag_cut & ew_cut & is_sf],
@@ -549,7 +550,7 @@ def make_corrections(params):
         )
 
 
-def effective_volume(nb_min, nb_max, survey_name):
+def effective_volume(nb_min, nb_max, survey_name='both'):
     '''
     Due to NB overlap, specially when considering single filters, the volume probed by one
     NB has to be corrected because some sources could be detected in that NB or in either
