@@ -367,7 +367,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         # Extract the photometry of Ly-alpha (L_Arr)
         if z[src] > 0:
             lya_band[src] = JPAS_synth_phot(
-                spec['FLUX'] * 1e-17, 10 ** spec['LOGLAM'], lya_band_tcurves
+                spec['FLUX'], 10 ** spec['LOGLAM'], lya_band_tcurves
             )
         if ~np.isfinite(lya_band[src]):
             lya_band[src] = 0

@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from my_functions import Zero_point_error
 
-def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
+def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False):
+    # If selection, return the valuable items for visual_inspection.py only
     pm_flx = np.array([]).reshape(60, 0)
     pm_err = np.array([]).reshape(60, 0)
     tile_id = np.array([])
@@ -20,6 +21,7 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
     y_im = np.array([])
     RA = np.array([])
     DEC = np.array([])
+    number = np.array([])
 
     N_minijpas = 0
     split_converter = lambda s: np.array(s.split()).astype(float)
@@ -64,6 +66,8 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
         x_im_i = cat['X_IMAGE']
         y_im_i = cat['Y_IMAGE']
 
+        number_i = cat['NUMBER']
+
         pm_flx = np.hstack((pm_flx, pm_flx_i))
         pm_err = np.hstack((pm_err, pm_err_i))
         tile_id = np.concatenate((tile_id, tile_id_i))
@@ -81,6 +85,16 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep']):
         y_im = np.concatenate((y_im, y_im_i))
         RA = np.concatenate((RA, RA_i))
         DEC = np.concatenate((DEC, DEC_i))
+        number = np.concatenate((number, number_i))
 
-    return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, starlhood,\
-        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im, RA, DEC
+    if selection:
+        return pm_flx, pm_err, x_im, y_im, tile_id, number
+    else:
+        return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, starlhood,\
+            spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im, RA, DEC
+
+def load_sdss_xmatch():
+    filename = 'csv/xmatch_sdss_dr12.csv'
+    cat = pd.read_csv(filename, sep=',', header=1)
+
+    return cat['NUMBER'], cat['TILE_ID'], cat['SpObjID']
