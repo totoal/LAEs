@@ -88,7 +88,7 @@ def search_lines(pm_flx, pm_err, ew0_cut, ew_obs, zspec, cont_est_m):
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_obs, obs=True)
+                               ew_obs, obs=True, sigma=5)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -423,7 +423,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
-                    hiL_factor, good_qso_factor, gal_factor, plot_it=True):
+                    hiL_factor, good_qso_factor, gal_factor, qso_frac, plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # Vector of magnitudes in r band
@@ -519,7 +519,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                                 ew_cut, where_hiL, survey_name)
 
 
-def make_corrections(params):
+def make_corrections(params, qso_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
@@ -546,7 +546,7 @@ def make_corrections(params):
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
-            hiL_factor, good_qso_factor, gal_factor
+            hiL_factor, good_qso_factor, gal_factor, qso_frac
         )
 
 
@@ -595,7 +595,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
     return volume_abs + volume_overlap * 0.5
 
 
-def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
+def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -618,7 +618,7 @@ def make_the_LF(params, cat_list=['minijpas', 'jnep'], return_hist=False):
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_oth, obs=True, mask=mask)
+                               ew_oth, obs=True, mask=mask, sigma=5)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -882,16 +882,16 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 400, 'nb'),
-        (17, 24, 4, 8, 30, 400, 'nb'),
-        (17, 24, 8, 12, 30, 400, 'nb'),
-        (17, 24, 12, 16, 30, 400, 'nb'),
-        (17, 24, 16, 20, 30, 400, 'nb'),
-        (17, 24, 20, 24, 30, 400, 'nb'),
+        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     for params in LF_parameters:
-        for qso_frac in [0.5]:
+        for qso_frac in [0.5, 0.3, 0.7, 1.]:
             gal_area = 5.54
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
@@ -909,9 +909,9 @@ if __name__ == '__main__':
             print(
                 'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
                 .format(*params))
-            make_corrections(params)
+            make_corrections(params, qso_frac)
             print('\nBuilding the LF...')
-            make_the_LF(params)
+            make_the_LF(params, qso_frac)
             print('\n\n')
             m, s = divmod(int(time.time() - t0), 60)
             print('Elapsed: {}m {}s'.format(m, s))

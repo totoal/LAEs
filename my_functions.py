@@ -425,7 +425,7 @@ def mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn):
 
 
 def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
-                  mask=True, obs=False):
+                  mask=True, obs=False, sigma=3):
     w_central = central_wavelength()[:-4]
     fwhm_Arr = nb_fwhm(range(56)).reshape(-1, 1)
 
@@ -438,7 +438,7 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     line = (
         # 3-sigma flux excess
         (
-            pm_flx[:-4] - cont_est > 3 * (pm_err[:-4]**2 + cont_err**2) ** 0.5
+            pm_flx[:-4] - cont_est > sigma * (pm_err[:-4]**2 + cont_err**2) ** 0.5
         )
         # EW0 min threshold
         & (
