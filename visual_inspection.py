@@ -24,8 +24,10 @@ bb_exp_time = 30
 nb_exp_time = 120
 
 
-def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec, spec=None,
-                         g_band=None):
+def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
+                         tile_id, x_im, y_im, nb_sel, other_lines,
+                         title, n_src, spec=None, g_band=None):
+
     if tile_id == 2520:
         survey_name = 'jnep'
     else:
@@ -57,8 +59,8 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec
     im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
 
     # Get max and min of the images to establish common scale
-    im_max = np.max([im_r.max(), im_nb.max()])
-    im_min = np.min([im_r.min(), im_nb.min()])
+    # im_max = np.max([im_r.max(), im_nb.max()])
+    # im_min = np.min([im_r.min(), im_nb.min()])
 
     fig = plt.figure(figsize=(8, 3))
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True)
@@ -76,14 +78,25 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec
         ax.axvline(w_value, color='dimgray', linestyle=':')
         ax.text(w_value + 0.1, text_h, name,
                 color='dimgray', fontsize=8, in_layout=True)
+    # Draw line on other lines selected
+    for nb in other_lines:
+        print(nb)
+        ax.axvline(w_central[nb], ls='--', c='orange', zorder=-90)
+
+    # Zero line
+    ax.axhline(0, linewidth=1, ls='-', c='k')
 
     ax.set_xlim(3000, 9600)
+
+    # Plot the continuum
+    ax.errorbar(w_central[1:40], cont_est[1:40] * 1e17,
+                yerr=cont_err[1:40] * 1e17, c='k', ls='-')
 
     #### Plot SDSS spectrum if available ####
     if g_band is not None and spec is not None:
         # Normalizing factor:
         norm = pm_flx[-3] / g_band
-        spec_flx = spec['FLUX'] * norm
+        spec_flx = spec['MODEL'] * norm
         spec_w = 10 ** spec['LOGLAM']
 
         ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
@@ -91,8 +104,8 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec
     #########################################
 
     wh = 0.25
-    ax1 = fig.add_axes([1 - 1.5 * wh, 1 - wh - 0.1, wh, wh])
-    ax2 = fig.add_axes([1 - wh, 1 - wh - 0.1, wh, wh])
+    ax1 = fig.add_axes([1 - 1.5 * wh - 0.1, 0.9, wh, wh])
+    ax2 = fig.add_axes([1 - wh - 0.1, 0.9, wh, wh])
 
     ax1.tick_params(axis='both', bottom=False, top=False,
                     labelbottom=False, labeltop=False,
@@ -103,8 +116,10 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec
                     right=False, left=False,
                     labelright=False, labelleft=False)
 
-    ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
-    ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
+    # ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
+    # ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
+    ax1.imshow(im_r, cmap='binary')
+    ax2.imshow(im_nb, cmap='binary')
 
     # Add circumference showing aperture 3arcsec diameter
     aper_r_px = 1.5 / 0.23
@@ -116,15 +131,14 @@ def plot_jspectra_images(pm_flx, pm_err, tile_id, x_im, y_im, nb_sel, src, zspec
     ax2.add_patch(circ2)
 
     tile_name = tile_dict[tile_id]
-    title = f'{tile_name}-{src}  z = {z_src:0.2f}, zspec = {zspec:0.2f}'
-    ax.set_title(title, fontsize=15, loc='left')
+    ax.set_title(title, loc='left')
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
 
     # plt.show(block=True)
     dirname = '/home/alberto/almacen/selected_LAEs'
     os.makedirs(dirname, exist_ok=True)
-    plt.savefig(f'{dirname}/{tile_name}-{src}.png',
+    plt.savefig(f'{dirname}/{n_src}-{tile_name}-{src}.png',
                 bbox_inches='tight', facecolor='w',
                 edgecolor='w', dpi=500)
     plt.close()
@@ -143,6 +157,9 @@ if __name__ == '__main__':
     print('Loading catalogs...')
     pm_flx, pm_err, x_im, y_im, tile_id, number = load_minijpas_jnep(selection=True)
     N_sel = len(selection['src'])
+
+    # Estimate the continuum to plot it
+    cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
 
     sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch() 
 
@@ -184,11 +201,38 @@ if __name__ == '__main__':
         this_x_im = selection['x_im'][n].astype(int)
         this_y_im = selection['y_im'][n].astype(int)
         nb = selection['nb_sel'][n].astype(int)
-        zspec = selection['SDSS_zspec'][n]
+        other_lines = selection['other_lines'][n]
+        z_src = z_NB(nb)[0]
+        NB_snr = pm_flx[nb, src] / pm_err[nb, src]
+
+        oth_raw_list = other_lines[1:-1].split()
+        if len(oth_raw_list) == 0:
+            oth_list = []
+        else:
+            oth_list = [int(item[:-1]) for item in oth_raw_list[:-1]] + [int(oth_raw_list[-1])]
+
+        # Text to write besides the plot for info
+        z_NB_name = '$z_\mathrm{NB}$'
+        z_spec_name = '$z_\mathrm{spec}$'
+        Log_LLya_name = r'$\log L_{\mathrm{Ly}\alpha}$'
+        EW_name = r'EW$_{\mathrm{Ly}\alpha, 0}$'
+        text_plot = f'''
+            Source #{n}
+            {z_NB_name} = {z_src:0.2f}
+            {z_spec_name} = {selection['SDSS_zspec'][n]:0.2f}
+            $r$ = {selection['r'][n]:0.2f}
+            {Log_LLya_name} = {selection['L_lya'][n]:0.2f}
+            {EW_name} = {selection['EW_lya'][n]:0.2f} $\AA$
+            NB S/N = {NB_snr:0.2f}
+            p = {selection['puri'][n]:0.2f}
+        '''
+
+        args = (pm_flx[:, src], pm_err[:, src],
+                cont_est_lya[:, src], cont_err_lya[:, src],
+                tile, this_x_im, this_y_im, nb,
+                oth_list, text_plot, n)
 
         if not spec_bool:
-            plot_jspectra_images(
-                pm_flx[:, src], pm_err[:, src], tile, this_x_im, this_y_im, nb, src, zspec)
+            plot_jspectra_images(*args)
         else:
-            plot_jspectra_images(
-                pm_flx[:, src], pm_err[:, src], tile, this_x_im, this_y_im, nb, src, zspec, spec, g_band)
+            plot_jspectra_images(*args, spec, g_band)

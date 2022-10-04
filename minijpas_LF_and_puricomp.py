@@ -882,16 +882,16 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 1, 4, 30, 100, '3fm'),
+        # (17, 24, 4, 8, 30, 100, 'nb'),
+        # (17, 24, 8, 12, 30, 100, 'nb'),
         (17, 24, 12, 16, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     for params in LF_parameters:
-        for qso_frac in [0.5, 0.3, 0.7, 1.]:
+        for qso_frac in [0.5]:
             gal_area = 5.54
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac

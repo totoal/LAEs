@@ -476,7 +476,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     ri = r - i
     # For z > 2.5
     # color_aux1 = (-1.5 * ri + 1.7 > gr)
-    color_aux1 = (ri < 0.9) & (gr < 0.9)
+    color_aux1 = (ri < 1.) & (gr < 1)
     # For z < 2.5
     # color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri < 1.)
     color_aux2 = np.ones(g.shape).astype(bool)
@@ -495,6 +495,18 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         w_obs_CIII = (1 + z_src) * w_CIII
 
         this_nice = True
+
+        # Check the Lyman limit
+        w_central_0 = w_central / (1 + z_src)
+        Lybreak_flx_Arr = pm_flx[w_central < 912, src]
+        Lybreak_err_Arr = pm_err[w_central < 912, src]
+        if len(Lybreak_flx_Arr) != 0:
+            Lybreak_flx = np.average(Lybreak_flx_Arr, weigths=Lybreak_err_Arr ** -2)
+            Lybreak_err = np.sum(Lybreak_err_Arr ** -2) ** -0.5
+
+            if Lybreak_flx > 3 * Lybreak_err:
+                this_nice = False
+
         for l in other_lines[src]:
             # Ignore very red and very blue NBs
             if (l > 50) | (l < 1):
@@ -504,11 +516,11 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 2)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 2)
                 | (w_obs_l > w_obs_CIII + fwhm)
             )
 
@@ -521,7 +533,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            if z_src < 2.5:
+            if z_src < 3.:
                 good_colors = color_aux2[src]
             else:
                 good_colors = color_aux1[src]
