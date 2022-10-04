@@ -498,10 +498,12 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
 
         # Check the Lyman limit
         w_central_0 = w_central / (1 + z_src)
-        Lybreak_flx_Arr = pm_flx[w_central < 912, src]
-        Lybreak_err_Arr = pm_err[w_central < 912, src]
+        w_central_0[0] = 99999
+        w_central_0[-4] = 99999
+        Lybreak_flx_Arr = pm_flx[w_central_0 < 912, src]
+        Lybreak_err_Arr = pm_err[w_central_0 < 912, src]
         if len(Lybreak_flx_Arr) != 0:
-            Lybreak_flx = np.average(Lybreak_flx_Arr, weigths=Lybreak_err_Arr ** -2)
+            Lybreak_flx = np.average(Lybreak_flx_Arr, weights=Lybreak_err_Arr ** -2)
             Lybreak_err = np.sum(Lybreak_err_Arr ** -2) ** -0.5
 
             if Lybreak_flx > 3 * Lybreak_err:

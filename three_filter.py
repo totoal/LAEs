@@ -75,7 +75,7 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
         t_NB = np.array(tcurves['t'][nb_c])
         w_NB = np.array(tcurves['w'][nb_c])
         w_EL = w_central[nb_c]
-        if 5 <= nb_c < 18: # g band range
+        if 1 <= nb_c <= 18: # g band range
             BB_LC = pm_flx[-3]
             BB_LC_err = pm_err[-3]
             t_BB_LC = np.array(tcurves['t'][-3])

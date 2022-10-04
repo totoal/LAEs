@@ -131,7 +131,7 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     ax2.add_patch(circ2)
 
     tile_name = tile_dict[tile_id]
-    ax.set_title(title, loc='left')
+    ax.set_title(title, loc='left', fontsize=10)
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
 
@@ -155,7 +155,8 @@ if __name__ == '__main__':
     sel_y_im = selection['y_im']
 
     print('Loading catalogs...')
-    pm_flx, pm_err, x_im, y_im, tile_id, number = load_minijpas_jnep(selection=True)
+    pm_flx, pm_err, x_im, y_im, tile_id, number, starprob, spCl,\
+            photoz, photoz_chi_best, photoz_odds = load_minijpas_jnep(selection=True)
     N_sel = len(selection['src'])
 
     # Estimate the continuum to plot it
@@ -219,12 +220,13 @@ if __name__ == '__main__':
         text_plot = f'''
             Source #{n}
             {z_NB_name} = {z_src:0.2f}
-            {z_spec_name} = {selection['SDSS_zspec'][n]:0.2f}
+            {z_spec_name} = {selection['SDSS_zspec'][n]:0.2f},\t\tspCl = {spCl[n]}
             $r$ = {selection['r'][n]:0.2f}
             {Log_LLya_name} = {selection['L_lya'][n]:0.2f}
             {EW_name} = {selection['EW_lya'][n]:0.2f} $\AA$
             NB S/N = {NB_snr:0.2f}
-            p = {selection['puri'][n]:0.2f}
+            p_star = {selection['puri'][n]:0.2f}
+            photo_z = {photoz[n]:0.2f}, odds = {photoz_odds[n]:0.2f}, $\chi^2$ = {photoz_chi_best[n]:0.2f}
         '''
 
         args = (pm_flx[:, src], pm_err[:, src],

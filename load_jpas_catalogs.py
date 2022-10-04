@@ -88,7 +88,8 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False):
         number = np.concatenate((number, number_i))
 
     if selection:
-        return pm_flx, pm_err, x_im, y_im, tile_id, number
+        return pm_flx, pm_err, x_im, y_im, tile_id, number, starprob, spCl,\
+            photoz, photoz_chi_best, photoz_odds
     else:
         return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, starlhood,\
             spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im, RA, DEC
