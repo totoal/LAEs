@@ -66,8 +66,8 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
     w_central = central_wavelength()
     N_sources = pm_flx.shape[1]
 
-    cont_est_lya = np.zeros((56, N_sources))
-    cont_err_lya = np.ones((56, N_sources)) ** 99.
+    cont_est_lya = np.ones((56, N_sources)) * np.inf
+    cont_err_lya = np.ones((56, N_sources)) * np.inf
 
     for nb_c in NB_Arr:
         NB = pm_flx[nb_c]
@@ -75,7 +75,7 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
         t_NB = np.array(tcurves['t'][nb_c])
         w_NB = np.array(tcurves['w'][nb_c])
         w_EL = w_central[nb_c]
-        if 1 <= nb_c <= 18: # g band range
+        if 2 <= nb_c <= 18: # g band range
             BB_LC = pm_flx[-3]
             BB_LC_err = pm_err[-3]
             t_BB_LC = np.array(tcurves['t'][-3])
@@ -97,6 +97,11 @@ def cont_est_3FM(pm_flx, pm_err, NB_Arr):
             cont_est_lya[nb_c] = 0.
             cont_err_lya[nb_c] = 99.
             continue
+
+        # Filter 1 is not inside the range of g, so we assign the value of filter 2
+        # to avoid nans
+        cont_est_lya[1] = cont_est_lya[2]
+        cont_err_lya[1] = cont_err_lya[2]
 
         _, A, B, A_err, B_err = three_filter_method(
             NB, BB_LC, BB_LU, NB_err, BB_LC_err, BB_LU_err, t_NB, w_NB, t_BB_LC, t_BB_LU,

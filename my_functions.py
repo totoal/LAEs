@@ -245,7 +245,7 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
         err = err * 1e17
 
     data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
-    cmap = data_tab['color_representation'][:-4]
+    cmap = data_tab['color_representation']
     w_central = data_tab['wavelength']
     fwhm_Arr = data_tab['width']
 
@@ -261,17 +261,17 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
                     markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
                     zorder=-99)
     ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
-                xerr=fwhm_Arr[-4] / 2,
-                fmt='none', color='purple', elinewidth=5)
+                fmt='s', markerfacecolor=cmap[-4], markersize=10,
+                ecolor='dimgray', capsize=4, capthick=1)
     ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
-                xerr=fwhm_Arr[-3] / 2,
-                fmt='none', color='green', elinewidth=5)
+                fmt='s', markerfacecolor=cmap[-3], markersize=10,
+                ecolor='dimgray', capsize=4, capthick=1)
     ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
-                xerr=fwhm_Arr[-2] / 2,
-                fmt='none', color='red', elinewidth=5)
+                fmt='s', markerfacecolor=cmap[-2], markersize=10,
+                ecolor='dimgray', capsize=4, capthick=1)
     ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
-                xerr=fwhm_Arr[-1] / 2,
-                fmt='none', color='saddlebrown', elinewidth=5)
+                fmt='s', markerfacecolor=cmap[-1], markersize=10,
+                ecolor='dimgray', capsize=4, capthick=1)
 
     try:
         if set_ylim:
@@ -451,6 +451,10 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
         & (
             mask
         )
+        # Check that cont_est is ok
+        & (
+            np.isfinite(cont_est)
+        )
     )
     return line
 
@@ -506,7 +510,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             Lybreak_flx = np.average(Lybreak_flx_Arr, weights=Lybreak_err_Arr ** -2)
             Lybreak_err = np.sum(Lybreak_err_Arr ** -2) ** -0.5
 
-            if Lybreak_flx > 3 * Lybreak_err:
+            if Lybreak_flx - pm_flx[-3, src] > 3 * Lybreak_err:
                 this_nice = False
 
         for l in other_lines[src]:
@@ -535,7 +539,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         elif len(other_lines[src]) > 1:
             pass
         else:
-            if z_src < 3.:
+            if z_src > 3.:
                 good_colors = color_aux2[src]
             else:
                 good_colors = color_aux1[src]
