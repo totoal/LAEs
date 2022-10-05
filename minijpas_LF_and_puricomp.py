@@ -973,7 +973,11 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
+<<<<<<< HEAD
         (17, 24, 1, 4, 30, 100, 'both'),
+=======
+        (17, 24, 1, 4, 30, 100, 'nb'),
+>>>>>>> parent of 011e013 (Checkpoint)
         # (17, 24, 4, 8, 30, 100, 'nb'),
         # (17, 24, 8, 12, 30, 100, 'nb'),
         (17, 24, 12, 16, 30, 100, 'nb'),
