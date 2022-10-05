@@ -43,7 +43,8 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
 
-    sf_frac = 0.5
+    sf_frac = 0.01
+    qso_LAE_frac = 0.01
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
@@ -76,31 +77,94 @@ def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
     return est_lya, err_lya, est_oth, err_oth
 
 
-def search_lines(pm_flx, pm_err, ew0_cut, ew_obs, zspec, cont_est_m):
-    cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
+def search_lines(pm_flx, pm_err, ew0_cut, ew_obs, zspec, z_min, z_max,
+                 mag_min, mag_max, mag, EW_lya, cont_est_m):
+    if cont_est_m in ['nb', '3fm']:
+        print(f'Looking for lines ({cont_est_m})')
+        cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
+            nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
-    # Lya search
-    line = is_there_line(pm_flx, pm_err, cont_est_lya, cont_err_lya, ew0_cut)
-    lya_lines, lya_cont_lines, _ = identify_lines(
-        line, pm_flx, cont_est_lya, first=True, return_line_width=True)
-    lya_lines = np.array(lya_lines)
+        # Lya search
+        line = is_there_line(pm_flx, pm_err, cont_est_lya,
+                             cont_err_lya, ew0_cut, sigma=3)
+        lya_lines, lya_cont_lines, _ = identify_lines(
+            line, pm_flx, cont_est_lya, first=True, return_line_width=True)
+        lya_lines = np.array(lya_lines)
 
-    # Other lines
-    line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_obs, obs=True, sigma=5)
-    other_lines = identify_lines(line_other, pm_flx, cont_est_other)
+        # Other lines
+        line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
+                                   ew_obs, obs=True, sigma=5)
+        other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
-    N_sources = pm_flx.shape[1]
+        N_sources = pm_flx.shape[1]
 
-    # Compute z
-    z_Arr = np.zeros(N_sources)
-    z_Arr[np.where(np.array(lya_lines) != -1)] =\
-        z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
+        # Compute z
+        z_Arr = np.zeros(N_sources)
+        z_Arr[np.where(np.array(lya_lines) != -1)] =\
+            z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
 
-    nice_z = np.abs(z_Arr - zspec) < 0.16
+        nice_z = np.abs(z_Arr - zspec) < 0.16
 
-    return cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z
+        z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
+        z_cut = (z_min < z_Arr) & (z_Arr < z_max)
+        zspec_cut = (z_min < zspec) & (zspec < z_max)
+        ew_cut = EW_lya > ew0_cut
+        mag_cut = (mag > mag_min) & (mag < mag_max)
+
+        N_sources = len(mag_cut)
+        snr = np.empty(N_sources)
+        for src in range(N_sources):
+            l = lya_lines[src]
+            snr[src] = pm_flx[l, src] / pm_err[l, src]
+        nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
+        # Nice lya selection
+        nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
+                                   cont_est_lya, z_Arr, mask=nice_lya_mask)
+    elif cont_est_m == 'both':
+        args = (pm_flx, pm_err, ew0_cut, ew_obs, zspec, z_min, z_max,
+                mag_min, mag_max, mag, EW_lya)
+        search_lines_out_nb = search_lines(*args, 'nb')
+        search_lines_out_3fm = search_lines(*args, '3fm')
+
+        nice_lya_nb = search_lines_out_nb[6]
+        nice_lya_3fm = search_lines_out_3fm[6]
+        nice_nice = ~nice_lya_nb & nice_lya_3fm
+
+        cont_est_lya = search_lines_out_nb[0]
+        cont_est_lya[:, nice_nice] = search_lines_out_3fm[0][:, nice_nice]
+        cont_err_lya = search_lines_out_nb[1]
+        cont_err_lya[:, nice_nice] = search_lines_out_3fm[1][:, nice_nice]
+
+        lya_lines = search_lines_out_nb[2]
+        lya_lines[nice_nice] = search_lines_out_3fm[2][nice_nice]
+
+        other_lines = [l3fm if nice_nice[ii] else lnb for ii, (l3fm, lnb) in enumerate(
+            zip(search_lines_out_3fm[3], search_lines_out_nb[3]))]
+
+        z_Arr = search_lines_out_nb[4]
+        z_Arr[nice_nice] = search_lines_out_3fm[4][nice_nice]
+
+        nice_z = search_lines_out_nb[5]
+        nice_z[nice_nice] = search_lines_out_3fm[5][nice_nice]
+
+        nice_lya = nice_lya_nb | nice_lya_3fm
+
+        zspec_cut = search_lines_out_nb[7]
+        zspec_cut[nice_nice] = search_lines_out_3fm[7][nice_nice]
+
+        z_cut = search_lines_out_nb[8]
+        z_cut[nice_nice] = search_lines_out_3fm[8][nice_nice]
+
+        mag_cut = search_lines_out_nb[9]
+        mag_cut[nice_nice] = search_lines_out_3fm[9][nice_nice]
+
+        ew_cut = search_lines_out_nb[10]
+        ew_cut[nice_nice] = search_lines_out_3fm[10][nice_nice]
+    else:
+        raise ValueError('Continuum estimate method not valid')
+
+    return cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z, nice_lya,\
+        zspec_cut, z_cut, mag_cut, ew_cut
 
 
 def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
@@ -161,7 +225,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                nice_z & is_qso & where_hiL & totals_mask]
     badh_to_corr = L_Arr[nice_lya & ~nice_z & (
         is_qso & is_LAE & ~where_hiL) & nb_mask & this_mag_cut]
-    badh_normal_qso = L_Arr[nice_lya & ~nice_z & (is_qso & ~is_LAE) & nb_mask & this_mag_cut]
+    badh_normal_qso = L_Arr[nice_lya & ~nice_z & (
+        is_qso & ~is_LAE) & nb_mask & this_mag_cut]
     badh_sf = L_Arr[nice_lya & ~nice_z & is_sf & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
@@ -180,7 +245,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
         good_qso_factor + hg_puri_qso_hiL * hiL_factor
     hg_comp = hg_comp_sf * sf_factor + hg_comp_qso_loL * \
         good_qso_factor + hg_comp_qso_hiL * hiL_factor
-    hb = hb_normal_qso + hb_sf * sf_factor + hb_to_corr * good_qso_factor + hb_gal * gal_factor
+    hb = hb_normal_qso + hb_sf * sf_factor + \
+        hb_to_corr * good_qso_factor + hb_gal * gal_factor
     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
     totals_qso_loL, _ = np.histogram(
         L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
@@ -442,25 +508,11 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     os.makedirs(dirname, exist_ok=True)
 
     # Estimate continuum, search lines
-    cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
-        search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
-
-    z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
-    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
-    zspec_cut = (z_min < zspec) & (zspec < z_max)
-    ew_cut = EW_lya > ew0_cut
-    mag_cut = (mag > mag_min) & (mag < mag_max)
-
-    N_sources = len(mag_cut)
-    snr = np.empty(N_sources)
-    for src in range(N_sources):
-        l = lya_lines[src]
-        snr[src] = pm_flx[l, src] / pm_err[l, src]
-    nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
-
-    # Nice lya selection
-    nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
-                               cont_est_lya, z_Arr, mask=nice_lya_mask)
+    args = (pm_flx, pm_err, ew0_cut, ew_oth, zspec, z_min, z_max,
+            mag_min, mag_max, mag, EW_lya, cont_est_m)
+    cont_est_lya, cont_err_lya, lya_lines, _, z_Arr, nice_z, nice_lya,\
+        zspec_cut, z_cut, mag_cut, ew_cut =\
+        search_lines(*args)
 
     # Estimate Luminosity
     _, _, L_Arr, _, _, _ = EW_L_NB(
@@ -522,7 +574,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 def make_corrections(params, qso_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
-    
+
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
         load_mocks('train', 'minijpas', add_errs=False)
 
@@ -595,6 +647,74 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
     return volume_abs + volume_overlap * 0.5
 
 
+def search_lines_minijpas(pm_flx, pm_err, cont_est_m, ew0_cut, ew_oth, mag, mag_min,
+                          mag_max, nb_min, nb_max):
+    if cont_est_m in ['nb', '3fm']:
+        cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
+            nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
+
+        # Lya search
+        line = is_there_line(pm_flx, pm_err, cont_est_lya,
+                             cont_err_lya, ew0_cut, mask=mask)
+        lya_lines, lya_cont_lines, _ = identify_lines(
+            line, pm_flx, cont_est_lya, first=True, return_line_width=True
+        )
+        lya_lines = np.array(lya_lines)
+
+        # Other lines
+        line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
+                                   ew_oth, obs=True, mask=mask, sigma=5)
+        other_lines = identify_lines(line_other, pm_flx, cont_est_other)
+
+        N_sources = pm_flx.shape[1]
+
+        mag_cut = (mag > mag_min) & (mag < mag_max)
+
+        z_Arr = np.zeros(N_sources)
+        z_Arr[np.where(np.array(lya_lines) != -1)] =\
+            z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
+
+        snr = np.empty(N_sources)
+        for src in range(N_sources):
+            l = lya_lines[src]
+            snr[src] = pm_flx[l, src] / pm_err[l, src]
+
+        mask = (lya_lines >= nb_min) & (
+            lya_lines <= nb_max) & mag_cut & (snr > 6)
+        nice_lya = nice_lya_select(
+            lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
+        )
+    elif cont_est_m == 'both':
+        args = (pm_flx, pm_err, cont_est_m, ew0_cut, ew_oth, mag, mag_min,
+                mag_max, nb_min, nb_max)
+        search_lines_out_nb = search_lines_minijpas(*args, 'nb')
+        search_lines_out_3fm = search_lines_minijpas(*args, '3fm')
+
+        nice_lya_nb = search_lines_out_nb[4]
+        nice_lya_3fm = search_lines_out_3fm[4]
+        nice_nice = ~nice_lya_nb & nice_lya_3fm
+
+        cont_est_lya = search_lines_out_nb[0]
+        cont_est_lya[:, nice_nice] = search_lines_out_3fm[0][:, nice_nice]
+        cont_err_lya = search_lines_out_nb[1]
+        cont_err_lya[:, nice_nice] = search_lines_out_3fm[1][:, nice_nice]
+
+        lya_lines = search_lines_out_nb[3]
+        lya_lines[nice_nice] = search_lines_out_3fm[3][nice_nice]
+
+        other_lines = [l3fm if nice_nice[ii] else lnb for ii, (l3fm, lnb) in enumerate(
+            zip(search_lines_out_3fm[5], search_lines_out_nb[5]))]
+
+        z_Arr = search_lines_out_nb[2]
+        z_Arr[nice_nice] = search_lines_out_3fm[2][nice_nice]
+
+        nice_lya = nice_lya_nb | nice_lya_3fm
+    else:
+        raise ValueError('Continuum estimate method not valid')
+
+    return cont_est_lya, cont_err_lya, z_Arr, lya_lines, nice_lya, other_lines
+
+
 def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
@@ -605,39 +725,10 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
-    cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
-
-    # Lya search
-    line = is_there_line(pm_flx, pm_err, cont_est_lya,
-                         cont_err_lya, ew0_cut, mask=mask)
-    lya_lines, lya_cont_lines, _ = identify_lines(
-        line, pm_flx, cont_est_lya, first=True, return_line_width=True
-    )
-    lya_lines = np.array(lya_lines)
-
-    # Other lines
-    line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_oth, obs=True, mask=mask, sigma=5)
-    other_lines = identify_lines(line_other, pm_flx, cont_est_other)
-
-    N_sources = pm_flx.shape[1]
-
-    mag_cut = (mag > mag_min) & (mag < mag_max)
-
-    z_Arr = np.zeros(N_sources)
-    z_Arr[np.where(np.array(lya_lines) != -1)] =\
-        z_NB(np.array(lya_cont_lines)[np.where(np.array(lya_lines) != -1)])
-
-    snr = np.empty(N_sources)
-    for src in range(N_sources):
-        l = lya_lines[src]
-        snr[src] = pm_flx[l, src] / pm_err[l, src]
-
-    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
-    nice_lya = nice_lya_select(
-        lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
-    )
+    args = (pm_flx, pm_err, cont_est_m, ew0_cut, ew_oth, mag, mag_min,
+            mag_max, nb_min, nb_max)
+    cont_est_lya, cont_err_lya, z_Arr, lya_lines, nice_lya, other_lines =\
+        search_lines_minijpas(*args)
 
     # Estimate Luminosity
     _, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
@@ -882,14 +973,14 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, '3fm'),
+        (17, 24, 1, 4, 30, 100, 'both'),
         # (17, 24, 4, 8, 30, 100, 'nb'),
         # (17, 24, 8, 12, 30, 100, 'nb'),
         (17, 24, 12, 16, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
     ]
-    
+
     for params in LF_parameters:
         for qso_frac in [0.5]:
             gal_area = 5.54

@@ -159,6 +159,10 @@ if __name__ == '__main__':
             photoz, photoz_chi_best, photoz_odds = load_minijpas_jnep(selection=True)
     N_sel = len(selection['src'])
 
+    i = flux_to_mag(pm_flx[-1], w_central[-1])
+    r = flux_to_mag(pm_flx[-2], w_central[-2])
+    g = flux_to_mag(pm_flx[-3], w_central[-3])
+
     # Estimate the continuum to plot it
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
 
@@ -227,6 +231,7 @@ if __name__ == '__main__':
             NB S/N = {NB_snr:0.2f}
             p_star = {selection['puri'][n]:0.2f}
             photo_z = {photoz[n]:0.2f}, odds = {photoz_odds[n]:0.2f}, $\chi^2$ = {photoz_chi_best[n]:0.2f}
+            g - r = {g - r:0.2f}, r - i = {r - i:0.2f}
         '''
 
         args = (pm_flx[:, src], pm_err[:, src],
