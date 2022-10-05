@@ -975,7 +975,11 @@ if __name__ == '__main__':
     LF_parameters = [
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         (17, 24, 1, 4, 30, 100, 'both'),
+=======
+        (17, 24, 1, 4, 30, 100, 'nb'),
+>>>>>>> parent of 011e013 (Checkpoint)
 =======
         (17, 24, 1, 4, 30, 100, 'nb'),
 >>>>>>> parent of 011e013 (Checkpoint)
