@@ -974,7 +974,11 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
 <<<<<<< HEAD
+<<<<<<< HEAD
         (17, 24, 1, 4, 30, 100, 'both'),
+=======
+        (17, 24, 1, 4, 30, 100, 'nb'),
+>>>>>>> parent of 011e013 (Checkpoint)
 =======
         (17, 24, 1, 4, 30, 100, 'nb'),
 >>>>>>> parent of 011e013 (Checkpoint)
