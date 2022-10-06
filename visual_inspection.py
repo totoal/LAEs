@@ -26,7 +26,7 @@ nb_exp_time = 120
 
 def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                          tile_id, x_im, y_im, nb_sel, other_lines,
-                         title, n_src, spec=None, g_band=None):
+                         plot_text, n_src, dirname, spec=None, g_band=None):
 
     if tile_id == 2520:
         survey_name = 'jnep'
@@ -131,12 +131,15 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     ax2.add_patch(circ2)
 
     tile_name = tile_dict[tile_id]
-    ax.set_title(title, loc='left', fontsize=10)
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
+    
+    ypos = ax.get_ylim()[1] + 0.5
+    for [xpos, string] in plot_text:
+        print(xpos, ypos)
+        ax.text(xpos, ypos, string)
 
     # plt.show(block=True)
-    dirname = '/home/alberto/almacen/selected_LAEs'
     os.makedirs(dirname, exist_ok=True)
     plt.savefig(f'{dirname}/{n_src}-{tile_name}-{src}.png',
                 bbox_inches='tight', facecolor='w',
@@ -163,6 +166,8 @@ if __name__ == '__main__':
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
 
     sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch() 
+
+    times_selected = np.load('tmp/times_selected.npy')
 
     # Directory of the spectra .fits files
     fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/miniJPAS_Xmatch'
@@ -217,24 +222,57 @@ if __name__ == '__main__':
         z_spec_name = '$z_\mathrm{spec}$'
         Log_LLya_name = r'$\log L_{\mathrm{Ly}\alpha}$'
         EW_name = r'EW$_{\mathrm{Ly}\alpha, 0}$'
-        text_plot = f'''
-            Source #{n}
-            {z_NB_name} = {z_src:0.2f}
-            {z_spec_name} = {selection['SDSS_zspec'][n]:0.2f},\t\tspCl = {spCl[n]}
-            $r$ = {selection['r'][n]:0.2f}
-            {Log_LLya_name} = {selection['L_lya'][n]:0.2f}
-            {EW_name} = {selection['EW_lya'][n]:0.2f} $\AA$
-            NB S/N = {NB_snr:0.2f}
-            p_star = {selection['puri'][n]:0.2f}
-            photo_z = {photoz[n]:0.2f}, odds = {photoz_odds[n]:0.2f}, $\chi^2$ = {photoz_chi_best[n]:0.2f}
-        '''
+        photoz_name = r'$z_\mathrm{phot}$'
 
+        # Direct info from the catalogs and method
+        ts = times_selected[src] * 0.2
+        if ts >= 50:
+            ts_color = 'green'
+        else:
+            ts_color = 'red'
+        text_plot_0 = (f'#{n}\n'
+                       f'\n{z_NB_name} = {z_src:0.2f}'
+                       f'\n{Log_LLya_name} = {selection["L_lya"][n]:0.2f}'
+                       f'\n{EW_name} = {selection["EW_lya"][n]:0.2f} $\AA$'
+                       f'\nTimes selected = {ts:0.1f} %')
+
+        # SDSS spectroscopic info
+        text_plot_1 = (f'{z_spec_name} = {selection["SDSS_zspec"][n]:0.2f}'
+                       f'\nspCl = {spCl[n]}')
+
+        # Photo_z
+        text_plot_2 = (f'{photoz_name} = {photoz[n]:0.2f}'
+                       f'\nodds = {photoz_odds[n]:0.2f}'
+                       f'\n$\chi^2$ = {photoz_chi_best[n]:0.2f}')
+
+        # r band and NB S/N
+        text_plot_3 = (f'$r$ = {selection["r"][n]:0.2f}'
+                      f'\nNB S/N = {NB_snr:0.1f}')
+
+        text_plot = [[3000, text_plot_0],
+                     [5100, text_plot_1],
+                     [6100, text_plot_2],
+                     [9000, text_plot_3],]
+
+        dirname = '/home/alberto/almacen/Selected_LAEs/with_spec_info'
+        print(dirname)
         args = (pm_flx[:, src], pm_err[:, src],
                 cont_est_lya[:, src], cont_err_lya[:, src],
                 tile, this_x_im, this_y_im, nb,
-                oth_list, text_plot, n)
+                oth_list, text_plot, n, dirname)
 
         if not spec_bool:
             plot_jspectra_images(*args)
         else:
             plot_jspectra_images(*args, spec, g_band)
+            
+        ####
+
+        dirname = '/home/alberto/almacen/Selected_LAEs/no_spec_info'
+        print(dirname)
+        args = (pm_flx[:, src], pm_err[:, src],
+                cont_est_lya[:, src], cont_err_lya[:, src],
+                tile, this_x_im, this_y_im, nb,
+                oth_list, text_plot, n, dirname)
+
+        plot_jspectra_images(*args)

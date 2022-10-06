@@ -14,7 +14,7 @@ w_lya = 1215.67
 
 
 def this_selection(pm_flx, pm_err, zspec, times_selected, times_nicez,
-                   ew0_cut=30, ew_other=400, nb_min=4, nb_max=16):
+                   ew0_cut=30, ew_other=100, nb_min=1, nb_max=24):
     N_sources = pm_flx.shape[1]
     # Lya search
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True,
@@ -27,7 +27,7 @@ def this_selection(pm_flx, pm_err, zspec, times_selected, times_nicez,
     # Other lines
     cont_est_other, cont_err_other = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-        ew_other, obs=True)
+        ew_other, obs=True, sigma=5)
     other_lines = identify_lines(line_other, cont_est_other, pm_err)
 
     # Compute z
@@ -61,7 +61,6 @@ def this_selection(pm_flx, pm_err, zspec, times_selected, times_nicez,
 
     times_selected += this_nice_lya.astype(int)
     # tmp
-    print(times_selected[this_nice_lya])
 
 if __name__ == '__main__':
     print('Loading mock...')

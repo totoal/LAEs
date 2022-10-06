@@ -260,16 +260,16 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
                     marker='o', markeredgecolor='dimgray', markerfacecolor=cmap[i],
                     markersize=8, ecolor='dimgray', capsize=4, capthick=1, linestyle='',
                     zorder=-99)
-    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4],
+    ax.errorbar(w_central[-4], flx[-4], yerr=err[-4], markeredgecolor='dimgray',
                 fmt='s', markerfacecolor=cmap[-4], markersize=10,
                 ecolor='dimgray', capsize=4, capthick=1)
-    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3],
+    ax.errorbar(w_central[-3], flx[-3], yerr=err[-3], markeredgecolor='dimgray',
                 fmt='s', markerfacecolor=cmap[-3], markersize=10,
                 ecolor='dimgray', capsize=4, capthick=1)
-    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2],
+    ax.errorbar(w_central[-2], flx[-2], yerr=err[-2], markeredgecolor='dimgray',
                 fmt='s', markerfacecolor=cmap[-2], markersize=10,
                 ecolor='dimgray', capsize=4, capthick=1)
-    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1],
+    ax.errorbar(w_central[-1], flx[-1], yerr=err[-1], markeredgecolor='dimgray',
                 fmt='s', markerfacecolor=cmap[-1], markersize=10,
                 ecolor='dimgray', capsize=4, capthick=1)
 
