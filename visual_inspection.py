@@ -135,7 +135,10 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     ax2.set_title(filter_labels[nb_sel])
     
     ypos = ax.get_ylim()[1] * 1.05
-    for [xpos, string] in plot_text:
+    for iii, [xpos, string] in enumerate(plot_text):
+        if spec is None:
+            if iii == 1:
+                continue
         ax.text(xpos, ypos, string)
 
     # plt.show(block=True)
@@ -232,23 +235,24 @@ if __name__ == '__main__':
                        f'\n{z_NB_name} = {z_src:0.2f}'
                        f'\n{Log_LLya_name} = {selection["L_lya"][n]:0.2f}'
                        f'\n{EW_name} = {selection["EW_lya"][n]:0.2f} $\AA$'
+                       f'\nstarprob = {starprob[where_mjj]}'
                        f'\nTimes selected = {ts:0.1f} %')
 
         # SDSS spectroscopic info
         text_plot_1 = (f'{z_spec_name} = {selection["SDSS_zspec"][n]:0.2f}'
-                       f'\nspCl = {spCl[n]}')
+                       f'\nspCl = {selection["SDSS_spCl"][n]}')
 
         # Photo_z
-        text_plot_2 = (f'{photoz_name} = {photoz[n]:0.2f}'
-                       f'\nodds = {photoz_odds[n]:0.2f}'
-                       f'\n$\chi^2$ = {photoz_chi_best[n]:0.2f}')
+        text_plot_2 = (f'{photoz_name} = {photoz[where_mjj]:0.2f}'
+                       f'\nodds = {photoz_odds[where_mjj]:0.2f}'
+                       f'\n$\chi^2$ = {photoz_chi_best[where_mjj]:0.2f}')
 
         # r band and NB S/N
         text_plot_3 = (f'$r$ = {selection["r"][n]:0.2f}'
                       f'\nNB S/N = {NB_snr:0.1f}')
 
         text_plot = [[3000, text_plot_0],
-                     [5100, text_plot_1],
+                     [5050, text_plot_1],
                      [6100, text_plot_2],
                      [9000, text_plot_3],]
 
