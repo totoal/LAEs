@@ -134,9 +134,8 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     ax1.set_title('rSDSS')
     ax2.set_title(filter_labels[nb_sel])
     
-    ypos = ax.get_ylim()[1] + 0.5
+    ypos = ax.get_ylim()[1] * 1.05
     for [xpos, string] in plot_text:
-        print(xpos, ypos)
         ax.text(xpos, ypos, string)
 
     # plt.show(block=True)
@@ -201,7 +200,6 @@ if __name__ == '__main__':
             spec_bool = False
             print('No spectrum')
 
-
         src = selection['src'][n].astype(int)
         tile = selection['tile_id'][n].astype(int)
         this_x_im = selection['x_im'][n].astype(int)
@@ -255,21 +253,20 @@ if __name__ == '__main__':
                      [9000, text_plot_3],]
 
         dirname = '/home/alberto/almacen/Selected_LAEs/with_spec_info'
-        print(dirname)
         args = (pm_flx[:, src], pm_err[:, src],
                 cont_est_lya[:, src], cont_err_lya[:, src],
                 tile, this_x_im, this_y_im, nb,
                 oth_list, text_plot, n, dirname)
 
         if not spec_bool:
-            plot_jspectra_images(*args)
+            # plot_jspectra_images(*args)
+            pass
         else:
             plot_jspectra_images(*args, spec, g_band)
             
         ####
 
         dirname = '/home/alberto/almacen/Selected_LAEs/no_spec_info'
-        print(dirname)
         args = (pm_flx[:, src], pm_err[:, src],
                 cont_est_lya[:, src], cont_err_lya[:, src],
                 tile, this_x_im, this_y_im, nb,
