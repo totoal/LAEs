@@ -247,7 +247,7 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
     data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
     cmap = data_tab['color_representation']
     w_central = data_tab['wavelength']
-    fwhm_Arr = data_tab['width']
+    # fwhm_Arr = data_tab['width']
 
     data_max = np.max(flx)
     data_min = np.min(flx)
@@ -471,7 +471,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     w_SiIV = 1397.61
     w_CIV = 1549.48
     w_CIII = 1908.73
-    # w_MgII = 2799.12
+    w_MgII = 2799.12
 
     i = flux_to_mag(pm_flx[-1], w_central[-1])
     r = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -497,6 +497,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         w_obs_SiIV = (1 + z_src) * w_SiIV
         w_obs_CIV = (1 + z_src) * w_CIV
         w_obs_CIII = (1 + z_src) * w_CIII
+        w_obs_MgII = (1 + z_src) * w_MgII
 
         this_nice = True
 
@@ -522,12 +523,13 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 2)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 2)
-                | (w_obs_l > w_obs_CIII + fwhm)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm * 1.5)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 1.5)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 1.5)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 1.5)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 1.5)
+                | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 1.5)
+                | (w_obs_l > w_obs_MgII + fwhm)
             )
 
             if ~good_l:

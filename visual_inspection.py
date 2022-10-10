@@ -84,7 +84,7 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
         ax.axvline(w_central[nb], ls='--', c='orange', zorder=-90)
 
     # Zero line
-    ax.axhline(0, linewidth=1, ls='-', c='k')
+    ax.axhline(0, linewidth=1, ls='-', c='k', zorder=-99)
 
     ax.set_xlim(3000, 9600)
 
