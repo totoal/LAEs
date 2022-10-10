@@ -98,8 +98,6 @@ def central_wavelength():
 
     return np.array(w_central)
 
-# FWHM of a curve
-
 
 def nb_fwhm(nb_ind, give_fwhm=True):
     '''
@@ -189,9 +187,7 @@ def estimate_continuum(NB_flx, NB_err, N_nb=7, IGM_T_correct=True,
                 NB_err[nb_idx + 2:]
             ))
 
-        # Conver errors to relative errors for the weights
-        # NBs_rel_errs = NBs_errs / NBs_to_avg
-        # NBs_rel_errs[NBs_rel_errs < 0] = 99.
+        # Weights for the average
         w = NBs_errs ** -2
 
         cont_est[nb_idx] = np.average(NBs_to_avg, weights=w, axis=0)
@@ -715,58 +711,3 @@ def Zero_point_error(tile_id_Arr, catname):
     zpt_err = zpt_err[:, idx]
 
     return zpt_err
-
-
-def ML_predict_L(pm_flx, pm_err, z_Arr, L_Arr, regname, L_lya=None):
-    '''
-    Predicts the L given the photometry fluxes and the peviously estimated z and L.
-    '''
-    w_central = central_wavelength()
-    NNdata = np.hstack(
-        (
-            pm_flx[2:55].T,
-            pm_flx[-3:].T,
-            pm_err[2:55].T / pm_flx[2:55].T,
-            pm_err[-3:].T / pm_flx[-3:].T,
-            L_Arr.reshape(-1, 1),
-            z_Arr.reshape(-1, 1)
-        )
-    )
-
-    ####### Pre-processing #######
-
-    # Take the relative fluxes to the selected one
-    NB_lya_position = NB_z(NNdata[:, -1].reshape(-1,))
-    for i, nb in enumerate(NB_lya_position - 2):
-        NNdata[i, :53] = (
-            flux_to_mag(NNdata[i, :53], w_central[:53])
-            - flux_to_mag(NNdata[i, :53][nb], w_central[nb + 2])
-        )
-        NNdata[i, 53: 53 +
-               3] = flux_to_mag(NNdata[i, 53: 53 + 3], w_central[-3:])
-
-    NNdata[~np.isfinite(NNdata)] = 99.
-
-    # MinMaxScaler
-    with open(f'MLmodels/{regname}_QSO-SF_scaler.sav', 'rb') as file:
-        mms = pickle.load(file)
-    NNdata = mms.transform(NNdata)
-
-    # PCA
-    with open(f'MLmodels/{regname}_QSO-SF_pca.sav', 'rb') as file:
-        pca = pickle.load(file)
-    NNdata = pca.transform(NNdata)
-
-    ##############################
-
-    # Import the regressor
-    with open(f'MLmodels/{regname}_QSO-SF_regressor.sav', 'rb') as file:
-        reg = pickle.load(file)
-
-    reg.set_params(n_jobs=-1, verbose=0)
-
-    L_Arr_pred = reg.predict(NNdata)
-    if L_lya is not None:
-        print(f'Score: {reg.score(NNdata, L_lya)}')
-
-    return L_Arr_pred

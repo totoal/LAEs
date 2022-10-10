@@ -165,7 +165,7 @@ if __name__ == '__main__':
     N_sel = len(selection['src'])
 
     # Estimate the continuum to plot it
-    cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=True)
+    cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
 
     sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch() 
 
