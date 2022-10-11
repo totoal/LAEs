@@ -287,18 +287,15 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
+    LF_dirname = '/home/alberto/cosmos/LAEs/Luminosity_functions/LF_r17-24_nb8-12_ew30_ewoth100_nb_0.5'
+
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
 
     dirname = './figures'
 
     for survey_name in survey_list:
-        puri2d = np.load(f'npy/puri2d_{survey_name}.npy')
-        comp2d = np.load(f'npy/comp2d_{survey_name}.npy')
+        puri2d = np.load(f'{LF_dirname}/puri2d_{survey_name}.npy')
+        comp2d = np.load(f'{LF_dirname}/comp2d_{survey_name}.npy')
 
         puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
-
-    # PURICOMP 1D
-    dirname = './Luminosity_functions/LF_r17-24_nb4-8_ew30_ewoth400_nb'
-    save_dirname = './figures'
-    puricomp1d_plot(dirname, save_dirname)
