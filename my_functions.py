@@ -248,7 +248,7 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False, fs=15):
     data_max = np.max(flx)
     data_min = np.min(flx)
     y_max = (data_max - data_min) * 2/3 + data_max
-    y_min = data_min - (data_max - data_min) * 0.5
+    y_min = data_min - (data_max - data_min) * 0.3
 
     ax = plt.gca()
     for i, w in enumerate(w_central[:-4]):

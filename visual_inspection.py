@@ -189,6 +189,29 @@ def plot_paper(pm_flx, pm_err, cont_est, cont_err,
 
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True, fs=11)
 
+    # Zero line
+    ax.axhline(0, linewidth=1, ls='-', c='k', zorder=-99)
+
+    ax.set_xlim(3000, 9600)
+
+    # Plot the continuum
+    ax.errorbar(w_central[1:40], cont_est[1:40] * 1e17,
+                yerr=cont_err[1:40] * 1e17, c='k', ls='-')
+
+    #### Plot SDSS spectrum if available ####
+    if g_band is not None and spec is not None:
+        # Normalizing factor:
+        norm = pm_flx[-3] / g_band
+        spec_flx = spec['MODEL'] * norm
+        spec_w = 10 ** spec['LOGLAM']
+
+        ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
+    
+    ylim = list(ax.get_ylim())
+    ylim[1] = np.max([ylim[1], spec_flx.max() * 1.1])
+
+    ax.set_ylim(ylim)
+
     text_h = ax.get_ylim()[1] * 1.05
     # Draw line on the selected NB
     ax.axvline(w_central[nb_sel], color='r', linestyle='--')
@@ -211,24 +234,6 @@ def plot_paper(pm_flx, pm_err, cont_est, cont_err,
     for nb in other_lines:
         print(nb)
         ax.axvline(w_central[nb], ls='--', c='orange', zorder=-90)
-
-    # Zero line
-    ax.axhline(0, linewidth=1, ls='-', c='k', zorder=-99)
-
-    ax.set_xlim(3000, 9600)
-
-    # Plot the continuum
-    ax.errorbar(w_central[1:40], cont_est[1:40] * 1e17,
-                yerr=cont_err[1:40] * 1e17, c='k', ls='-')
-
-    #### Plot SDSS spectrum if available ####
-    if g_band is not None and spec is not None:
-        # Normalizing factor:
-        norm = pm_flx[-3] / g_band
-        spec_flx = spec['MODEL'] * norm
-        spec_w = 10 ** spec['LOGLAM']
-
-        ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
 
     #########################################
 
@@ -398,7 +403,6 @@ if __name__ == '__main__':
                     this_tile_id, this_number, this_x_im, this_y_im, nb,
                     oth_list, text_plot, n, dirname)
             plot_paper(*args, z_src, spec, g_band)
-            break
             
         ####
 
