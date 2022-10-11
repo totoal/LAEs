@@ -25,7 +25,7 @@ nb_exp_time = 120
 
 
 def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
-                         tile_id, x_im, y_im, nb_sel, other_lines,
+                         tile_id, number, x_im, y_im, nb_sel, other_lines,
                          plot_text, n_src, dirname, spec=None, g_band=None):
 
     if tile_id == 2520:
@@ -148,6 +148,131 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                 edgecolor='w', dpi=500)
     plt.close()
 
+def plot_paper(pm_flx, pm_err, cont_est, cont_err,
+               tile_id, number, x_im, y_im, nb_sel, other_lines,
+               plot_text, n_src, dirname, redshift, spec=None, g_band=None):
+    if tile_id == 2520:
+        survey_name = 'jnep'
+    else:
+        survey_name = 'minijpas'
+
+    # Lya redshift
+    z_src = z_NB(nb_sel)[0]
+
+    # Relevant spectral features
+    spec_fts = {
+        'Ly lim': 912 * (1 + z_src),
+        'CIV': 1549.48 * (1 + z_src),
+        r'Ly $\beta$': 1025.18 * (1 + z_src),
+        'CIII': 1908.73 * (1 + z_src),
+        'MgII': 2799.12 * (1 + z_src)
+    }
+
+    filenamer = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{59}.fits'
+    filenamenb = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{nb_sel + 1}.fits'
+
+    box_side = 16
+    y_range = slice(x_im - box_side, x_im + box_side + 1)
+    x_range = slice(y_im - box_side, y_im + box_side + 1)
+    im_r = fits.open(filenamer)[1].data[x_range, y_range]
+    im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
+
+    # Normalize by the bandwidth
+    im_r = im_r / fwhm_Arr[-2] * bb_exp_time
+    im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
+
+    # Get max and min of the images to establish common scale
+    # im_max = np.max([im_r.max(), im_nb.max()])
+    # im_min = np.min([im_r.min(), im_nb.min()])
+
+    fig = plt.figure(figsize=(6, 2.4))
+
+    ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True, fs=11)
+
+    text_h = ax.get_ylim()[1] * 1.05
+    # Draw line on the selected NB
+    ax.axvline(w_central[nb_sel], color='r', linestyle='--')
+    ax.text(w_central[nb_sel] + 0.1, text_h,
+            r'Ly$\alpha$', fontsize=8, color='dimgray')
+    # Draw other important features
+    for name, w_value in spec_fts.items():
+        if w_value > 9500:
+            continue
+        ax.axvline(w_value, color='dimgray', linestyle=':')
+        if name == 'Ly lim':
+            if redshift < 4:
+                continue
+            this_text_h = text_h * 1.065
+        else:
+            this_text_h = text_h
+        ax.text(w_value - 100, this_text_h, name,
+                color='dimgray', fontsize=8, in_layout=True)
+    # Draw line on other lines selected
+    for nb in other_lines:
+        print(nb)
+        ax.axvline(w_central[nb], ls='--', c='orange', zorder=-90)
+
+    # Zero line
+    ax.axhline(0, linewidth=1, ls='-', c='k', zorder=-99)
+
+    ax.set_xlim(3000, 9600)
+
+    # Plot the continuum
+    ax.errorbar(w_central[1:40], cont_est[1:40] * 1e17,
+                yerr=cont_err[1:40] * 1e17, c='k', ls='-')
+
+    #### Plot SDSS spectrum if available ####
+    if g_band is not None and spec is not None:
+        # Normalizing factor:
+        norm = pm_flx[-3] / g_band
+        spec_flx = spec['MODEL'] * norm
+        spec_w = 10 ** spec['LOGLAM']
+
+        ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
+
+    #########################################
+
+    wh = 0.25
+    ax1 = fig.add_axes([1 - 1.5 * wh - 0.1, 0.61, wh, wh])
+    ax2 = fig.add_axes([1 - wh - 0.1, 0.61, wh, wh])
+
+    ax1.tick_params(axis='both', bottom=False, top=False,
+                    labelbottom=False, labeltop=False,
+                    right=False, left=False,
+                    labelright=False, labelleft=False)
+    ax2.tick_params(axis='both', bottom=False, top=False,
+                    labelbottom=False, labeltop=False,
+                    right=False, left=False,
+                    labelright=False, labelleft=False)
+
+    # ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
+    # ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
+    ax1.imshow(im_r, cmap='binary')
+    ax2.imshow(im_nb, cmap='binary')
+
+    # Add circumference showing aperture 3arcsec diameter
+    aper_r_px = 1.5 / 0.23
+    circ1 = plt.Circle((box_side, box_side),
+                       radius=aper_r_px, ec='yellow', fc='none')
+    circ2 = plt.Circle((box_side, box_side),
+                       radius=aper_r_px, ec='yellow', fc='none')
+    ax1.add_patch(circ1)
+    ax2.add_patch(circ2)
+
+    tile_name = tile_dict[tile_id]
+    ax1.set_xlabel('rSDSS', fontsize=9)
+    ax2.set_xlabel(filter_labels[nb_sel], fontsize=9)
+
+    ax.tick_params(labelsize=9, direction='in', which='both')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    
+    os.makedirs(dirname, exist_ok=True)
+    plt.savefig(f'{dirname}/{n_src}-{tile_name}-{src}.png',
+                bbox_inches='tight', facecolor='w',
+                edgecolor='w', dpi=500, pad_inches=0)
+    plt.close()
+
 def nanomaggie_to_flux(nmagg, wavelength):
     mAB = -2.5 * np.log10(nmagg * 1e-9)
     flx = mag_to_flux(mAB, wavelength)
@@ -204,7 +329,6 @@ if __name__ == '__main__':
             print('No spectrum')
 
         src = selection['src'][n].astype(int)
-        tile = selection['tile_id'][n].astype(int)
         this_x_im = selection['x_im'][n].astype(int)
         this_y_im = selection['y_im'][n].astype(int)
         nb = selection['nb_sel'][n].astype(int)
@@ -257,23 +381,31 @@ if __name__ == '__main__':
                      [9000, text_plot_3],]
 
         dirname = '/home/alberto/almacen/Selected_LAEs/with_spec_info'
-        args = (pm_flx[:, src], pm_err[:, src],
-                cont_est_lya[:, src], cont_err_lya[:, src],
-                tile, this_x_im, this_y_im, nb,
-                oth_list, text_plot, n, dirname)
-
         if not spec_bool:
             # plot_jspectra_images(*args)
             pass
         else:
+            args = (pm_flx[:, src], pm_err[:, src],
+                    cont_est_lya[:, src], cont_err_lya[:, src],
+                    this_tile_id, this_number, this_x_im, this_y_im, nb,
+                    oth_list, text_plot, n, dirname)
+
             plot_jspectra_images(*args, spec, g_band)
+
+            dirname = '/home/alberto/almacen/Selected_LAEs/paper'
+            args = (pm_flx[:, src], pm_err[:, src],
+                    cont_est_lya[:, src], cont_err_lya[:, src],
+                    this_tile_id, this_number, this_x_im, this_y_im, nb,
+                    oth_list, text_plot, n, dirname)
+            plot_paper(*args, z_src, spec, g_band)
+            break
             
         ####
 
         dirname = '/home/alberto/almacen/Selected_LAEs/no_spec_info'
         args = (pm_flx[:, src], pm_err[:, src],
                 cont_est_lya[:, src], cont_err_lya[:, src],
-                tile, this_x_im, this_y_im, nb,
+                this_tile_id, this_number, this_x_im, this_y_im, nb,
                 oth_list, text_plot, n, dirname)
 
         plot_jspectra_images(*args)

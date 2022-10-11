@@ -231,7 +231,7 @@ def IGM_TRANSMISSION(w_Arr, A=-0.001845, B=3.924):
     return np.exp(A * (w_Arr / 1215.67)**B)
 
 
-def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
+def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False, fs=15):
     '''
     Generates a plot with the JPAS data.
     '''
@@ -275,13 +275,13 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False):
     except:
         pass
 
-    ax.set_xlabel('$\lambda\ (\AA)$', size=15)
+    ax.set_xlabel('$\lambda\ (\AA)$', size=fs)
     if e17scale:
         ax.set_ylabel(
-            r'$f_\lambda\cdot10^{17}$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+            r'$f_\lambda\cdot10^{17}$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=fs)
     else:
         ax.set_ylabel(
-            '$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=15)
+            '$f_\lambda$ (erg cm$^{-2}$ s$^{-1}$ $\AA^{-1}$)', size=fs)
 
     return ax
 

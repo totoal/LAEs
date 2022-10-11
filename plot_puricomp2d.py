@@ -287,7 +287,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_dirname = '/home/alberto/cosmos/LAEs/Luminosity_functions/LF_r17-24_nb8-12_ew30_ewoth100_nb_0.5'
+    LF_dirname = 'npy'
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
