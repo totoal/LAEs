@@ -10,7 +10,7 @@ import astropy.units as u
 w_central = central_wavelength()
 
 
-def load_QSO_mock(name, add_errs=True, how_many=-1):
+def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -25,6 +25,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
 
     qso_flx = data_qso.to_numpy()[:, 1: 60 + 1].T
     qso_err = data_qso.to_numpy()[:, 60 + 1: 120 + 1].T
+    mag = flux_to_mag(qso_flx[-2], w_central[-2])
 
     if add_errs:
         qso_flx += qso_err * np.random.normal(size=qso_err.shape)
@@ -36,7 +37,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1):
     # Remove bad sources
     good_src = []
     for src in range(qso_err.shape[1]):
-        bad_src = ()
+        bad_src = (mag < mag_min - 0.25) & (mag > mag_max + 0.25)
         if bad_src:
             continue
         else:
@@ -68,7 +69,7 @@ def angular_radius(R, z):
     return R_ang.to(u.deg).value
 
 
-def load_GAL_mock(name, add_errs=True):
+def load_GAL_mock(name, add_errs=True, mag_min=0, mag_max=99):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -100,7 +101,7 @@ def load_GAL_mock(name, add_errs=True):
         bad_src = (
             (gal_zspec[src] > 2)
             | color_aux2[src]
-            | (r[src] > 24.25) | (r[src] < 16)
+            | ((r < mag_min - 0.25) & (r > mag_max + 0.25))
         )
         if bad_src:
             continue
@@ -128,7 +129,7 @@ def load_GAL_mock(name, add_errs=True):
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L, R_ang
 
 
-def load_SF_mock(name, add_errs=True, how_many=-1):
+def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -143,6 +144,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
     sf_flx = data.to_numpy()[:, 1: 60 + 1].T.astype(float)
     sf_err = data.to_numpy()[:, 60 + 1: 120 + 1].T.astype(float)
+    mag = flux_to_mag(sf_flx[-2], w_central[-2])
 
     if add_errs:
         sf_flx += sf_err * np.random.normal(size=sf_err.shape)
@@ -154,7 +156,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
     # Remove bad sources
     good_src = []
     for src in range(sf_err.shape[1]):
-        bad_src = ()
+        bad_src = (mag < mag_min - 0.25) & (mag > mag_max + 0.25)
         if bad_src:
             continue
         else:
@@ -172,12 +174,13 @@ def load_SF_mock(name, add_errs=True, how_many=-1):
 
 
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
-                  add_errs=True, qso_LAE_frac=1., sf_frac=1.):
+                  add_errs=True, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(
-        name_qso, add_errs)
+        name_qso, add_errs, mag_min=mag_min, magmax=mag_max)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
-        name_gal, add_errs)
-    sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs)
+        name_gal, add_errs, mag_min=mag_min, magmax=mag_max)
+    sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs, 
+                                                         magmin=mag_min, mag_max=mag_max)
 
     # Truncate SF
     if sf_frac < 1:

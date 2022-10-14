@@ -36,7 +36,8 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
     return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
 
 
-def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
+def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
+               mag_min=0, mag_max=99):
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
@@ -47,7 +48,7 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.):
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac)
+                                             qso_LAE_frac, sf_frac, mag_max, mag_min)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -523,8 +524,9 @@ def make_corrections(params, qso_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
+    mag_min, mag_max = params[:2]
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-        load_mocks('train', 'minijpas', add_errs=False)
+        load_mocks('train', 'minijpas', add_errs=False, mag_min=mag_min, mag_max=mag_max)
 
     print()
     for survey_name in survey_name_list:

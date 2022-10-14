@@ -468,7 +468,7 @@ if __name__ == '__main__':
     L_max = 46
     area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
-    for survey_name in ['minijpas']:
+    for survey_name in ['jnep']:
         for train_or_test in ['train']:
             main(part, area, z_min, z_max, L_min, L_max,
                  survey_name, train_or_test, 'D_deep_')
@@ -484,7 +484,7 @@ if __name__ == '__main__':
 
     area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
 
-    survey_name = 'minijpas'
+    survey_name = 'jnep'
     train_or_test = 'train'
         
     main(part, area, z_min, z_max, L_min, L_max, survey_name,
