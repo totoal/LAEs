@@ -367,7 +367,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         # Extract the photometry of Ly-alpha (L_Arr)
         if z[src] > 0:
             lya_band[src] = JPAS_synth_phot(
-                spec['FLUX'], 10 ** spec['LOGLAM'], lya_band_tcurves
+                spec['FLUX'] * 1e-17, 10 ** spec['LOGLAM'], lya_band_tcurves
             )
         if ~np.isfinite(lya_band[src]):
             lya_band[src] = 0
@@ -405,7 +405,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     EW0 = F_line / f_cont / (1 + z)
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
-
+    
     idx_closest, _, L_factor, new_z = duplicate_sources(
         area, z, L, z_min, z_max, L_min, L_max
     )
@@ -441,7 +441,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     )
 
     # Let's remove the sources with very low r magnitudes
-    low_r_mask = (pm_SEDs[-2] > 1e-22)
+    low_r_mask = (pm_SEDs[-2] > 1e-21)
     print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
 
     pd.DataFrame(
