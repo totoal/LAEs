@@ -201,8 +201,9 @@ def main(part, survey_name, t_or_t):
         EW_out_Arr.append(my_e)
         z_out_Arr.append(my_z)
 
-    pm_SEDs, pm_SEDs_err = add_errors(
-        pm_SEDs, apply_err=False, survey_name=survey_name)
+    # pm_SEDs, pm_SEDs_err = add_errors(
+    #     pm_SEDs, apply_err=False, survey_name=survey_name)
+    pm_SEDs_err = np.zeros(pm_SEDs.shape)
 
     # Output L_Arr is converted into rest-frame
     z_out_Arr = np.array(z_out_Arr)
@@ -223,7 +224,7 @@ def main(part, survey_name, t_or_t):
 if __name__ == '__main__':
     t0 = time()
 
-    for survey_name in ['minijpas']:
+    for survey_name in ['jnep']:
         for t_or_t in ['train']:
             main(sys.argv[1], survey_name, t_or_t)
 

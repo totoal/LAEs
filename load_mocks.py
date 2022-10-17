@@ -24,20 +24,25 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     data_qso = pd.concat(fi, axis=0, ignore_index=True)
 
     qso_flx = data_qso.to_numpy()[:, 1: 60 + 1].T
-    qso_err = data_qso.to_numpy()[:, 60 + 1: 120 + 1].T
+    # qso_err = data_qso.to_numpy()[:, 60 + 1: 120 + 1].T
+    qso_err = np.zeros(qso_flx.shape)
     mag = flux_to_mag(qso_flx[-2], w_central[-2])
 
     if add_errs:
         qso_flx += qso_err * np.random.normal(size=qso_err.shape)
 
-    qso_L = data_qso['L_lya'].to_numpy()
-    EW_qso = data_qso['EW0'].to_numpy()
     qso_zspec = data_qso['z'].to_numpy()
+    try:
+        qso_L = data_qso['L_lya'].to_numpy()
+        EW_qso = data_qso['EW0'].to_numpy()
+    except:
+        qso_L = np.zeros(qso_zspec.shape)
+        EW_qso = np.zeros(qso_zspec.shape)
 
     # Remove bad sources
     good_src = []
     for src in range(qso_err.shape[1]):
-        bad_src = (mag < mag_min - 0.25) & (mag > mag_max + 0.25)
+        bad_src = (mag[src] < mag_min - 0.25) & (mag[src] > mag_max + 0.25)
         if bad_src:
             continue
         else:
@@ -101,7 +106,7 @@ def load_GAL_mock(name, add_errs=True, mag_min=0, mag_max=99):
         bad_src = (
             (gal_zspec[src] > 2)
             | color_aux2[src]
-            | ((r < mag_min - 0.25) & (r > mag_max + 0.25))
+            | ((r[src] < mag_min - 0.25) & (r [src]> mag_max + 0.25))
         )
         if bad_src:
             continue
@@ -156,7 +161,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     # Remove bad sources
     good_src = []
     for src in range(sf_err.shape[1]):
-        bad_src = (mag < mag_min - 0.25) & (mag > mag_max + 0.25)
+        bad_src = (mag[src] < mag_min - 0.25) & (mag[src] > mag_max + 0.25)
         if bad_src:
             continue
         else:
@@ -176,11 +181,11 @@ def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
                   add_errs=True, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(
-        name_qso, add_errs, mag_min=mag_min, magmax=mag_max)
+        name_qso, add_errs, mag_min=mag_min, mag_max=mag_max)
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
-        name_gal, add_errs, mag_min=mag_min, magmax=mag_max)
+        name_gal, add_errs, mag_min=mag_min, mag_max=mag_max)
     sf_flx, sf_err, sf_zspec, EW_sf, sf_L = load_SF_mock(name_sf, add_errs, 
-                                                         magmin=mag_min, mag_max=mag_max)
+                                                         mag_min=mag_min, mag_max=mag_max)
 
     # Truncate SF
     if sf_frac < 1:
