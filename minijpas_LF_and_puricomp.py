@@ -29,6 +29,9 @@ nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
 
+#### HOW MANY SFG ####
+how_many_sf = 6
+
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
 
@@ -47,13 +50,14 @@ def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1.,
     name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
     name_qso_bad = 'QSO_double_train_jnep_DR16_D_deep_0'
     name_qso_hiL = 'QSO_double_train_jnep_DR16_highL2_D_deep_0'
-    name_sf = 'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_deep_0'
+    name_sf = 'LAE_12.5deg_z2-4.25_train_jnep_VUDS_deep_0'
 
     sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_max, mag_min)
+                                             qso_LAE_frac, sf_frac, mag_max, mag_min,
+                                             how_many_sf=how_many_sf)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -900,12 +904,12 @@ if __name__ == '__main__':
     ]
     
     for params in LF_parameters:
-        for qso_frac in [0.3, 1.]:
+        for qso_frac in [0.5]:
             gal_area = 5.54
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
             hiL_qso_area = 4000 / qso_frac
-            sf_area = 200
+            sf_area = 200 * how_many_sf / 32
 
             # the proportional factors are made in relation to bad_qso
             # so bad_qso_factor = 1

@@ -284,7 +284,7 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False, fs=15):
     return ax
 
 
-def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
+def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=1, first=False,
                    return_line_width=False):
     '''
     Returns a list of N lists with the index positions of the lines.

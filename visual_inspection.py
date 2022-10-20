@@ -397,7 +397,7 @@ if __name__ == '__main__':
 
             plot_jspectra_images(*args, spec, g_band)
 
-            dirname = '/home/alberto/almacen/Selected_LAEs/paper'
+            dirname = '/home/alberto/almacen/Selected_LAEs/paper_no_other_lines'
             args = (pm_flx[:, src], pm_err[:, src],
                     cont_est_lya[:, src], cont_err_lya[:, src],
                     this_tile_id, this_number, this_x_im, this_y_im, nb,
