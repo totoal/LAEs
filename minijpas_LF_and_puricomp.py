@@ -30,7 +30,7 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 
 #### HOW MANY SFG ####
-how_many_sf = 6
+how_many_sf = 32
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -41,22 +41,22 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
 
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
-    # name_qso = 'QSO_100000_0'
-    # name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
-    # name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
-    # name_gal = f'GAL_LC_lines_0'
-    # name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
-    name_gal = 'GAL_LC_0_deep'
-    name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
-    name_qso_bad = 'QSO_double_train_jnep_DR16_D_deep_0'
-    name_qso_hiL = 'QSO_double_train_jnep_DR16_highL2_D_deep_0'
-    name_sf = 'LAE_12.5deg_z2-4.25_train_jnep_VUDS_deep_0'
+    name_qso = 'QSO_100000_0'
+    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
+    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
+    name_gal = f'GAL_LC_lines_0'
+    name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
+    # name_gal = 'GAL_LC_0_deep'
+    # name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
+    # name_qso_bad = 'QSO_double_train_jnep_DR16_D_deep_0'
+    # name_qso_hiL = 'QSO_double_train_jnep_DR16_highL2_D_deep_0'
+    # name_sf = 'LAE_12.5deg_z2-4.25_train_jnep_VUDS_deep_0'
 
     sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_max, mag_min,
+                                             qso_LAE_frac, sf_frac, mag_min, mag_max,
                                              how_many_sf=how_many_sf)
 
     N_gal = count_true(is_gal)
@@ -316,7 +316,10 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
                          good_qso_factor, gal_factor):
-    r_bins = np.linspace(mag_min, mag_max, 10 + 1)
+    r_bins = np.linspace(mag_min, mag_max, 50 + 1)
+
+    r_bins_c = [sum(r_bins[i] + r_bins[i + 1]) * 0.5 for i in range(len(r_bins) - 1)]
+    L_bins_c = [sum(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)]
 
     # Perturb L
     N_iter = 500
@@ -425,8 +428,13 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         + h2d_sel_gal * gal_factor
     )
 
-    puri2d = h2d_nice / h2d_sel
-    comp2d = h2d_nice / h2d_parent
+    # Make the mats smooooooth
+    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.2, 0.2)
+    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.2, 0.2)
+    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.2, 0.2)
+
+    puri2d = h2d_nice_smooth / h2d_sel_smooth
+    comp2d = h2d_nice_smooth / h2d_parent_smooth
 
     return puri2d, comp2d, L_bins, r_bins
 
@@ -478,7 +486,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     )
 
     # Compute and save L corrections and errors
-    L_binning = np.logspace(40, 47, 25 + 1)
+    L_binning = np.logspace(40, 47, 100 + 1)
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     Lmask = nice_z & nice_lya & (L_lya > 43.2)
     L_Lbin_err, median_L = compute_L_Lbin_err(
@@ -894,13 +902,14 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (23.5, 26, 1, 24, 30, 100, 'nb')
+        # (23.5, 26, 1, 24, 30, 100, 'nb')
         # (17, 24, 1, 4, 30, 100, 'nb'),
         # (17, 24, 4, 8, 30, 100, 'nb'),
         # (17, 24, 8, 12, 30, 100, 'nb'),
         # (17, 24, 12, 16, 30, 100, 'nb'),
         # (17, 24, 16, 20, 30, 100, 'nb'),
         # (17, 24, 20, 24, 30, 100, 'nb'),
+        (17, 24, 1, 24, 30, 100, 'nb'),
     ]
     
     for params in LF_parameters:

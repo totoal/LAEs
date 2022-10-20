@@ -97,6 +97,31 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
                 bbox_inches='tight', facecolor='white',)
     plt.close()
 
+    ####################
+    # Alternative Plot #
+    ####################
+    fig, ax = plt.subplots(figsize=(6, 6))
+
+    ax_cbar = fig.add_axes([width + 0.02, 0, cbar_width, height])
+    sns.heatmap(puri.T / comp.T, ax=ax, vmin=0, vmax=5, cbar_ax=ax_cbar, cmap=cmap)
+
+    ax.set_yticks(yticks)
+    ax.set_yticklabels(ytick_labels, rotation='horizontal')
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xtick_labels, rotation='vertical')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
+    ax.tick_params(axis='y', direction='in', labelsize=16)
+    ax.tick_params(axis='x', direction='in', labelsize=16)
+    ax.spines[:].set_visible(True)
+    ax.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax.set_ylabel('$r$ (magAB)', fontsize=22)
+    # ax.set_xlim(8, 22)
+
+    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}_alt.pdf',
+                bbox_inches='tight', facecolor='white',)
+    plt.close()
+
 
 def load_puricomp1d(dirname):
     comp_list = [

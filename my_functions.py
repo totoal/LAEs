@@ -303,7 +303,7 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=1, first=False,
         fil = 0
         this_src_lines = []  # The list of lines
         this_cont_lines = []  # The list of continuum indices of lines
-        this_src_line_flx = [] # The list of lengths of this src lines
+        this_src_line_flx = []  # The list of lengths of this src lines
 
         while fil < N_fil:
             this_line = []  # The list of contiguous indices of this line
@@ -334,7 +334,8 @@ def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=1, first=False,
             this_src_lines.append(
                 np.argmax(qso_flx[np.array(this_line) + nb_min, src]) + aux
             )
-            this_src_line_flx.append(qso_flx[np.array(this_line) + nb_min, src].sum())
+            this_src_line_flx.append(
+                qso_flx[np.array(this_line) + nb_min, src].sum())
 
         if first:  # If first=True,
             try:
@@ -432,7 +433,8 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     line = (
         # 3-sigma flux excess
         (
-            pm_flx[:-4] - cont_est > sigma * (pm_err[:-4]**2 + cont_err**2) ** 0.5
+            pm_flx[:-4] - cont_est > sigma * \
+            (pm_err[:-4]**2 + cont_err**2) ** 0.5
         )
         # EW0 min threshold
         & (
@@ -502,7 +504,8 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         Lybreak_flx_Arr = pm_flx[w_central_0 < 912, src]
         Lybreak_err_Arr = pm_err[w_central_0 < 912, src]
         if len(Lybreak_flx_Arr) != 0:
-            Lybreak_flx = np.average(Lybreak_flx_Arr, weights=Lybreak_err_Arr ** -2)
+            Lybreak_flx = np.average(
+                Lybreak_flx_Arr, weights=Lybreak_err_Arr ** -2)
             Lybreak_err = np.sum(Lybreak_err_Arr ** -2) ** -0.5
 
             if Lybreak_flx - pm_flx[-3, src] > 3 * Lybreak_err:
@@ -709,3 +712,32 @@ def Zero_point_error(tile_id_Arr, catname):
     zpt_err = zpt_err[:, idx]
 
     return zpt_err
+
+
+def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
+    '''
+    X_Arr  es el eje X de la matriz
+    Y_Arr  es el eje Y de la matriz
+    Mat es la matrix
+    Dx  es el delta X que quieres usar para la integracion
+    Dx  es el delta Y que quieres usar para la integracion
+    '''
+    new_Mat = np.zeros_like(Mat)
+    for i in range(0, Mat.shape[0]):
+
+        for j in range(0, Mat.shape[1]):
+
+            mask_i = (X_Arr > X_Arr[i] - 0.5 * Dx) * (X_Arr < X_Arr[i] + 0.5 * Dx)
+            mask_j = (Y_Arr > Y_Arr[j] - 0.5 * Dy) * (Y_Arr < Y_Arr[j] + 0.5 * Dy)
+
+            index_i_Arr = np.arange(0, len(mask_i))
+            index_j_Arr = np.arange(0, len(mask_j))
+
+            i_min = np.amin(index_i_Arr[mask_i])
+            j_min = np.amin(index_j_Arr[mask_j])
+            i_max = np.amax(index_i_Arr[mask_i])
+            j_max = np.amax(index_j_Arr[mask_j])
+
+            new_Mat[i, j] = np.nanmean(Mat[i_min:i_max, j_min:j_max])
+
+    return new_Mat
