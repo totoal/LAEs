@@ -284,7 +284,7 @@ def plot_JPAS_source(flx, err, set_ylim=True, e17scale=False, fs=15):
     return ax
 
 
-def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=1, first=False,
+def identify_lines(line_Arr, qso_flx, cont_flx, nb_min=0, first=False,
                    return_line_width=False):
     '''
     Returns a list of N lists with the index positions of the lines.
@@ -724,9 +724,7 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
     '''
     new_Mat = np.zeros_like(Mat)
     for i in range(0, Mat.shape[0]):
-
         for j in range(0, Mat.shape[1]):
-
             mask_i = (X_Arr > X_Arr[i] - 0.5 * Dx) * (X_Arr < X_Arr[i] + 0.5 * Dx)
             mask_j = (Y_Arr > Y_Arr[j] - 0.5 * Dy) * (Y_Arr < Y_Arr[j] + 0.5 * Dy)
 
@@ -738,6 +736,6 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
             i_max = np.amax(index_i_Arr[mask_i])
             j_max = np.amax(index_j_Arr[mask_j])
 
-            new_Mat[i, j] = np.nanmean(Mat[i_min:i_max, j_min:j_max])
+            new_Mat[i, j] = np.sum(Mat[i_min:i_max, j_min:j_max])
 
     return new_Mat

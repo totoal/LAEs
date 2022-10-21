@@ -46,12 +46,12 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
                         color='k', capsize=3, linestyle='')
 
     # TICKS
-    xticks = range(len(L_bins))[1::2]  # Only odd xticks
-    yticks = range(len(r_bins))[1::2]  # Only odd yticks
+    xticks = range(len(L_bins))[1::5]  # Only odd xticks
+    yticks = range(len(r_bins))[1::10]  # Only odd yticks
     xtick_labels = ['{0:0.1f}'.format(n)
-                    for n in L_bins][1::2]  # Only odd xticks
+                    for n in L_bins][1::5]  # Only odd xticks
     ytick_labels = ['{0:0.1f}'.format(n)
-                    for n in r_bins][1::2]  # Only odd yticks
+                    for n in r_bins][1::10]  # Only odd yticks
 
     ax0.set_yticks(yticks)
     ax0.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -103,7 +103,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     fig, ax = plt.subplots(figsize=(6, 6))
 
     ax_cbar = fig.add_axes([width + 0.02, 0, cbar_width, height])
-    sns.heatmap(puri.T / comp.T, ax=ax, vmin=0, vmax=5, cbar_ax=ax_cbar, cmap=cmap)
+    sns.heatmap(puri.T / comp.T, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
+                rasterized=True)
 
     ax.set_yticks(yticks)
     ax.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -116,7 +117,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     ax.spines[:].set_visible(True)
     ax.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
     ax.set_ylabel('$r$ (magAB)', fontsize=22)
-    # ax.set_xlim(8, 22)
+    ax.set_xlim(90, 160)
+    # ax.set_ylim(1, 180)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}_alt.pdf',
                 bbox_inches='tight', facecolor='white',)
@@ -188,125 +190,6 @@ def load_puricomp1d(dirname):
 
     return comp_list, comp_qso_list, comp_sf_list, puri_list,\
         comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins
-
-
-def puricomp1d_plot(dirname, save_dirname, surname=''):
-    comp_list, comp_qso_list, comp_sf_list, puri_list,\
-        comp_den_list, comp_den_qso_list, comp_den_sf_list, puri_den_list, puricomp_bins = \
-        load_puricomp1d(dirname)
-
-    # Define the survey list in order
-    survey_list = [f'AEGIS00{i}' for i in range(1, 4 + 1)] + ['J-NEP']
-
-    # Bin centers
-    bc = [puricomp_bins[i: i + 2].sum() * 0.5 for i in range(len(puricomp_bins) - 1)]
-
-    fig, ax = plt.subplots(figsize=(5, 4))
-
-    # Plot the individual comps
-    for i, comp in enumerate(comp_list):
-        ax.plot(bc, comp, ls=':', alpha=0.6, marker='^', markersize=10,
-                color=f'C{i + 2}', label=survey_list[i])
-
-    # Total comp
-    total_comp_num = (np.array(comp_list) *
-                      np.array(comp_den_list)).sum(axis=0)
-    total_comp_den = np.array(comp_den_list).sum(axis=0)
-    total_comp = total_comp_num / total_comp_den
-    ax.plot(bc, total_comp, ls='-', marker='s', color='black', label='Total')
-
-    # Total SF and QSO comps
-    # total_comp_num = (np.array(comp_qso_list) * np.array(comp_den_qso_list)).sum(axis=0)
-    # total_comp_den = np.array(comp_den_qso_list).sum(axis=0)
-    # total_qso_comp = total_comp_num / total_comp_den
-    # ax.plot(bc, total_qso_comp, ls='--', color='C0', linewidth=2,
-    #         label='Only QSO')
-    # total_comp_num = (np.array(comp_sf_list) * np.array(comp_den_sf_list)).sum(axis=0)
-    # total_comp_den = np.array(comp_den_sf_list).sum(axis=0)
-    # total_sf_comp = total_comp_num / total_comp_den
-    # ax.plot(bc, total_sf_comp, ls='--', color='C1', linewidth=2,
-    #         label='Only SF')
-
-    # Fraction sf/qso
-    # total_comp_num_qso = (np.array(comp_qso_list) * np.array(comp_den_qso_list)).sum(axis=0)
-    # total_comp_num_sf = (np.array(comp_sf_list) * np.array(comp_den_sf_list)).sum(axis=0)
-    # sf_qso_frac = total_comp_num_sf / total_comp_num_qso
-    # sf_qso_frac[~np.isfinite(sf_qso_frac)] = 0
-    # ax.plot(bc, sf_qso_frac, color='m', label='SF / QSO')
-
-    ax.legend(loc=0, fontsize=10)
-    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=12)
-    ax.set_ylabel('Completeness', fontsize=12)
-
-    ax.set_ylim(0, 1)
-
-    plt.savefig(f'{save_dirname}/Comp1D.pdf',
-                bbox_inches='tight', facecolor='white',)
-
-    fig, ax = plt.subplots(figsize=(5, 4))
-
-    # Plot the individual puris
-    for i, puri in enumerate(puri_list):
-        ax.plot(bc, puri, ls='--', alpha=0.6, marker='s', label=survey_list[i])
-
-    # Total puri
-    total_puri_num = (np.array(puri_list) *
-                      np.array(puri_den_list)).sum(axis=0)
-    total_puri_den = np.array(puri_den_list).sum(axis=0)
-    total_puri = total_puri_num / total_puri_den
-    total_puri[~np.isfinite(total_puri)] = 0.
-    ax.plot(bc, total_puri, ls='-', marker='s', color='black', label='Total')
-
-    ax.legend(loc=0, fontsize=10)
-    ax.set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=12)
-    ax.set_ylabel('Purity', fontsize=12)
-
-    ax.set_ylim(0, 1)
-
-    plt.savefig(f'{save_dirname}/Puri1D.pdf',
-                bbox_inches='tight', facecolor='white',)
-    plt.close()
-
-    ### Combined plot PuriComp1D ###
-
-    fig, axs = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
-    fig.subplots_adjust(hspace=0.1)
-
-    for i, puri in enumerate(puri_list):
-        axs[0].plot(bc, puri, ls='--', alpha=0.6, marker='s', markersize=10,
-                    color=f'C{i + 2}', label=survey_list[i])
-
-    for i, comp in enumerate(comp_list):
-        axs[1].plot(bc, comp, ls='--', alpha=0.6, marker='s', markersize=10,
-                    color=f'C{i + 2}')
-
-    axs[0].plot(bc, total_puri, ls='-', marker='s', color='black',
-                markersize=10, label='Total')
-    axs[1].plot(bc, total_comp, ls='-', marker='s', color='black',
-                markersize=10)
-
-    # Font size
-    fs = 15
-
-    axs[0].legend(loc=0, fontsize=14)
-
-    axs[1].set_xlabel(r'$\log L$ (erg$\,$s$^{-1}$)', fontsize=20)
-    axs[0].set_ylabel('Purity', fontsize=20)
-    axs[1].set_ylabel('Completeness', fontsize=20)
-
-    for ax in axs:
-        ax.set_ylim(0, 1)
-        ax.set_xlim(42.25, 45.5)
-        ax.tick_params(labelsize=fs, direction='in', length=6)
-        ax.yaxis.set_ticks_position('both')
-        ax.xaxis.set_ticks_position('both')
-
-    # fig.tight_layout()
-
-    plt.savefig(f'{save_dirname}/PuriComp1D{surname}.pdf',
-                bbox_inches='tight', facecolor='white',)
-    plt.close()
-
 
 survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 

@@ -316,10 +316,10 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
                          good_qso_factor, gal_factor):
-    r_bins = np.linspace(mag_min, mag_max, 50 + 1)
+    r_bins = np.linspace(mag_min, mag_max, 200 + 1)
 
-    r_bins_c = [sum(r_bins[i] + r_bins[i + 1]) * 0.5 for i in range(len(r_bins) - 1)]
-    L_bins_c = [sum(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)]
+    r_bins_c = np.array([(r_bins[i] + r_bins[i + 1]) * 0.5 for i in range(len(r_bins) - 1)])
+    L_bins_c = np.array([(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)])
 
     # Perturb L
     N_iter = 500
@@ -429,9 +429,9 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     )
 
     # Make the mats smooooooth
-    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.2, 0.2)
-    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.2, 0.2)
-    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.2, 0.2)
+    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.15, 0.15)
+    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.15)
+    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.15)
 
     puri2d = h2d_nice_smooth / h2d_sel_smooth
     comp2d = h2d_nice_smooth / h2d_parent_smooth
@@ -486,7 +486,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     )
 
     # Compute and save L corrections and errors
-    L_binning = np.logspace(40, 47, 100 + 1)
+    L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     Lmask = nice_z & nice_lya & (L_lya > 43.2)
     L_Lbin_err, median_L = compute_L_Lbin_err(
@@ -512,16 +512,17 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     bins = np.log10(L_binning)
 
     # Compute puri/comp 2D
+    L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
     puri2d, comp2d, L_bins, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
-        nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, bins,
+        nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
         L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
         good_qso_factor, gal_factor
     )
 
     np.save(f'npy/puri2d_{survey_name}.npy', puri2d)
     np.save(f'npy/comp2d_{survey_name}.npy', comp2d)
-    np.save('npy/puricomp2d_L_bins.npy', L_bins)
+    np.save('npy/puricomp2d_L_bins.npy', L_bins_cor)
     np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
     if not plot_it:
