@@ -46,12 +46,12 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
                         color='k', capsize=3, linestyle='')
 
     # TICKS
-    xticks = range(len(L_bins))[1::5]  # Only odd xticks
-    yticks = range(len(r_bins))[1::10]  # Only odd yticks
+    xticks = range(len(L_bins))[1::7]  # Only odd xticks
+    yticks = range(len(r_bins))[1::15]  # Only odd yticks
     xtick_labels = ['{0:0.1f}'.format(n)
-                    for n in L_bins][1::5]  # Only odd xticks
+                    for n in L_bins][1::7]  # Only odd xticks
     ytick_labels = ['{0:0.1f}'.format(n)
-                    for n in r_bins][1::10]  # Only odd yticks
+                    for n in r_bins][1::15]  # Only odd yticks
 
     ax0.set_yticks(yticks)
     ax0.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -102,8 +102,11 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     ####################
     fig, ax = plt.subplots(figsize=(6, 6))
 
-    ax_cbar = fig.add_axes([width + 0.02, 0, cbar_width, height])
-    sns.heatmap(puri.T / comp.T, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
+    ax_cbar = fig.add_axes([0.92, 0.1, 0.05, 0.79])
+    
+    correction = puri.T / comp.T
+    # correction[~np.isfinite(correction)] = 0.
+    sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
                 rasterized=True)
 
     ax.set_yticks(yticks)
@@ -114,11 +117,12 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     ax.xaxis.set_ticks_position('both')
     ax.tick_params(axis='y', direction='in', labelsize=16)
     ax.tick_params(axis='x', direction='in', labelsize=16)
+    ax_cbar.tick_params(labelsize=12)
     ax.spines[:].set_visible(True)
     ax.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
     ax.set_ylabel('$r$ (magAB)', fontsize=22)
     ax.set_xlim(90, 160)
-    # ax.set_ylim(1, 180)
+    ax.set_ylim(199, 20)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}_alt.pdf',
                 bbox_inches='tight', facecolor='white',)
