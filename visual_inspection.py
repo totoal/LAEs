@@ -288,6 +288,7 @@ if __name__ == '__main__':
     selection = pd.read_csv('csv/selection.csv')
     sel_x_im = selection['x_im']
     sel_y_im = selection['y_im']
+    puri = selection['puri']
 
     print('Loading catalogs...')
     pm_flx, pm_err, x_im, y_im, tile_id, number, starprob, spCl,\
@@ -365,7 +366,8 @@ if __name__ == '__main__':
                        f'\n{Log_LLya_name} = {selection["L_lya"][n]:0.2f}'
                        f'\n{EW_name} = {selection["EW_lya"][n]:0.2f} $\AA$'
                        f'\nstarprob = {starprob[where_mjj]}'
-                       f'\nTimes selected = {ts:0.1f} %')
+                       f'\nTimes selected = {ts:0.1f} %'
+                       f'\npuri = {puri[n]:0.2f}')
 
         # SDSS spectroscopic info
         text_plot_1 = (f'{z_spec_name} = {selection["SDSS_zspec"][n]:0.2f}'

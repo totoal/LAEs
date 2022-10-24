@@ -106,7 +106,7 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     
     correction = puri.T / comp.T
     # correction[~np.isfinite(correction)] = 0.
-    sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
+    sns.heatmap(correction, ax=ax, vmin=0, vmax=5, cbar_ax=ax_cbar, cmap=cmap,
                 rasterized=True)
 
     ax.set_yticks(yticks)

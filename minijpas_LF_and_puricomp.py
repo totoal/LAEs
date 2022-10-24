@@ -429,9 +429,9 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     )
 
     # Make the mats smooooooth
-    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.15, 0.15)
-    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.15)
-    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.15)
+    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.3, 0.3)
+    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.3, 0.3)
+    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.3, 0.3)
 
     puri2d = h2d_nice_smooth / h2d_sel_smooth
     comp2d = h2d_nice_smooth / h2d_parent_smooth
