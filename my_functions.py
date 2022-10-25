@@ -739,3 +739,20 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
             new_Mat[i, j] = np.sum(Mat[i_min:i_max, j_min:j_max])
 
     return new_Mat
+
+def smooth_hist(values_Arr, value_min, value_max, step, d_value):
+    if value_max <= value_min:
+        raise ValueError('value_max has to be grater than value_min')
+
+    N_steps = int((value_max - value_min) / step)
+    centers = np.arange(value_min + step * 0.5, value_max + step * 0.5, step)
+    out_Arr = np.zeros(N_steps, dtype=float)
+
+    for j in range(N_steps):
+        this_mask = (
+            (values_Arr >= centers[j] - d_value * 0.5)
+            & (values_Arr < centers[j] + d_value * 0.5)
+        )
+        out_Arr[j] = sum(this_mask)
+
+    return out_Arr, centers

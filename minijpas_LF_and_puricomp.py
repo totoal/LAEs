@@ -913,8 +913,8 @@ if __name__ == '__main__':
         # (17, 24, 1, 24, 30, 100, 'nb'),
     ]
     
-    for params in LF_parameters:
-        for qso_frac in [0.3, 0.7, 1.0]:
+    for qso_frac in [1.0, 0.5, 0.7, 1.2]:
+        for params in LF_parameters:
             gal_area = 5.54
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
