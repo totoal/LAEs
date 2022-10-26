@@ -474,7 +474,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     for src in range(N_sources):
         l = lya_lines[src]
         snr[src] = pm_flx[l, src] / pm_err[l, src]
-    nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
+    # nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
+    nice_lya_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
 
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
@@ -914,6 +915,7 @@ if __name__ == '__main__':
     ]
     
     for qso_frac in [1.0, 0.5, 0.7, 1.2]:
+        print(f'QSO_frac = {qso_frac}')
         for params in LF_parameters:
             gal_area = 5.54
             bad_qso_area = 200

@@ -78,7 +78,7 @@ def angular_radius(R, z):
     return R_ang.to(u.deg).value
 
 
-def load_GAL_mock(name, add_errs=True, mag_min=0, mag_max=99):
+def load_GAL_mock(name, add_errs=False, mag_min=0, mag_max=99):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -97,20 +97,20 @@ def load_GAL_mock(name, add_errs=True, mag_min=0, mag_max=99):
 
     gal_zspec = data_gal['z'].to_numpy().astype(float)
 
-    i = flux_to_mag(gal_flx[-1], w_central[-1])
+    # i = flux_to_mag(gal_flx[-1], w_central[-1])
     r = flux_to_mag(gal_flx[-2], w_central[-2])
-    g = flux_to_mag(gal_flx[-3], w_central[-3])
-    gr = g - r
-    ri = r - i
-    color_aux2 = (-1.5 * ri + 1.95 > gr) & (ri > 1.25) & (gr > 1.75)
+    # g = flux_to_mag(gal_flx[-3], w_central[-3])
+    # gr = g - r
+    # ri = r - i
+    # color_aux2 = (-1.5 * ri + 1.95 > gr) & (ri > 1.25) & (gr > 1.75)
 
     # Remove bad sources
     good_src = []
     for src in range(gal_err.shape[1]):
         bad_src = (
             (gal_zspec[src] > 2)
-            | color_aux2[src]
-            | ((r[src] < mag_min - 0.25) | (r [src]> mag_max + 0.25))
+            # | color_aux2[src]
+            | ((r[src] < mag_min - 0.4) | (r [src] > mag_max + 0.25))
         )
         if bad_src:
             continue
@@ -183,7 +183,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
 
 
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
-                  add_errs=True, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99,
+                  add_errs=False, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99,
                   how_many_sf=-1):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L = load_QSO_mock(
         name_qso, add_errs, mag_min=mag_min, mag_max=mag_max)

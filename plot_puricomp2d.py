@@ -27,8 +27,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
 
     # PLOT STUFF
     cmap = 'Spectral'
-    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc0, cmap=cmap)
-    sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=5, cbar_ax=axc1, cmap=cmap)
+    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc0, cmap=cmap, rasterized=True)
+    sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=2, cbar_ax=axc1, cmap=cmap, rasterized=True)
 
     # If L_Arr is not None, plot the selected sources
     if (L_Arr is not None) and (L_Arr_e is not None) and (mag is not None):
@@ -90,8 +90,10 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     # ax1.set_ylabel('$r$ (magAB)', fontsize=22)
 
     # AXES LIMITS
-    ax0.set_xlim(8, 22)
-    ax1.set_xlim(8, 22)
+    ax0.set_xlim(90, 160)
+    ax0.set_ylim(199, 20)
+    ax1.set_xlim(90, 160)
+    ax1.set_ylim(199, 20)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white',)
