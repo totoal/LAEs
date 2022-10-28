@@ -23,7 +23,6 @@ fwhm_Arr = nb_fwhm(np.arange(60))
 bb_exp_time = 30
 nb_exp_time = 120
 
-
 def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                          tile_id, number, x_im, y_im, nb_sel, other_lines,
                          plot_text, n_src, dirname, spec=None, g_band=None):

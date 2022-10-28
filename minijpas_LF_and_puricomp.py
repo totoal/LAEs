@@ -41,7 +41,7 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
 
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
-    name_qso = 'QSO_100000_0'
+    name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
     name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
     name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
     name_gal = f'GAL_LC_lines_0'
@@ -565,6 +565,10 @@ def make_corrections(params, qso_frac):
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
 
+        where_bad_flx = ~np.isfinite(pm_flx)
+        pm_flx[where_bad_flx] = 0.
+        pm_err[where_bad_flx] = 9999999999.
+
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
@@ -914,7 +918,7 @@ if __name__ == '__main__':
         # (17, 24, 1, 24, 30, 100, 'nb'),
     ]
     
-    for qso_frac in [1.0, 0.5, 0.7, 1.2]:
+    for qso_frac in [1.0]:
         print(f'QSO_frac = {qso_frac}')
         for params in LF_parameters:
             gal_area = 5.54

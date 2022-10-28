@@ -78,7 +78,7 @@ def angular_radius(R, z):
     return R_ang.to(u.deg).value
 
 
-def load_GAL_mock(name, add_errs=False, mag_min=0, mag_max=99):
+def load_GAL_mock(name, add_errs=False, mag_min=0, mag_max=99, return_src_list=False):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -135,6 +135,8 @@ def load_GAL_mock(name, add_errs=False, mag_min=0, mag_max=99):
     R_eff = (Rdisk * Mdisk + Rbulge * Mbulge) / (Mbulge + Mdisk)
     R_ang = angular_radius(R_eff, gal_zspec)
 
+    if return_src_list:
+        return gal_flx, gal_err, EW_gal, gal_zspec, gal_L, R_ang, good_src
     return gal_flx, gal_err, EW_gal, gal_zspec, gal_L, R_ang
 
 

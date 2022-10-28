@@ -14,6 +14,7 @@ import numpy as np
 from my_utilities import *
 
 w_lya = 1215.67
+w_central = central_wavelength().reshape(-1, 1)
 
 
 def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
@@ -261,12 +262,12 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     perm = np.random.permutation(np.arange(N_QSO_set))
     old_z_Arr = np.copy(z_Arr)
     if train_or_test == 'train':
-        slc = slice(0, int(np.floor(N_QSO_set * 0.7)))
+        slc = slice(0, int(np.floor(N_QSO_set * 1)))
         z_Arr = z_Arr[perm][slc]
         L_Arr = L_Arr[perm][slc]
     if train_or_test == 'test':
-        slc = slice(int(np.floor(N_QSO_set * 0.7)),
-                    int(np.floor(N_QSO_set * 0.95)))
+        slc = slice(int(np.floor(N_QSO_set * 0.99)),
+                    int(np.floor(N_QSO_set * 1)))
         z_Arr = z_Arr[perm][slc]
         L_Arr = L_Arr[perm][slc]
 
@@ -285,7 +286,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
             L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
         # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
-        idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        # idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        # Pick the closest in L
+        idx_closest[src] = closest_z_Arr[closest_L_Arr][0]
 
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
@@ -405,16 +408,16 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     EW0 = F_line / f_cont / (1 + z)
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
-    
-    idx_closest, _, L_factor, new_z = duplicate_sources(
-        area, z, L, z_min, z_max, L_min, L_max
-    )
 
     # Load the DR16 PM
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
     pm_SEDs_DR16 = pd.read_csv(
         filename_pm_DR16, usecols=np.arange(1, 64)
     ).to_numpy()[:, :60].T
+
+    idx_closest, _, L_factor, new_z = duplicate_sources(
+        area, z, L, z_min, z_max, L_min, L_max
+    )
 
     print('Sampling from DR16 pm...')
     pm_SEDs = pm_SEDs_DR16[:, idx_closest] * L_factor
@@ -471,7 +474,7 @@ if __name__ == '__main__':
     for survey_name in ['jnep']:
         for train_or_test in ['train']:
             main(part, area, z_min, z_max, L_min, L_max,
-                 survey_name, train_or_test, 'D_deep_')
+                 survey_name, train_or_test, 'D_deep_tmp')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))
@@ -488,7 +491,7 @@ if __name__ == '__main__':
     train_or_test = 'train'
         
     main(part, area, z_min, z_max, L_min, L_max, survey_name,
-            train_or_test, 'highL2_D_deep_')
+            train_or_test, 'highL2_D_deep_tmp')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))
