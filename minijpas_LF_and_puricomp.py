@@ -322,7 +322,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     L_bins_c = np.array([(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)])
 
     # Perturb L
-    N_iter = 500
+    N_iter = 250
     h2d_nice_qso_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -909,12 +909,12 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
         # (23.5, 26, 1, 24, 30, 100, 'nb')
-        (17, 24, 1, 4, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 12, 16, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 24, 30, 100, 'nb'),
+        (17, 21, 1, 4, 30, 100, 'nb'),
+        (17, 21, 4, 8, 30, 100, 'nb'),
+        (17, 21, 8, 12, 30, 100, 'nb'),
+        (17, 21, 12, 16, 30, 100, 'nb'),
+        (17, 21, 16, 20, 30, 100, 'nb'),
+        (17, 21, 20, 24, 30, 100, 'nb'),
         # (17, 24, 1, 24, 30, 100, 'nb'),
     ]
     
