@@ -273,7 +273,10 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     is_gal = np.concatenate(
         (np.zeros(N_qso), np.zeros(N_sf), np.ones(N_gal))).astype(bool)
     is_LAE = (is_qso & (zspec > 2)) | is_sf
-    where_hiL = (is_qso & (L_lya > 44))
+    if len(name_qso_hiL) > 0:
+        where_hiL = (is_qso & (L_lya > 44))
+    else:
+        where_hiL = np.zeros_like(is_qso).astype(bool)
 
     ang_R = np.zeros(EW_lya.shape)
     ang_R[is_gal] = gal_R

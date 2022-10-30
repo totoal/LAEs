@@ -42,8 +42,10 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
     name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
-    name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
-    name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
+    # name_qso_bad = f'QSO_double_{train_or_test}_{survey_name}_DR16_D_0'
+    name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
+    # name_qso_hiL = f'QSO_double_{train_or_test}_{survey_name}_DR16_highL2_D_0'
+    name_qso_hiL = ''
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
     # name_gal = 'GAL_LC_0_deep'
@@ -908,18 +910,16 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        # (23.5, 26, 1, 24, 30, 100, 'nb')
-        (17, 21, 1, 4, 30, 100, 'nb'),
-        (17, 21, 4, 8, 30, 100, 'nb'),
-        (17, 21, 8, 12, 30, 100, 'nb'),
-        (17, 21, 12, 16, 30, 100, 'nb'),
-        (17, 21, 16, 20, 30, 100, 'nb'),
-        (17, 21, 20, 24, 30, 100, 'nb'),
-        # (17, 24, 1, 24, 30, 100, 'nb'),
+        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     for qso_frac in [1.0]:
-        print(f'QSO_frac = {qso_frac}')
+        print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 5.54
             bad_qso_area = 200
