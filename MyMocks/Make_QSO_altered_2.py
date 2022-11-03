@@ -209,7 +209,7 @@ def schechter(L, phistar, Lstar, alpha):
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
 
 
-def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
+def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
     volume = z_volume(z_min, z_max, area)
 
     Lx = np.logspace(L_min, L_max, 10000)
@@ -255,40 +255,32 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     idx_closest = np.zeros(N_sources_LAE).astype(int)
     print('Looking for the closest QSOs...')
 
-    # Randomize the whole QSO set and split in:
-    # 70% train, 25% test, 5% validation
-    np.random.seed(48713043)
-    N_QSO_set = len(z_Arr)
-    perm = np.random.permutation(np.arange(N_QSO_set))
-    old_z_Arr = np.copy(z_Arr)
-    if train_or_test == 'train':
-        slc = slice(0, int(np.floor(N_QSO_set * 1)))
-        z_Arr = z_Arr[perm][slc]
-        L_Arr = L_Arr[perm][slc]
-    if train_or_test == 'test':
-        slc = slice(int(np.floor(N_QSO_set * 0.99)),
-                    int(np.floor(N_QSO_set * 1)))
-        z_Arr = z_Arr[perm][slc]
-        L_Arr = L_Arr[perm][slc]
+    # Load EW to L_lya relation
+    percs = np.load('../npy/percs_L_EW_relation.npy')
+    L_bins = np.linspace(42, 46, 50)
+    L_bc = np.array([L_bins[i : i + 2].sum() * 0.5 for i in range(len(L_bins) - 1)])
 
     for src in range(N_sources_LAE):
         if src % 500 == 0:
             print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
-        closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.02)[0]
+        closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.12)[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
         if len(closest_z_Arr < 10):
             closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
 
-        # Then, within the closest in z, we choose the 5 closest in L
+        # Then, within the closest in z, we choose the 5 closest in EW0_Lya
         # Or don't select by L proximity (uncomment one)
-        closest_L_Arr = np.abs(
-            L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:5]
+        this_EW_16 = np.interp(my_L_Arr[src], L_bc, percs[:, 0])
+        this_EW_50 = np.interp(my_L_Arr[src], L_bc, percs[:, 1])
+        this_EW_84 = np.interp(my_L_Arr[src], L_bc, percs[:, 2])
+        this_EW = this_EW_50 + np.random.randn() * (this_EW_84 - this_EW_16) * 0.5
+        closest_L_Arr = np.abs(EW0[closest_z_Arr] - this_EW).argsort()[:1]
         # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
-        # idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
         # Pick the closest in L
-        idx_closest[src] = closest_z_Arr[closest_L_Arr][0]
+        idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        # print(f'{my_L_Arr[src]:0.2f}', f'{this_EW:0.2f}', f'{EW0[idx_closest[src]]:0.2f}')
 
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
@@ -297,11 +289,11 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max):
     L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
 
     # Re-convert idx_closest to initial units pre randomization
-    idx_closest = perm[slc][idx_closest]
+    # idx_closest = perm[slc][idx_closest]
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
-    return idx_closest, w_factor, L_factor, old_z_Arr[idx_closest]
+    return idx_closest, w_factor, L_factor, z_Arr[idx_closest]
 
 
 def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
@@ -416,7 +408,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     ).to_numpy()[:, :60].T
 
     idx_closest, _, L_factor, new_z = duplicate_sources(
-        area, z, L, z_min, z_max, L_min, L_max
+        area, z, L, z_min, z_max, L_min, L_max, EW0
     )
 
     print('Sampling from DR16 pm...')
@@ -467,31 +459,31 @@ if __name__ == '__main__':
 
     z_min = 2
     z_max = 4.25
-    L_min = 42
+    L_min = 43
     L_max = 46
     area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
     for survey_name in ['jnep']:
         for train_or_test in ['train']:
             main(part, area, z_min, z_max, L_min, L_max,
-                 survey_name, train_or_test, 'D_deep_tmp')
+                 survey_name, train_or_test, 'good2_')
 
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))
 
-    t0 = time.time()
-    L_min = 44
-    L_max = 46
+    # t0 = time.time()
+    # L_min = 44
+    # L_max = 46
 
-    z_min, z_max = 2, 4.25
+    # z_min, z_max = 2, 4.25
 
-    area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
+    # area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
 
-    survey_name = 'jnep'
-    train_or_test = 'train'
+    # survey_name = 'jnep'
+    # train_or_test = 'train'
         
-    main(part, area, z_min, z_max, L_min, L_max, survey_name,
-            train_or_test, 'highL2_D_deep_tmp')
+    # main(part, area, z_min, z_max, L_min, L_max, survey_name,
+    #         train_or_test, 'highL_good_')
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
-        *divmod(time.time() - t0, 60)))
+    # print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
+    #     *divmod(time.time() - t0, 60)))

@@ -744,8 +744,8 @@ def smooth_hist(values_Arr, value_min, value_max, step, d_value):
     if value_max <= value_min:
         raise ValueError('value_max has to be grater than value_min')
 
-    N_steps = int((value_max - value_min) / step)
-    centers = np.arange(value_min + step * 0.5, value_max + step * 0.5, step)
+    centers = np.arange(value_min + step * 0.5, value_max, step)
+    N_steps = len(centers)
     out_Arr = np.zeros(N_steps, dtype=float)
 
     for j in range(N_steps):
@@ -756,3 +756,6 @@ def smooth_hist(values_Arr, value_min, value_max, step, d_value):
         out_Arr[j] = sum(this_mask)
 
     return out_Arr, centers
+
+def bin_centers(bins):
+    return np.array([bins[i : i+ 2].sum() * 0.5 for i in range(len(bins) - 1)])
