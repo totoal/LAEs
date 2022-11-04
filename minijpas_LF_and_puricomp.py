@@ -916,10 +916,12 @@ if __name__ == '__main__':
         (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
-    for qso_frac in [1.0, 1.2, 0.8, 0.5]:
+    # for qso_frac in [1.0, 1.2, 0.8, 0.5]:
+    for qso_frac in [1.0]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
-            gal_area = 5.54
+            # gal_area = 5.54
+            gal_area = 3.16
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
             hiL_qso_area = 4000 / qso_frac
