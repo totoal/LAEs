@@ -42,8 +42,8 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
 def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
     name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good_0'
-    name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good_0'
+    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
     # name_gal = 'GAL_LC_0_deep'

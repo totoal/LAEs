@@ -471,19 +471,19 @@ if __name__ == '__main__':
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))
 
-    # t0 = time.time()
-    # L_min = 44
-    # L_max = 46
+    t0 = time.time()
+    L_min = 44
+    L_max = 46
 
-    # z_min, z_max = 2, 4.25
+    z_min, z_max = 2, 4.25
 
-    # area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
+    area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
 
-    # survey_name = 'jnep'
-    # train_or_test = 'train'
+    survey_name = 'jnep'
+    train_or_test = 'train'
         
-    # main(part, area, z_min, z_max, L_min, L_max, survey_name,
-    #         train_or_test, 'highL_good_')
+    main(part, area, z_min, z_max, L_min, L_max, survey_name,
+            train_or_test, 'highL_good2_')
 
-    # print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
-    #     *divmod(time.time() - t0, 60)))
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
+        *divmod(time.time() - t0, 60)))

@@ -143,10 +143,10 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
 if __name__ == '__main__':
     field_name = 'minijpasAEGIS001'
-    name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_train_minijpas_DR16_D_0'
+    name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
+    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
     name_gal = f'GAL_LC_lines_0'
-    name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_0'
+    name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, _ =\
         ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, add_errs=False)
