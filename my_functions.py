@@ -740,7 +740,7 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
 
     return new_Mat
 
-def smooth_hist(values_Arr, value_min, value_max, step, d_value):
+def smooth_hist(values_Arr, value_min, value_max, step, d_value, weights=None):
     if value_max <= value_min:
         raise ValueError('value_max has to be grater than value_min')
 
@@ -753,7 +753,11 @@ def smooth_hist(values_Arr, value_min, value_max, step, d_value):
             (values_Arr >= centers[j] - d_value * 0.5)
             & (values_Arr < centers[j] + d_value * 0.5)
         )
-        out_Arr[j] = sum(this_mask)
+
+        if weights is not None:
+            out_Arr[j] = sum(weights[this_mask])
+        else:
+            out_Arr[j] = sum(this_mask)
 
     return out_Arr, centers
 
