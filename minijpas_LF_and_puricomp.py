@@ -921,7 +921,7 @@ if __name__ == '__main__':
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             # gal_area = 5.54
-            gal_area = 3.16
+            gal_area = 3
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
             hiL_qso_area = 4000 / qso_frac
