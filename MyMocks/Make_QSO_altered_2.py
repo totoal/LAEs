@@ -274,13 +274,12 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
         this_EW_16 = np.interp(my_L_Arr[src], L_bc, percs[:, 0])
         this_EW_50 = np.interp(my_L_Arr[src], L_bc, percs[:, 1])
         this_EW_84 = np.interp(my_L_Arr[src], L_bc, percs[:, 2])
-        this_EW = this_EW_50 + np.random.randn() * (this_EW_84 - this_EW_16) * 0.5
-        closest_L_Arr = np.abs(EW0[closest_z_Arr] - this_EW).argsort()[:1]
-        # closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
+        # this_EW = this_EW_50 + np.random.randn() * (this_EW_84 - this_EW_16) * 0.5
+        # closest_L_Arr = np.abs(EW0[closest_z_Arr] - this_EW).argsort()[:1]
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:1]
 
         # Pick the closest in L
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
-        # print(f'{my_L_Arr[src]:0.2f}', f'{this_EW:0.2f}', f'{EW0[idx_closest[src]]:0.2f}')
 
     # The amount of w that we have to correct
     w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])

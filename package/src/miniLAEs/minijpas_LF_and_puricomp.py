@@ -30,7 +30,7 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 
 #### HOW MANY SFG ####
-how_many_sf = 16
+how_many_sf = 32
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -39,13 +39,18 @@ def sch_fit(Lx, Phistar, Lstar, alpha):
     return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
 
 
-def load_mocks(add_errs=True, qso_LAE_frac=1., 
+def load_mocks(train_or_test, survey_name, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
+    name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
+    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
     name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
-    name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good_0'
     name_gal = f'GAL_LC_lines_0'
-    name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
+    name_sf = f'LAE_12.5deg_z2-4.25_{train_or_test}_{survey_name}_VUDS_0'
+    # name_gal = 'GAL_LC_0_deep'
+    # name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
+    # name_qso_bad = 'QSO_double_train_jnep_DR16_D_deep_0'
+    # name_qso_hiL = 'QSO_double_train_jnep_DR16_highL2_D_deep_0'
+    # name_sf = 'LAE_12.5deg_z2-4.25_train_jnep_VUDS_deep_0'
 
     sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
@@ -235,6 +240,78 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     plt.close()
 
 
+def plot_puricomp_grids(puri, comp, L_bins, r_bins, dirname, survey_name):
+    fig = plt.figure(figsize=(7, 6))
+
+    width = 1
+    height = 1
+    spacing = 0.1
+    cbar_width = 0.08
+
+    # ADD AXES
+    ax0 = fig.add_axes([0, 0, width, height])
+    ax1 = fig.add_axes([width + spacing, 0, width, height])
+    axc = fig.add_axes([width * 2 + spacing * 2, 0, cbar_width, height])
+
+    # Mask puri and comp where at least one of them is zero or nan
+    mask_puricomp = ~(np.isfinite(puri) & np.isfinite(comp)
+                      & (puri > 0) & (comp > 0))
+    puri[mask_puricomp] = np.nan
+    comp[mask_puricomp] = np.nan
+
+    # PLOT STUFF
+    cmap = 'Spectral'
+    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc, cmap=cmap)
+    sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=1, cbar=False, cmap=cmap)
+
+    # TICKS
+    xticks = range(len(L_bins))
+    yticks = range(len(r_bins))
+    xtick_labels = ['{0:0.1f}'.format(n) for n in L_bins]
+    ytick_labels = ['{0:0.1f}'.format(n) for n in r_bins]
+
+    ax0.set_yticks(yticks)
+    ax0.set_yticklabels(ytick_labels, rotation='horizontal')
+    ax0.set_xticks(xticks)
+    ax0.set_xticklabels(xtick_labels, rotation='vertical')
+    ax0.yaxis.set_ticks_position('both')
+    ax0.xaxis.set_ticks_position('both')
+    ax0.tick_params(axis='y', direction='in', labelsize=16)
+    ax0.tick_params(axis='x', direction='in', labelsize=16)
+
+    ax1.set_yticks(yticks)
+    ax1.set_yticklabels(ytick_labels, rotation='horizontal')
+    ax1.set_xticks(xticks)
+    ax1.set_xticklabels(xtick_labels, rotation='vertical')
+    ax1.yaxis.set_ticks_position('both')
+    ax1.xaxis.set_ticks_position('both')
+    ax1.tick_params(axis='y', direction='in', labelsize=16)
+    ax1.tick_params(axis='x', direction='in', labelsize=16)
+
+    axc.tick_params(labelsize=16)
+
+    # SPINES
+    ax0.spines[:].set_visible(True)
+    ax1.spines[:].set_visible(True)
+
+    # TITLES
+    ax0.set_title('Purity', fontsize=25)
+    ax1.set_title('Completeness', fontsize=25)
+
+    # AXES LABELS
+    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax0.set_ylabel('$r$ (magAB)', fontsize=22)
+
+    # AXES LIMITS
+    ax0.set_xlim(6, 22)
+    ax1.set_xlim(6, 22)
+
+    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
+                bbox_inches='tight', facecolor='white',)
+    plt.close()
+
+
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
@@ -386,6 +463,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
 
+    z_cut_nice = (z_min - 0.2 < z_Arr) & (z_Arr < z_max + 0.2)
     z_cut = (z_min < z_Arr) & (z_Arr < z_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
     ew_cut = EW_lya > ew0_cut
@@ -443,13 +521,15 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         good_qso_factor, gal_factor
     )
 
-    np.save(f'{dirname}/puri2d_{survey_name}.npy', puri2d)
-    np.save(f'{dirname}/comp2d_{survey_name}.npy', comp2d)
-    np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
-    np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
+    np.save(f'npy/puri2d_{survey_name}.npy', puri2d)
+    np.save(f'npy/comp2d_{survey_name}.npy', comp2d)
+    np.save('npy/puricomp2d_L_bins.npy', L_bins_cor)
+    np.save('npy/puricomp2d_r_bins.npy', r_bins)
 
     if not plot_it:
         return
+
+    plot_puricomp_grids(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
 
     nbs_to_consider = np.arange(nb_min, nb_max + 1)
 
@@ -465,7 +545,7 @@ def make_corrections(params, qso_frac):
     
     mag_min, mag_max = params[:2]
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
-        load_mocks(add_errs=False, mag_min=mag_min, mag_max=mag_max)
+        load_mocks('train', 'minijpas', add_errs=False, mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
     print()
@@ -481,7 +561,6 @@ def make_corrections(params, qso_frac):
         # else:
         #     print('Loaded.')
         #     continue
-        # ######
 
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
