@@ -30,7 +30,7 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 
 #### HOW MANY SFG ####
-how_many_sf = 16
+how_many_sf = 32
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -43,7 +43,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
                mag_min=0, mag_max=99):
     name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
     name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good_0'
+    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -546,7 +546,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
-        spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im,\
+        spCl, zsp, _, _, _, N_minijpas, x_im, y_im,\
         ra, dec =\
         load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -587,7 +587,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     )
 
     # Estimate Luminosity
-    _, EW_Arr_e, L_Arr, _, _, _ = EW_L_NB(
+    EW_Arr, EW_e_Arr, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
@@ -616,12 +616,12 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     is_minijpas_source[N_minijpas:] = False
 
     # Compute EW_Arr
-    EW_Arr = np.empty(L_Arr.shape)
-    for src in range(N_sources):
-        l = lya_lines[src]
-        EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] -
-                       1) * nb_fwhm_Arr[l]
-    EW_Arr /= z_Arr
+    # EW_Arr = np.empty(L_Arr.shape)
+    # for src in range(N_sources):
+    #     l = lya_lines[src]
+    #     EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] -
+    #                    1) * nb_fwhm_Arr[l]
+    # EW_Arr /= z_Arr
 
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
@@ -697,7 +697,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         'L_lya': L_Arr[nice_lya],
         'L_lya_err': L_e_Arr[nice_lya],
         'EW_lya': EW_Arr[nice_lya],
-        'EW_lya_err': EW_Arr_e[nice_lya],
+        'EW_lya_err': EW_e_Arr[nice_lya],
         'puri': nice_puri_list,
         'r': mag[nice_lya],
         'other_lines': [other_lines[idx] for idx in np.where(nice_lya)[0]]
@@ -829,12 +829,19 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 12, 16, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 24, 30, 100, 'nb'),
+        (17, 21, 1, 4, 30, 100, 'nb'),
+        (17, 21, 4, 8, 30, 100, 'nb'),
+        (17, 21, 8, 12, 30, 100, 'nb'),
+        (17, 21, 12, 16, 30, 100, 'nb'),
+        (17, 21, 16, 20, 30, 100, 'nb'),
+        (17, 21, 20, 24, 30, 100, 'nb'),
+
+        (21, 21, 1, 4, 30, 100, 'nb'),
+        (21, 21, 4, 8, 30, 100, 'nb'),
+        (21, 24, 8, 12, 30, 100, 'nb'),
+        (21, 24, 12, 16, 30, 100, 'nb'),
+        (21, 24, 16, 20, 30, 100, 'nb'),
+        (21, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     # for qso_frac in [1.0, 1.2, 0.8, 0.5]:

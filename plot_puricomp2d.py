@@ -201,7 +201,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_dirname = 'npy'
+    LF_dirname = 'LF_r17-24_nb12-16_ew30_ewoth100_nb_1.0'
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
