@@ -80,11 +80,6 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
     elif survey_name[:8] == 'minijpas':
         pm_SEDs_err = np.array([]).reshape(60, 0)
 
-        # Split sources in 4 groups (tiles) randomly
-        N_sources = pm_SEDs.shape[1]
-        rand_perm = np.random.permutation(np.arange(N_sources))
-        N_src_i = N_sources // 4
-
         tile_id_Arr = [2241, 2243, 2406, 2470]
 
         i = float(survey_name[-1])
@@ -150,7 +145,7 @@ def source_f_cont(mjd, plate, fiber):
         pass
     print('Computing f_cont Arr')
 
-    Lya_fts = pd.read_csv('../csv/Lya_fts_DR16.csv')
+    Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
 
     N_sources = len(mjd)
     EW = np.empty(N_sources)
@@ -183,7 +178,7 @@ def source_f_cont(mjd, plate, fiber):
 
 
 def load_QSO_prior_mock():
-    filename = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
+    filename = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
 
     def format_string4(x): return '{:04d}'.format(int(x))
     def format_string5(x): return '{:05d}'.format(int(x))
@@ -256,9 +251,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
     print('Looking for the closest QSOs...')
 
     # Load EW to L_lya relation
-    percs = np.load('../npy/percs_L_EW_relation.npy')
-    L_bins = np.linspace(42, 46, 50)
-    L_bc = np.array([L_bins[i : i + 2].sum() * 0.5 for i in range(len(L_bins) - 1)])
+    # percs = np.load('../npy/percs_L_EW_relation.npy')
+    # L_bins = np.linspace(42, 46, 50)
+    # L_bc = np.array([L_bins[i : i + 2].sum() * 0.5 for i in range(len(L_bins) - 1)])
 
     for src in range(N_sources_LAE):
         if src % 500 == 0:
@@ -271,9 +266,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
 
         # Then, within the closest in z, we choose the 5 closest in EW0_Lya
         # Or don't select by L proximity (uncomment one)
-        this_EW_16 = np.interp(my_L_Arr[src], L_bc, percs[:, 0])
-        this_EW_50 = np.interp(my_L_Arr[src], L_bc, percs[:, 1])
-        this_EW_84 = np.interp(my_L_Arr[src], L_bc, percs[:, 2])
+        # this_EW_16 = np.interp(my_L_Arr[src], L_bc, percs[:, 0])
+        # this_EW_50 = np.interp(my_L_Arr[src], L_bc, percs[:, 1])
+        # this_EW_84 = np.interp(my_L_Arr[src], L_bc, percs[:, 2])
         # this_EW = this_EW_50 + np.random.randn() * (this_EW_84 - this_EW_16) * 0.5
         # closest_L_Arr = np.abs(EW0[closest_z_Arr] - this_EW).argsort()[:1]
         closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:1]
@@ -401,10 +396,14 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     L = np.log10(F_line * 4*np.pi * dL ** 2)
 
     # Load the DR16 PM
-    filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16.csv')
+    filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
     pm_SEDs_DR16 = pd.read_csv(
         filename_pm_DR16, usecols=np.arange(1, 64)
     ).to_numpy()[:, :60].T
+
+    # part = 99 is only for computing the correction adn f_cont arrays
+    if int(part) == 99:
+        return
 
     idx_closest, _, L_factor, new_z = duplicate_sources(
         area, z, L, z_min, z_max, L_min, L_max, EW0
@@ -455,7 +454,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
 if __name__ == '__main__':
     t0 = time.time()
     part = sys.argv[1]
-
+    
     z_min = 2
     z_max = 4.25
     L_min = 43
@@ -476,7 +475,7 @@ if __name__ == '__main__':
 
     z_min, z_max = 2, 4.25
 
-    area = 4000 / (16 * 2)  # We have to do 2 runs of 12 parallel processes
+    area = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
     survey_name = 'jnep'
     train_or_test = 'train'
@@ -484,5 +483,4 @@ if __name__ == '__main__':
     main(part, area, z_min, z_max, L_min, L_max, survey_name,
             train_or_test, 'highL_good2_')
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
-        *divmod(time.time() - t0, 60)))
+    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))

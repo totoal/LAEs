@@ -15,7 +15,6 @@ from load_mocks import ensemble_mock
 from my_functions import *
 from add_errors import add_errors
 
-import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 13})
@@ -28,9 +27,6 @@ w_central = central_wavelength()
 nb_fwhm_Arr = nb_fwhm(range(60))
 w_lya = 1215.67
 filter_tags = load_filter_tags()
-
-#### HOW MANY SFG ####
-how_many_sf = 32
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
@@ -51,8 +47,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_min, mag_max,
-                                             how_many_sf=how_many_sf)
+                                             qso_LAE_frac, sf_frac, mag_min, mag_max)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -829,19 +824,12 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 21, 1, 4, 30, 100, 'nb'),
-        (17, 21, 4, 8, 30, 100, 'nb'),
-        (17, 21, 8, 12, 30, 100, 'nb'),
-        (17, 21, 12, 16, 30, 100, 'nb'),
-        (17, 21, 16, 20, 30, 100, 'nb'),
-        (17, 21, 20, 24, 30, 100, 'nb'),
-
-        (21, 21, 1, 4, 30, 100, 'nb'),
-        (21, 21, 4, 8, 30, 100, 'nb'),
-        (21, 24, 8, 12, 30, 100, 'nb'),
-        (21, 24, 12, 16, 30, 100, 'nb'),
-        (21, 24, 16, 20, 30, 100, 'nb'),
-        (21, 24, 20, 24, 30, 100, 'nb'),
+        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     # for qso_frac in [1.0, 1.2, 0.8, 0.5]:
@@ -853,7 +841,7 @@ if __name__ == '__main__':
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
             hiL_qso_area = 4000 / qso_frac
-            sf_area = 200 * how_many_sf / 32
+            sf_area = 200
 
             # the proportional factors are made in relation to bad_qso
             # so bad_qso_factor = 1
