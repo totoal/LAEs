@@ -136,45 +136,45 @@ def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
     return pm_SEDs, pm_SEDs_err
 
 
-def source_f_cont(mjd, plate, fiber):
-    try:
-        f_cont = np.load('npy/f_cont_DR16.npy')
-        print('f_cont Arr loaded')
-        return f_cont
-    except:
-        pass
-    print('Computing f_cont Arr')
+# def source_f_cont(mjd, plate, fiber):
+#     try:
+#         f_cont = np.load('npy/f_cont_DR16.npy')
+#         print('f_cont Arr loaded')
+#         return f_cont
+#     except:
+#         pass
+#     print('Computing f_cont Arr')
 
-    Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
+#     Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
 
-    N_sources = len(mjd)
-    EW = np.empty(N_sources)
-    Flambda = np.empty(N_sources)
+#     N_sources = len(mjd)
+#     EW = np.empty(N_sources)
+#     Flambda = np.empty(N_sources)
 
-    for src in range(N_sources):
-        if src % 1000 == 0:
-            print(f'{src} / {N_sources}', end='\r')
+#     for src in range(N_sources):
+#         if src % 1000 == 0:
+#             print(f'{src} / {N_sources}', end='\r')
 
-        where = np.where(
-            (int(mjd[src]) == Lya_fts['mjd'].to_numpy().flatten())
-            & (int(plate[src]) == Lya_fts['plate'].to_numpy().flatten())
-            & (int(fiber[src]) == Lya_fts['fiberid'].to_numpy().flatten())
-        )
+#         where_mjd = np.where(Lya_fts['mjd'] == mjd[src])
+#         where_mjd_pl = np.where(Lya_fts['plate'][where_mjd] == plate[src])
+#         where_mjd_pl_fi = np.where(Lya_fts['fiberid'][where_mjd[0][where_mjd_pl]] == fiber[src])
 
-        # Some sources are repeated, so we take the first occurence
-        where = where[0][0]
+#         where = where_mjd[0][where_mjd_pl[0][where_mjd_pl_fi]]
 
-        EW[src] = np.abs(Lya_fts['LyaEW'][where])  # Obs frame EW by now
-        Flambda[src] = Lya_fts['LyaF'][where]
+#         # Some sources are repeated, so we take the first occurence
+#         where = where[0][0]
 
-    Flambda *= 1e-17  # Correct units & apply correction
+#         EW[src] = np.abs(Lya_fts['LyaEW'][where])  # Obs frame EW by now
+#         Flambda[src] = Lya_fts['LyaF'][where]
 
-    # From the EW formula:
-    f_cont = Flambda / EW
+#     Flambda *= 1e-17  # Correct units & apply correction
 
-    np.save('npy/f_cont_DR16.npy', f_cont)
+#     # From the EW formula:
+#     f_cont = Flambda / EW
 
-    return f_cont
+#     np.save('npy/f_cont_DR16.npy', f_cont)
+
+#     return f_cont
 
 
 def load_QSO_prior_mock():
@@ -259,7 +259,8 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
         if src % 500 == 0:
             print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
-        closest_z_Arr = np.where(np.abs(z_Arr - my_z_Arr[src]) < 0.12)[0]
+        closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.12)
+                                 & (L_Arr > 0))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
         if len(closest_z_Arr < 10):
             closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
@@ -294,8 +295,8 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     '''
     Computes correct Arr and saves it to a .csv if it dont exist
     '''
-    lya_band_res = 1000  # Resolution of the Lya band
-    lya_band_hw = 150  # Half width of the Lya band in Angstroms
+    # lya_band_res = 1000  # Resolution of the Lya band
+    # lya_band_hw = 150  # Half width of the Lya band in Angstroms
 
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
@@ -303,7 +304,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         lya_band = np.load(f'{correct_dir}lya_band_arr_{t_or_t}_dr16.npy')
         print('Correct arr loaded')
 
-        return z, lya_band, lya_band_hw
+        return z
     except:
         print('Computing correct arr...')
         pass
@@ -312,7 +313,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
 
     # Declare some arrays
     z = np.empty(N_sources)
-    lya_band = np.zeros(N_sources)
+    # lya_band = np.zeros(N_sources)
 
     # Do the integrated photometry
     # print('Extracting band fluxes from the spectra...')
@@ -327,7 +328,7 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         spec_name = fits_dir + \
             f'spec-{plate[src]:04d}-{mjd[src]:05d}-{fiber[src]:04d}.fits'
 
-        spec = Table.read(spec_name, hdu=1, format='fits')
+        # spec = Table.read(spec_name, hdu=1, format='fits')
         spzline = Table.read(spec_name, hdu=3, format='fits')
 
         # Select the source's z as the z from any line not being Lya.
@@ -340,32 +341,32 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         else:
             z[src] = 0.
 
-        if z[src] < 2:
+        if z[src] < 1.9:
             continue
 
-        # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
-        w_lya_obs = w_lya * (1 + z[src])
+        # # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
+        # w_lya_obs = w_lya * (1 + z[src])
 
-        lya_band_tcurves = {
-            'tag': ['lyaband'],
-            't': [np.ones(lya_band_res)],
-            'w': [np.linspace(
-                w_lya_obs - lya_band_hw, w_lya_obs + lya_band_hw, lya_band_res
-            )]
-        }
-        # Extract the photometry of Ly-alpha (L_Arr)
-        if z[src] > 0:
-            lya_band[src] = JPAS_synth_phot(
-                spec['FLUX'] * 1e-17, 10 ** spec['LOGLAM'], lya_band_tcurves
-            )
-        if ~np.isfinite(lya_band[src]):
-            lya_band[src] = 0
+        # lya_band_tcurves = {
+        #     'tag': ['lyaband'],
+        #     't': [np.ones(lya_band_res)],
+        #     'w': [np.linspace(
+        #         w_lya_obs - lya_band_hw, w_lya_obs + lya_band_hw, lya_band_res
+        #     )]
+        # }
+        # # Extract the photometry of Ly-alpha (L_Arr)
+        # if z[src] > 0:
+        #     lya_band[src] = JPAS_synth_phot(
+        #         spec['FLUX'] * 1e-17, 10 ** spec['LOGLAM'], lya_band_tcurves
+        #     )
+        # if ~np.isfinite(lya_band[src]):
+        #     lya_band[src] = 0
 
     os.makedirs(correct_dir, exist_ok=True)
     np.save(f'{correct_dir}z_arr_{t_or_t}_dr16', z)
-    np.save(f'{correct_dir}lya_band_arr_{t_or_t}_dr16', lya_band)
+    # np.save(f'{correct_dir}lya_band_arr_{t_or_t}_dr16', lya_band)
 
-    return z, lya_band, lya_band_hw
+    return z
 
 
 def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
@@ -384,16 +385,24 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    z, lya_band, lya_band_hw = lya_band_z(
+    z = lya_band_z(
         fits_dir, plate, mjd, fiber, train_or_test)
 
-    f_cont = source_f_cont(mjd, plate, fiber)
+    # f_cont = source_f_cont(mjd, plate, fiber)
+    Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
 
-    F_line = (lya_band - f_cont) * 2 * lya_band_hw
-    F_line_err = np.zeros(lya_band.shape)
-    EW0 = F_line / f_cont / (1 + z)
+    # F_line = (lya_band - f_cont) * 2 * lya_band_hw
+    # F_line_err = np.zeros(lya_band.shape)
+    # EW0 = F_line / f_cont / (1 + z)
+    # dL = cosmo.luminosity_distance(z).to(u.cm).value
+    # L = np.log10(F_line * 4*np.pi * dL ** 2)
+    F_line = Lya_fts['LyaF']
+    F_line_err = Lya_fts['LyaF_err']
+    EW0 = Lya_fts['LyaEW'] / (1 + z)
+    mask_neg_EW0 = (EW0 < 0)
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
+    L[mask_neg_EW0] = -1
 
     # Load the DR16 PM
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
@@ -405,9 +414,8 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     if int(part) == 99:
         return
 
-    idx_closest, _, L_factor, new_z = duplicate_sources(
-        area, z, L, z_min, z_max, L_min, L_max, EW0
-    )
+    idx_closest, _, L_factor, new_z = duplicate_sources(area, z, L, z_min, z_max,
+                                                        L_min, L_max, EW0)
 
     print('Sampling from DR16 pm...')
     pm_SEDs = pm_SEDs_DR16[:, idx_closest] * L_factor

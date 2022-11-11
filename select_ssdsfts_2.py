@@ -41,15 +41,15 @@ for src in range(N_sources):
     lya_cont_err[src] = lineinfo['LINECONTLEVEL_ERR'][where]
     lya_z[src] = lineinfo['LINEZ'][where]
 
-neg_cont = np.where(lya_cont < 0)
-lya_cont_corrected = np.copy(lya_cont)
-lya_cont_corrected[neg_cont] = np.abs(lya_cont_err[neg_cont])
+# neg_cont = np.where(lya_cont < 0)
+# lya_cont_corrected = np.copy(lya_cont)
+# lya_cont_corrected[neg_cont] = np.abs(lya_cont_err[neg_cont])
 
 data = {
-    'LyaEW': np.abs(lya_F) / lya_cont_corrected,
+    'LyaEW': np.abs(lya_F) / lya_cont,
     'LyaF': np.abs(lya_F),
     'LyaF_err': lya_F_err,
-    'LyaCont': lya_cont_corrected,
+    'LyaCont': lya_cont,
     'LyaCont_err': lya_cont_err,
     'Lya_z': lya_z,
     'mjd': mjd,
