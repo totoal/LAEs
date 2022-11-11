@@ -4,7 +4,6 @@ import numpy as np
 
 filename = '/home/alberto/almacen/SDSS_spectra_fits/DR16/DR16Q_Superset_v3.fits'
 with fits.open(filename) as fread:
-    # Criteria in Queiroz et al. 2022
     good_qso = (
         (fread[1].data['ZWARNING'] == 0)
         & (fread[1].data['SN_MEDIAN_ALL'] > 0)
@@ -27,13 +26,14 @@ fread = fits.open('/home/alberto/almacen/prolly_useful_files/spAllLine-v5_13_0.f
 lineinfo = fread[1].data[np.where(fread[1].data['LINEWAVE'] == 1215.67)]
 
 for src in range(N_sources):
-    print(f'{src} / {N_sources}', end='\r')
+    if src % 100 == 0:
+        print(f'{src} / {N_sources}', end='\r')
 
-    where = (
-        (lineinfo['MJD'] == mjd[src])
-        & (lineinfo['PLATE'] == plate[src])
-        & (lineinfo['FIBERID'] == fiber[src])
-    )
+    where_mjd = np.where(lineinfo['MJD'] == mjd[src])
+    where_mjd_pl = np.where(lineinfo['PLATE'][where_mjd] == plate[src])
+    where_mjd_pl_fi = np.where(lineinfo['FIBERID'][where_mjd[0][where_mjd_pl]] == fiber[src])
+
+    where = where_mjd[0][where_mjd_pl[0][where_mjd_pl_fi]]
 
     lya_F[src] = lineinfo['LINEAREA'][where]
     lya_F_err[src] = lineinfo['LINEAREA_ERR'][where]
