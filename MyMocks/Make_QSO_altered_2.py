@@ -396,12 +396,16 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     # EW0 = F_line / f_cont / (1 + z)
     # dL = cosmo.luminosity_distance(z).to(u.cm).value
     # L = np.log10(F_line * 4*np.pi * dL ** 2)
-    F_line = Lya_fts['LyaF']
-    F_line_err = Lya_fts['LyaF_err']
-    EW0 = Lya_fts['LyaEW'] / (1 + z)
-    mask_neg_EW0 = (EW0 < 0)
+    F_line = np.array(Lya_fts['LyaF']) * 1e-17
+    F_line_err = np.array(Lya_fts['LyaF_err']) * 1e-17
+    EW0 = np.array(Lya_fts['LyaEW']) / (1 + z)
+    EW_err = np.array(Lya_fts['LyaEW_err'])
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
+    
+    # Mask poorly measured EWs
+    EW_snr = EW0 * (1 + z) / EW_err
+    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 10) | (EW0 < 20)
     L[mask_neg_EW0] = -1
 
     # Load the DR16 PM
@@ -418,7 +422,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
                                                         L_min, L_max, EW0)
 
     print('Sampling from DR16 pm...')
-    pm_SEDs = pm_SEDs_DR16[:, idx_closest] * L_factor
+    pm_SEDs = pm_SEDs_DR16[:, idx_closest] * np.array(L_factor)
     print('Ok')
 
     new_L = L[idx_closest] + np.log10(L_factor)
