@@ -301,7 +301,6 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     correct_dir = 'csv/QSO_mock_correct_files/'
     try:
         z = np.load(f'{correct_dir}z_arr_{t_or_t}_dr16.npy')
-        lya_band = np.load(f'{correct_dir}lya_band_arr_{t_or_t}_dr16.npy')
         print('Correct arr loaded')
 
         return z
@@ -385,11 +384,13 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    z = lya_band_z(
-        fits_dir, plate, mjd, fiber, train_or_test)
+    # z = lya_band_z(
+    #     fits_dir, plate, mjd, fiber, train_or_test)
 
     # f_cont = source_f_cont(mjd, plate, fiber)
     Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
+    z = Lya_fts['Lya_z'].to_numpy().flatten()
+    z[z == 0] = -1
 
     # F_line = (lya_band - f_cont) * 2 * lya_band_hw
     # F_line_err = np.zeros(lya_band.shape)
@@ -405,14 +406,14 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     
     # Mask poorly measured EWs
     EW_snr = EW0 * (1 + z) / EW_err
-    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 10) | (EW0 < 20)
+    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 10)
     L[mask_neg_EW0] = -1
 
     # Load the DR16 PM
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
     pm_SEDs_DR16 = pd.read_csv(
         filename_pm_DR16, usecols=np.arange(1, 64)
-    ).to_numpy()[:, :60].T
+    ).to_numpy()[:, 1:61].T
 
     # part = 99 is only for computing the correction adn f_cont arrays
     if int(part) == 99:
@@ -433,8 +434,9 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    pm_SEDs, pm_SEDs_err = add_errors(
-        pm_SEDs, apply_err=False, survey_name=survey_name)
+    # pm_SEDs, pm_SEDs_err = add_errors(
+    #     pm_SEDs, apply_err=False, survey_name=survey_name)
+    pm_SEDs_err = np.zeros_like(pm_SEDs)
 
     pm_SEDs[where_out_of_range] = 0.
     pm_SEDs_err[where_out_of_range] = 99.
@@ -481,18 +483,18 @@ if __name__ == '__main__':
     print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t0, 60)))
 
-    t0 = time.time()
-    L_min = 44
-    L_max = 46
+    # t0 = time.time()
+    # L_min = 44
+    # L_max = 46
 
-    z_min, z_max = 2, 4.25
+    # z_min, z_max = 2, 4.25
 
-    area = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+    # area = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
-    survey_name = 'jnep'
-    train_or_test = 'train'
+    # survey_name = 'jnep'
+    # train_or_test = 'train'
         
-    main(part, area, z_min, z_max, L_min, L_max, survey_name,
-            train_or_test, 'highL_good2_')
+    # main(part, area, z_min, z_max, L_min, L_max, survey_name,
+    #         train_or_test, 'highL_good2_')
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+    # print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
