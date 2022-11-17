@@ -7,6 +7,7 @@ from scipy.stats import binned_statistic
 
 import os
 import time
+import glob
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
@@ -45,7 +46,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
 
     sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
-        is_LAE, where_hiL, _ = ensemble_mock(name_qso, name_gal, name_sf,
+        is_LAE, where_hiL, _, L_NV = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
                                              qso_LAE_frac, sf_frac, mag_min, mag_max)
 
@@ -58,7 +59,8 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     print(f'N_gal = {N_gal}, N_qso_cont = {N_qso_cont}, N_qso_loL = {N_qso_loL}, '
           f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
 
-    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL
+    return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL,\
+        L_NV
 
 
 def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
@@ -359,7 +361,8 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
-                    hiL_factor, good_qso_factor, gal_factor, qso_frac, plot_it=True):
+                    hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV,
+                    plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # Vector of magnitudes in r band
@@ -416,8 +419,10 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
-    L_Arr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
+    L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
                               [mask_median_L], median_L[mask_median_L])
+    # For the puricomp2d we include the L_NV
+    L_lya_NV = np.log10(10**L_lya + 10**L_NV)
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -427,14 +432,12 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
 
-    bins = np.log10(L_binning)
-
     # Compute puri/comp 2D
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
-    puri2d, comp2d, L_bins, r_bins = puricomp_corrections(
+    puri2d, comp2d, _, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
-        L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
+        L_lya_NV, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
         good_qso_factor, gal_factor
     )
 
@@ -449,7 +452,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     nbs_to_consider = np.arange(nb_min, nb_max + 1)
 
     purity_or_completeness_plot(mag, nbs_to_consider, lya_lines, nice_lya,
-                                nice_z, L_Arr, mag_max, mag_min, ew0_cut, is_gal,
+                                nice_z, L_Arr_corr, mag_max, mag_min, ew0_cut, is_gal,
                                 is_sf, is_qso, is_LAE, zspec, L_lya, dirname,
                                 ew_cut, where_hiL, survey_name)
 
@@ -459,7 +462,7 @@ def make_corrections(params, qso_frac):
                         'minijpasAEGIS004', 'jnep']
     
     mag_min, mag_max = params[:2]
-    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL =\
+    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV =\
         load_mocks(add_errs=False, mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
@@ -488,7 +491,7 @@ def make_corrections(params, qso_frac):
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
-            hiL_factor, good_qso_factor, gal_factor, qso_frac
+            hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV
         )
 
 
