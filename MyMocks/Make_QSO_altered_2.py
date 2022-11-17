@@ -16,167 +16,6 @@ from my_utilities import *
 w_lya = 1215.67
 w_central = central_wavelength().reshape(-1, 1)
 
-
-def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):
-    if survey_name == 'jnep':
-        err_fit_params_jnep = np.load('../npy/err_fit_params_jnep.npy')
-    elif survey_name[:8] == 'minijpas':
-        err_fit_params_001 = np.load(
-            '../npy/err_fit_params_minijpas_AEGIS001.npy')
-        err_fit_params_002 = np.load(
-            '../npy/err_fit_params_minijpas_AEGIS002.npy')
-        err_fit_params_003 = np.load(
-            '../npy/err_fit_params_minijpas_AEGIS003.npy')
-        err_fit_params_004 = np.load(
-            '../npy/err_fit_params_minijpas_AEGIS004.npy')
-    else:
-        raise ValueError('Survey name not known')
-
-    if survey_name == 'minijpas':
-        detec_lim_001 = pd.read_csv('../csv/depth3arc5s_minijpas_2241.csv',
-                                    sep=',', header=0, usecols=[1]).to_numpy()
-        detec_lim_002 = pd.read_csv('../csv/depth3arc5s_minijpas_2243.csv',
-                                    sep=',', header=0, usecols=[1]).to_numpy()
-        detec_lim_003 = pd.read_csv('../csv/depth3arc5s_minijpas_2406.csv',
-                                    sep=',', header=0, usecols=[1]).to_numpy()
-        detec_lim_004 = pd.read_csv('../csv/depth3arc5s_minijpas_2470.csv',
-                                    sep=',', header=0, usecols=[1]).to_numpy()
-        detec_lim = np.hstack(
-            (
-                detec_lim_001,
-                detec_lim_002,
-                detec_lim_003,
-                detec_lim_004
-            )
-        )
-        detec_lim.shape
-    if survey_name == 'jnep':
-        detec_lim = pd.read_csv('../csv/depth3arc5s_jnep_2520.csv',
-                                sep=',', header=0, usecols=[1]).to_numpy()
-
-    if survey_name == 'jnep':
-        a = err_fit_params_jnep[:, 0].reshape(-1, 1)
-        b = err_fit_params_jnep[:, 1].reshape(-1, 1)
-        c = err_fit_params_jnep[:, 2].reshape(-1, 1)
-        def expfit(x): return a * np.exp(b * x + c)
-
-        w_central = central_wavelength().reshape(-1, 1)
-
-        mags = flux_to_mag(pm_SEDs, w_central)
-        mags[np.isnan(mags) | np.isinf(mags)] = 99.
-
-        # Zero point error
-        zpt_err = Zero_point_error(np.ones(mags.shape[1]) * 2520, 'jnep')
-
-        mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
-        where_himag = np.where(mags > detec_lim)
-
-        mag_err[where_himag] = expfit(detec_lim)[where_himag[0]].reshape(-1,)
-
-        mags[where_himag] = detec_lim[where_himag[0]].reshape(-1,)
-
-        pm_SEDs_err = mag_to_flux(
-            mags - mag_err, w_central) - mag_to_flux(mags, w_central)
-    elif survey_name[:8] == 'minijpas':
-        pm_SEDs_err = np.array([]).reshape(60, 0)
-
-        tile_id_Arr = [2241, 2243, 2406, 2470]
-
-        i = float(survey_name[-1])
-
-        detec_lim_i = detec_lim[:, i].reshape(-1, 1)
-
-        if i == 1:
-            a = err_fit_params_001[:, 0].reshape(-1, 1)
-            b = err_fit_params_001[:, 1].reshape(-1, 1)
-            c = err_fit_params_001[:, 2].reshape(-1, 1)
-        if i == 2:
-            a = err_fit_params_002[:, 0].reshape(-1, 1)
-            b = err_fit_params_002[:, 1].reshape(-1, 1)
-            c = err_fit_params_002[:, 2].reshape(-1, 1)
-        if i == 3:
-            a = err_fit_params_003[:, 0].reshape(-1, 1)
-            b = err_fit_params_003[:, 1].reshape(-1, 1)
-            c = err_fit_params_003[:, 2].reshape(-1, 1)
-        if i == 4:
-            a = err_fit_params_004[:, 0].reshape(-1, 1)
-            b = err_fit_params_004[:, 1].reshape(-1, 1)
-            c = err_fit_params_004[:, 2].reshape(-1, 1)
-
-        def expfit(x): return a * np.exp(b * x + c)
-
-        w_central = central_wavelength().reshape(-1, 1)
-
-        mags = flux_to_mag(pm_SEDs, w_central)
-        mags[np.isnan(mags) | np.isinf(mags)] = 99.
-
-        # Zero point error
-        tile_id = tile_id_Arr[i]
-        zpt_err = Zero_point_error(
-            np.ones(mags.shape[1]) * tile_id, 'minijpas')
-
-        mag_err = (expfit(mags) ** 2 + zpt_err ** 2) ** 0.5
-        where_himag = np.where(mags > detec_lim_i)
-
-        mag_err[where_himag] = expfit(detec_lim_i)[where_himag[0]].reshape(-1,)
-
-        mags[where_himag] = detec_lim_i[where_himag[0]].reshape(-1,)
-
-        pm_SEDs_err_i = mag_to_flux(
-            mags - mag_err, w_central) - mag_to_flux(mags, w_central)
-
-        pm_SEDs_err = np.hstack((pm_SEDs_err, pm_SEDs_err_i))
-    else:
-        raise ValueError('Survey name not known')
-
-    # Perturb according to the error
-    if apply_err:
-        pm_SEDs += np.random.normal(size=mags.shape) * pm_SEDs_err
-
-    return pm_SEDs, pm_SEDs_err
-
-
-# def source_f_cont(mjd, plate, fiber):
-#     try:
-#         f_cont = np.load('npy/f_cont_DR16.npy')
-#         print('f_cont Arr loaded')
-#         return f_cont
-#     except:
-#         pass
-#     print('Computing f_cont Arr')
-
-#     Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
-
-#     N_sources = len(mjd)
-#     EW = np.empty(N_sources)
-#     Flambda = np.empty(N_sources)
-
-#     for src in range(N_sources):
-#         if src % 1000 == 0:
-#             print(f'{src} / {N_sources}', end='\r')
-
-#         where_mjd = np.where(Lya_fts['mjd'] == mjd[src])
-#         where_mjd_pl = np.where(Lya_fts['plate'][where_mjd] == plate[src])
-#         where_mjd_pl_fi = np.where(Lya_fts['fiberid'][where_mjd[0][where_mjd_pl]] == fiber[src])
-
-#         where = where_mjd[0][where_mjd_pl[0][where_mjd_pl_fi]]
-
-#         # Some sources are repeated, so we take the first occurence
-#         where = where[0][0]
-
-#         EW[src] = np.abs(Lya_fts['LyaEW'][where])  # Obs frame EW by now
-#         Flambda[src] = Lya_fts['LyaF'][where]
-
-#     Flambda *= 1e-17  # Correct units & apply correction
-
-#     # From the EW formula:
-#     f_cont = Flambda / EW
-
-#     np.save('npy/f_cont_DR16.npy', f_cont)
-
-#     return f_cont
-
-
 def load_QSO_prior_mock():
     filename = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
 
@@ -214,10 +53,6 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
     phistar1 = 3.33e-6
     Lstar1 = 44.65
     alpha1 = -1.35
-    # Zhang's LF
-    # phistar1 = 10 ** -5.85
-    # Lstar1 = 44.6
-    # alpha1 = -1.2
     Phi = schechter(Lx, phistar1, 10 ** Lstar1, alpha1) * Lx * np.log(10)
 
     LF_p_cum_x = np.linspace(L_min, L_max, 1000)
@@ -250,29 +85,17 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
     idx_closest = np.zeros(N_sources_LAE).astype(int)
     print('Looking for the closest QSOs...')
 
-    # Load EW to L_lya relation
-    # percs = np.load('../npy/percs_L_EW_relation.npy')
-    # L_bins = np.linspace(42, 46, 50)
-    # L_bc = np.array([L_bins[i : i + 2].sum() * 0.5 for i in range(len(L_bins) - 1)])
-
     for src in range(N_sources_LAE):
         if src % 500 == 0:
             print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
-        closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.12)
-                                 & (L_Arr > 0))[0]
+        closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.05)
+                                 & (L_Arr > 0) & np.isfinite(L_Arr))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
         if len(closest_z_Arr < 10):
             closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
 
-        # Then, within the closest in z, we choose the 5 closest in EW0_Lya
-        # Or don't select by L proximity (uncomment one)
-        # this_EW_16 = np.interp(my_L_Arr[src], L_bc, percs[:, 0])
-        # this_EW_50 = np.interp(my_L_Arr[src], L_bc, percs[:, 1])
-        # this_EW_84 = np.interp(my_L_Arr[src], L_bc, percs[:, 2])
-        # this_EW = this_EW_50 + np.random.randn() * (this_EW_84 - this_EW_16) * 0.5
-        # closest_L_Arr = np.abs(EW0[closest_z_Arr] - this_EW).argsort()[:1]
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:1]
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:10]
 
         # Pick the closest in L
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
@@ -343,27 +166,9 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
         if z[src] < 1.9:
             continue
 
-        # # Synthetic band in Ly-alpha wavelength +- 200 Angstroms
-        # w_lya_obs = w_lya * (1 + z[src])
-
-        # lya_band_tcurves = {
-        #     'tag': ['lyaband'],
-        #     't': [np.ones(lya_band_res)],
-        #     'w': [np.linspace(
-        #         w_lya_obs - lya_band_hw, w_lya_obs + lya_band_hw, lya_band_res
-        #     )]
-        # }
-        # # Extract the photometry of Ly-alpha (L_Arr)
-        # if z[src] > 0:
-        #     lya_band[src] = JPAS_synth_phot(
-        #         spec['FLUX'] * 1e-17, 10 ** spec['LOGLAM'], lya_band_tcurves
-        #     )
-        # if ~np.isfinite(lya_band[src]):
-        #     lya_band[src] = 0
 
     os.makedirs(correct_dir, exist_ok=True)
     np.save(f'{correct_dir}z_arr_{t_or_t}_dr16', z)
-    # np.save(f'{correct_dir}lya_band_arr_{t_or_t}_dr16', lya_band)
 
     return z
 
@@ -384,25 +189,22 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     mjd = plate_mjd_fiber[1]
     fiber = plate_mjd_fiber[2]
 
-    # z = lya_band_z(
-    #     fits_dir, plate, mjd, fiber, train_or_test)
-
-    # f_cont = source_f_cont(mjd, plate, fiber)
     Lya_fts = pd.read_csv('../csv/Lya_fts_DR16_v2.csv')
     z = Lya_fts['Lya_z'].to_numpy().flatten()
     z[z == 0] = -1
 
-    # F_line = (lya_band - f_cont) * 2 * lya_band_hw
-    # F_line_err = np.zeros(lya_band.shape)
-    # EW0 = F_line / f_cont / (1 + z)
-    # dL = cosmo.luminosity_distance(z).to(u.cm).value
-    # L = np.log10(F_line * 4*np.pi * dL ** 2)
     F_line = np.array(Lya_fts['LyaF']) * 1e-17
     F_line_err = np.array(Lya_fts['LyaF_err']) * 1e-17
     EW0 = np.array(Lya_fts['LyaEW']) / (1 + z)
     EW_err = np.array(Lya_fts['LyaEW_err'])
     dL = cosmo.luminosity_distance(z).to(u.cm).value
     L = np.log10(F_line * 4*np.pi * dL ** 2)
+
+    F_line_NV = np.array(Lya_fts['NVF']) * 1e-17
+    F_line_NV_err = np.array(Lya_fts['NVF_err']) * 1e-17
+    EW0_NV = np.array(Lya_fts['NVEW']) / (1 + z)
+    EW_NV_err = np.array(Lya_fts['NVFEW_err'])
+    L_NV = np.log10(F_line_NV * 4*np.pi * dL ** 2)
     
     # Mask poorly measured EWs
     EW_snr = EW0 * (1 + z) / EW_err
@@ -415,10 +217,6 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         filename_pm_DR16, usecols=np.arange(1, 64)
     ).to_numpy()[:, 1:61].T
 
-    # part = 99 is only for computing the correction adn f_cont arrays
-    if int(part) == 99:
-        return
-
     idx_closest, _, L_factor, new_z = duplicate_sources(area, z, L, z_min, z_max,
                                                         L_min, L_max, EW0)
 
@@ -430,6 +228,11 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     new_F_line = F_line[idx_closest] * L_factor
     new_F_line_err = F_line_err[idx_closest] * L_factor
     new_EW0 = EW0[idx_closest] * (1 + z[idx_closest]) / (1 + new_z)
+
+    new_L_NV = L_NV[idx_closest] + np.log10(L_factor)
+    new_F_NV_line = F_line_NV[idx_closest] * L_factor
+    new_F_NV_line_err = F_line_NV_err[idx_closest] * L_factor
+    new_EW0_NV = EW0_NV[idx_closest] * (1 + z[idx_closest]) / (1 + new_z)
 
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
@@ -445,6 +248,8 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         tcurves['tag']
         + [s + '_e' for s in tcurves['tag']]
         + ['z', 'EW0', 'L_lya', 'F_line', 'F_line_err']
+        + ['EW0_NV', 'L_NV', 'F_line_NV', 'F_line_NV_err']
+        + ['mjd', 'fiber', 'plate']
     )
 
     # Let's remove the sources with very low r magnitudes
@@ -455,11 +260,18 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
         data=np.hstack(
             (
                 pm_SEDs.T[low_r_mask], pm_SEDs_err.T[low_r_mask],
-                new_z[low_r_mask].reshape(-1,
-                                          1), new_EW0[low_r_mask].reshape(-1, 1),
-                new_L[low_r_mask].reshape(-1,
-                                          1), new_F_line[low_r_mask].reshape(-1, 1),
-                new_F_line_err[low_r_mask].reshape(-1, 1)
+                new_z[low_r_mask].reshape(-1, 1),
+                new_EW0[low_r_mask].reshape(-1, 1),
+                new_L[low_r_mask].reshape(-1, 1),
+                new_F_line[low_r_mask].reshape(-1, 1),
+                new_F_line_err[low_r_mask].reshape(-1, 1),
+                new_EW0_NV[low_r_mask].reshape(-1, 1),
+                new_L_NV[low_r_mask].reshape(-1, 1),
+                new_F_NV_line[low_r_mask].reshape(-1, 1),
+                new_F_NV_line_err[low_r_mask].reshape(-1, 1),
+                mjd[idx_closest][low_r_mask].reshape(-1, 1),
+                fiber[idx_closest][low_r_mask].reshape(-1, 1),
+                plate[idx_closest][low_r_mask].reshape(-1, 1),
             )
         )
     ).to_csv(filename + f'/data{part}.csv', header=hdr)
