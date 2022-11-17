@@ -68,9 +68,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     ax1.set_xticklabels(xtick_labels, rotation='vertical')
     ax1.yaxis.set_ticks_position('both')
     ax1.xaxis.set_ticks_position('both')
-    ax1.tick_params(axis='y', direction='in', labelsize=16, labelleft=False,
-                    length=9)
-    ax1.tick_params(axis='x', direction='in', labelsize=16, length=9)
+    ax1.tick_params(axis='y', direction='in', labelsize=16, labelleft=False)
+    ax1.tick_params(axis='x', direction='in', labelsize=16)
 
     axc0.tick_params(labelsize=16)
     axc1.tick_params(labelsize=16)

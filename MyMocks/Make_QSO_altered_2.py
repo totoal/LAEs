@@ -90,12 +90,12 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
             print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
         closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.05)
-                                 & (L_Arr > 0) & np.isfinite(L_Arr))[0]
+                                 & (EW0 > 0) & np.isfinite(EW0))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
-        if len(closest_z_Arr < 10):
-            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:10]
+        if len(closest_z_Arr < 1):
+            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:100]
 
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:10]
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:100]
 
         # Pick the closest in L
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
@@ -210,6 +210,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     EW_snr = EW0 * (1 + z) / EW_err
     mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 10)
     L[mask_neg_EW0] = -1
+    z[mask_neg_EW0] = -1
 
     # Load the DR16 PM
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
