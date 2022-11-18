@@ -109,8 +109,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     median = np.ones(len(L_binning) - 1) * 99
     last = [99., 99.]
     for i in range(len(L_binning) - 1):
-        in_bin = (10 ** L_Arr >= L_binning[i]
-                  ) & (10 ** L_Arr < L_binning[i + 1])
+        in_bin = (10 ** L_Arr >= L_binning[i]) & (10 ** L_Arr < L_binning[i + 1])
         if count_true(in_bin) == 0:
             L_Lbin_err_plus[i] = last[0]
             L_Lbin_err_minus[i] = last[1]
@@ -237,7 +236,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     L_bins_c = np.array([(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)])
 
     # Perturb L
-    N_iter = 250
+    N_iter = 1
     h2d_nice_qso_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -248,7 +247,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
 
     for k in range(N_iter):
-        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
+        L_perturbed = L_Arr #+ L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
@@ -379,9 +378,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
 
-    z_cut = (z_min < z_Arr) & (z_Arr < z_max)
+    z_cut = (lya_lines >= nb_min) & (lya_lines <= nb_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
-    ew_cut = EW_lya > ew0_cut
+    ew_cut = EW_lya > 0.
     mag_cut = (mag > mag_min) & (mag < mag_max)
 
     N_sources = len(mag_cut)
@@ -800,6 +799,12 @@ if __name__ == '__main__':
         (17, 24, 12, 16, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
+
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 8, 12, 20, 100, 'nb'),
+        (17, 24, 8, 12, 50, 100, 'nb'),
+        (17, 24, 8, 12, 30, 200, 'nb'),
+        (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
     for qso_frac in [1.0]:

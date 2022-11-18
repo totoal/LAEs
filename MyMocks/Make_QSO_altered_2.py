@@ -93,9 +93,9 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
                                  & (EW0 > 0) & np.isfinite(EW0))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
         if len(closest_z_Arr < 1):
-            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()[:100]
+            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()
 
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()[:100]
+        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
         # Pick the closest in L
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
