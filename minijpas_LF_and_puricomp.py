@@ -7,7 +7,6 @@ from scipy.stats import binned_statistic
 
 import os
 import time
-import glob
 
 from three_filter import cont_est_3FM
 from LumFunc_miniJPAS import LF_perturb_err
@@ -30,10 +29,6 @@ w_lya = 1215.67
 filter_tags = load_filter_tags()
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
-
-
-def sch_fit(Lx, Phistar, Lstar, alpha):
-    return schechter(Lx, Phistar, Lstar, alpha) * Lx * np.log(10)
 
 
 def load_mocks(add_errs=True, qso_LAE_frac=1., 
@@ -596,8 +591,8 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
-    L_Arr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
-                              [mask_median_L], median_L[mask_median_L])
+    L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
+                                   [mask_median_L], median_L[mask_median_L])
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -651,7 +646,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
         L_LF_err_percentiles, this_puri = LF_perturb_err(
-            L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
+            L_Arr_corr[this_mask], L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
             mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
             return_puri=True, dirname=dirname
@@ -663,7 +658,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         nice_puri_list[this_mask[nice_lya]] = this_puri
 
     L_LF_err_percentiles, this_puri = LF_perturb_err(
-        L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
+        L_Arr_corr[~is_minijpas_source], L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
         bins, 'jnep', tile_id[~is_minijpas_source], return_puri=True, dirname=dirname
     )
@@ -678,7 +673,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     L_LF_err_minus = L_LF_err_minus_jn + L_LF_err_minus_mj
 
     ###### RAW LF ######
-    LF_raw = np.histogram(L_Arr[nice_lya], bins=bins)[0] / bin_width / volume
+    LF_raw = np.histogram(L_Arr_corr[nice_lya], bins=bins)[0] / bin_width / volume
     ####################
 
     # Save the selection
@@ -692,7 +687,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         'SDSS_zspec': zsp[nice_lya],
         'RA': ra[nice_lya],
         'DEC': dec[nice_lya],
-        'L_lya': L_Arr[nice_lya],
+        'L_lya': L_Arr_corr[nice_lya],
         'L_lya_err': L_e_Arr[nice_lya],
         'EW_lya': EW_Arr[nice_lya],
         'EW_lya_err': EW_e_Arr[nice_lya],
@@ -728,34 +723,6 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
             marker='^', markersize=11, zorder=4, label='miniJPAS + J-NEP (raw)')
     LFs_dict['LF_total_raw'] = LF_raw
-
-    # Plot the corrected J-NEP LF
-    # yerr_cor_plus = (hist_median_jn + L_LF_err_plus_jn **
-    #                  2) ** 0.5 / bin_width / volume_jn
-    # yerr_cor_minus = (hist_median_jn + L_LF_err_minus_jn **
-    #                   2) ** 0.5 / bin_width / volume_jn
-    # xerr = bin_width / 2
-    # LF_values = hist_median_jn / bin_width / volume_jn
-    # ax.errorbar(LF_bins + 0.028, LF_values,
-    #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-    #             marker='^', linestyle='', markersize=10, color='g',
-    #             label='J-NEP', zorder=2)
-    # LFs_dict['LF_jnep'] = LF_values
-    # LFs_dict['LF_jnep_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
-
-    # Plot the corrected miniJPAS LF
-    # yerr_cor_plus = (hist_median_mj + L_LF_err_plus_mj **
-    #                  2) ** 0.5 / bin_width / volume_mj
-    # yerr_cor_minus = (hist_median_mj + L_LF_err_minus_mj **
-    #                   2) ** 0.5 / bin_width / volume_mj
-    # xerr = bin_width / 2
-    # LF_values = hist_median_mj / bin_width / volume_mj
-    # ax.errorbar(LF_bins + 0.014, LF_values,
-    #             yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-    #             marker='^', linestyle='', markersize=10, color='m',
-    #             label='miniJPAS', zorder=3)
-    # LFs_dict['LF_minijpas'] = LF_values
-    # LFs_dict['LF_minijpas_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Save the dict
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
@@ -835,7 +802,6 @@ if __name__ == '__main__':
         (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
-    # for qso_frac in [1.0, 1.2, 0.8, 0.5]:
     for qso_frac in [1.0]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:

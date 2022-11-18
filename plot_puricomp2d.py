@@ -101,13 +101,13 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     ####################
     # Alternative Plot #
     ####################
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(5, 5))
 
     ax_cbar = fig.add_axes([0.92, 0.1, 0.05, 0.79])
     
     correction = puri.T / comp.T
     # correction[~np.isfinite(correction)] = 0.
-    sns.heatmap(correction, ax=ax, vmin=0, vmax=5, cbar_ax=ax_cbar, cmap=cmap,
+    sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
                 rasterized=True)
 
     ax.set_yticks(yticks)

@@ -38,6 +38,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
         qso_L_NV = data_qso['L_NV'].to_numpy()
     except:
         qso_L = np.zeros(qso_zspec.shape)
+        qso_L_NV = np.zeros(qso_zspec.shape)
         EW_qso = np.zeros(qso_zspec.shape)
 
     # Remove bad sources
@@ -64,7 +65,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     EW_qso = EW_qso[good_src].astype(float)
     qso_zspec = qso_zspec[good_src].astype(float)
     qso_L = qso_L[good_src].astype(float)
-    qso_L_NV = qso_L[good_src].astype(float)
+    qso_L_NV = qso_L_NV[good_src].astype(float)
 
     return qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV
 

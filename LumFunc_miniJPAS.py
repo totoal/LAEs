@@ -34,7 +34,7 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
 
     return bin_centers, hist, volume, bin_width
 
-def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
+def LF_perturb_err(L_Arr_corr, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, survey_name, tile_id, which_w=[0, 2],
                    return_puri=False, dirname=''):
     N_bins = len(bins) - 1
@@ -47,6 +47,8 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     for k in range(N_iter):
         L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed[np.isnan(L_perturbed)] = 0.
+        L_perturbed_corr = L_Arr_corr + L_e_Arr * np.random.randn(len(L_e_Arr))
+        L_perturbed_corr[np.isnan(L_perturbed_corr)] = 0.
 
         puri, comp = weights_LF(
             L_perturbed[nice_lya], mag[nice_lya],
@@ -61,7 +63,7 @@ def LF_perturb_err(L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         w[include_mask] = 1. / comp[include_mask]
         w[np.isnan(w) | np.isinf(w)] = 0.
 
-        hist_i_mat[k], _ = np.histogram(L_perturbed[nice_lya], bins=bins, weights=w)
+        hist_i_mat[k], _ = np.histogram(L_perturbed_corr[nice_lya], bins=bins, weights=w)
         puri_list.append(puri)
     
     puri = np.mean(puri_list, axis=0)
