@@ -47,7 +47,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
-    N_qso_loL = count_true(is_qso & ~where_hiL)
+    N_qso_loL = count_true(is_qso & ~where_hiL & is_LAE)
     N_qso_hiL = count_true(is_qso & where_hiL)
     N_sf = count_true(is_sf)
     print(f'\nMock length: {len(L_lya)}')
@@ -380,7 +380,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     z_cut = (lya_lines >= nb_min) & (lya_lines <= nb_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
-    ew_cut = EW_lya > 0.
     mag_cut = (mag > mag_min) & (mag < mag_max)
 
     N_sources = len(mag_cut)
@@ -419,12 +418,12 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_lya_NV = np.log10(10**L_lya + 10**L_NV)
 
     # Apply bin err
-    L_binning_position = binned_statistic(
-        10 ** L_Arr, None, 'count', bins=L_binning
-    ).binnumber
-    L_binning_position[L_binning_position > len(
-        L_binning) - 2] = len(L_binning) - 2
+    L_binning_position = binned_statistic(10 ** L_Arr, None,
+                                          'count', bins=L_binning).binnumber
+    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = L_Lbin_err[L_binning_position]
+
+    ew_cut = EW_lya > ew0_cut
 
     # Compute puri/comp 2D
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
@@ -645,8 +644,8 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
         L_LF_err_percentiles, this_puri = LF_perturb_err(
-            L_Arr_corr[this_mask], L_Arr[this_mask], L_e_Arr[this_mask], nice_lya[this_mask],
-            mag[this_mask], z_Arr[this_mask], starprob[this_mask],
+            L_Arr_corr[this_mask], L_Arr[this_mask], L_e_Arr[this_mask],
+            nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
             return_puri=True, dirname=dirname
         )
@@ -657,9 +656,11 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         nice_puri_list[this_mask[nice_lya]] = this_puri
 
     L_LF_err_percentiles, this_puri = LF_perturb_err(
-        L_Arr_corr[~is_minijpas_source], L_Arr[~is_minijpas_source], L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
-        mag[~is_minijpas_source], z_Arr[~is_minijpas_source], starprob[~is_minijpas_source],
-        bins, 'jnep', tile_id[~is_minijpas_source], return_puri=True, dirname=dirname
+        L_Arr_corr[~is_minijpas_source], L_Arr[~is_minijpas_source],
+        L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
+        mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
+        starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
+        return_puri=True, dirname=dirname
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -800,14 +801,14 @@ if __name__ == '__main__':
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
 
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 8, 12, 20, 100, 'nb'),
-        (17, 24, 8, 12, 50, 100, 'nb'),
-        (17, 24, 8, 12, 30, 200, 'nb'),
-        (17, 24, 8, 12, 30, 50, 'nb'),
+        # (17, 24, 8, 12, 30, 100, 'nb'),
+        # (17, 24, 8, 12, 20, 100, 'nb'),
+        # (17, 24, 8, 12, 50, 100, 'nb'),
+        # (17, 24, 8, 12, 30, 200, 'nb'),
+        # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
-    for qso_frac in [1.0]:
+    for qso_frac in [1.0, 0.5]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             # gal_area = 5.54

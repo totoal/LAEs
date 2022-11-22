@@ -92,8 +92,10 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
         closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.05)
                                  & (EW0 > 0) & np.isfinite(EW0))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
-        if len(closest_z_Arr < 1):
+        if len(closest_z_Arr) < 1:
             closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()
+            print(z_Arr[closest_z_Arr[0]], my_z_Arr[src])
+            print(f'Best I can do is: delta_z = {z_Arr[closest_z_Arr[0]] - my_z_Arr[src]:0.4f}')
 
         closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
 
@@ -178,8 +180,6 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_DR16_{surname}0'
     os.makedirs(filename, exist_ok=True)
 
-    fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/DR16/QSO/'
-
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
 
     # Loading the Carolina's QSO mock
@@ -208,7 +208,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     
     # Mask poorly measured EWs
     EW_snr = EW0 * (1 + z) / EW_err
-    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 10)
+    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 5)
     L[mask_neg_EW0] = -1
     z[mask_neg_EW0] = -1
 

@@ -215,8 +215,8 @@ def z_volume(z_min, z_max, area):
     '''
     z_x = np.linspace(z_min, z_max, 1000)
     dV = cosmo.differential_comoving_volume(z_x).to(u.Mpc**3 / u.sr).value
-    area *= (2 * np.pi / 360) ** 2
-    theta = np.arccos(1 - area / (2 * np.pi))
+    area_rad = area * (2 * np.pi / 360) ** 2
+    theta = np.arccos(1 - area_rad / (2 * np.pi))
     Omega = 2 * np.pi * (1 - np.cos(theta))
     vol = simpson(dV, z_x) * Omega
     return vol
