@@ -742,7 +742,6 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     LFs_dict = {'LF_bins': LF_bins}
 
     fig, ax = plt.subplots(figsize=(7, 5))
-    # fig, ax = plt.subplots(figsize=(4, 4))
 
     # Plot the corrected total LF
     yerr_cor_plus = (hist_median + L_LF_err_plus **

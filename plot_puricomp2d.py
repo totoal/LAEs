@@ -2,9 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+tile_dict = {
+    'minijpasAEGIS001': 2241,
+    'minijpasAEGIS002': 2243,
+    'minijpasAEGIS003': 2406,
+    'minijpasAEGIS004': 2470,
+    'jnep': 2520
+}
 
-def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
+def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
                     L_Arr=None, L_Arr_e=None, mag=None):
+
+    # L and r from the selected sources in this {survey_name}
+    mask_this_tile = (select['tile_id'] == tile_dict[survey_name])
+    selec_r = select['r'][mask_this_tile]
+    selec_L = select['L_lya'][mask_this_tile]
+    selec_L_err = select['L_lya_err'][mask_this_tile]
+
     fig = plt.figure(figsize=(5, 5))
 
     width = 1
@@ -31,19 +45,20 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=2, cbar_ax=axc1, cmap=cmap, rasterized=True)
 
     # If L_Arr is not None, plot the selected sources
-    if (L_Arr is not None) and (L_Arr_e is not None) and (mag is not None):
-        # Change units to plot:
-        def L_to_bins(L_Arr):
-            return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
-        def r_to_bins(L_Arr):
-            return np.interp(mag, r_bins, np.arange(len(r_bins)))
+    # Change units to plot:
+    def L_to_bins(L_Arr):
+        return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
+    def r_to_bins(mag):
+        return np.interp(mag, r_bins, np.arange(len(r_bins)))
 
-        L_Arr_b = L_to_bins(L_Arr)
-        mag_b = r_to_bins(mag)
+    L_Arr_b = L_to_bins(selec_L)
+    mag_b = r_to_bins(selec_r)
+    L_err_Arr_b = (L_to_bins(selec_L + selec_L_err)
+                   - L_to_bins(selec_L - selec_L_err)) * 0.5
 
-        for ax in [ax0, ax1]:
-            ax.errorbar(L_Arr_b, mag_b, xerr=L_Arr_e, fmt='s',
-                        color='k', capsize=3, linestyle='')
+    for ax in [ax0, ax1]:
+        ax.errorbar(L_Arr_b, mag_b, fmt='s', xerr=L_err_Arr_b,
+                    color='k', capsize=3, linestyle='')
 
     # TICKS
     xticks = range(len(L_bins))[1::7]  # Only odd xticks
@@ -109,6 +124,20 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name,
     # correction[~np.isfinite(correction)] = 0.
     sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
                 rasterized=True)
+
+    # Change units to plot:
+    def L_to_bins(L_Arr):
+        return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
+    def r_to_bins(mag):
+        return np.interp(mag, r_bins, np.arange(len(r_bins)))
+
+    L_Arr_b = L_to_bins(selec_L)
+    mag_b = r_to_bins(selec_r)
+    L_err_Arr_b = (L_to_bins(selec_L + selec_L_err)
+                   - L_to_bins(selec_L - selec_L_err)) * 0.5
+
+    ax.errorbar(L_Arr_b, mag_b, fmt='s', xerr=L_err_Arr_b,
+                color='k', capsize=3, linestyle='')
 
     ax.set_yticks(yticks)
     ax.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -200,7 +229,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_dirname = 'Luminosity_functions/LF_r17-24_nb1-4_ew30_ewoth100_nb_0.5'
+    LF_dirname = 'Luminosity_functions/LF_r17-24_nb1-4_ew30_ewoth100_nb_1.0'
 
     L_bins = np.load('npy/puricomp2d_L_bins.npy')
     r_bins = np.load('npy/puricomp2d_r_bins.npy')
@@ -210,5 +239,6 @@ if __name__ == '__main__':
     for survey_name in survey_list:
         puri2d = np.load(f'{LF_dirname}/puri2d_{survey_name}.npy')
         comp2d = np.load(f'{LF_dirname}/comp2d_{survey_name}.npy')
+        select = np.load(f'{LF_dirname}/selection.npy', allow_pickle=True)
 
-        puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name)
+        puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name, select)

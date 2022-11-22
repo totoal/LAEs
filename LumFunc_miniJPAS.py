@@ -58,7 +58,7 @@ def LF_perturb_err(L_Arr_corr, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         )
 
         w = np.random.rand(len(puri))
-        include_mask = (w < puri)
+        include_mask = (w < puri) & (comp > 0.2)
         w[:] = 1.
         w[~include_mask] = 0.
         w[include_mask] = 1. / comp[include_mask]
