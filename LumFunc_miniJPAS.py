@@ -45,7 +45,7 @@ def LF_perturb_err(L_Arr_corr, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     puri_list = []
 
     for k in range(N_iter):
-        delta_L = 0 # L_e_Arr * np.random.randn(len(L_e_Arr))
+        delta_L = L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed = L_Arr + delta_L
         L_perturbed[np.isnan(L_perturbed)] = 0.
         L_perturbed_corr = L_Arr_corr + delta_L

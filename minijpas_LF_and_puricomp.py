@@ -122,6 +122,28 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
 
     return L_Lbin_err_plus, median
 
+def compute_EW_bin_err(EW_Arr, EW_lya, EW_binning):
+    '''
+    Computes the errors due to dispersion of L_retrieved with some L_retrieved binning
+    '''
+    EW_bin_err_plus = np.ones(len(EW_binning) - 1) * 99
+    EW_bin_err_minus = np.ones(len(EW_binning) - 1) * 99
+    median = np.ones(len(EW_binning) - 1) * 99
+    last = [0., 0.]
+    for i in range(len(EW_binning) - 1):
+        in_bin = (EW_Arr >= EW_binning[i]) & (EW_Arr < EW_binning[i + 1])
+        if count_true(in_bin) == 0:
+            EW_bin_err_plus[i] = last[0]
+            EW_bin_err_minus[i] = last[1]
+            continue
+        perc = np.nanpercentile((EW_Arr - EW_lya)[in_bin], [16, 50, 84])
+        EW_bin_err_plus[i] = perc[2] - perc[1]
+
+        last = [EW_bin_err_plus[i], EW_bin_err_minus[i]]
+        median[i] = perc[1]
+
+    return EW_bin_err_plus, median
+
 
 def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
@@ -236,7 +258,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     L_bins_c = np.array([(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)])
 
     # Perturb L
-    N_iter = 1
+    N_iter = 250
     h2d_nice_qso_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -247,7 +269,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
 
     for k in range(N_iter):
-        L_perturbed = L_Arr #+ L_e_Arr * np.random.randn(len(L_e_Arr))
+        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
@@ -395,20 +417,27 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                                cont_est_lya, z_Arr, mask=nice_lya_mask)
 
     # Estimate Luminosity
-    _, _, L_Arr, _, _, _ = EW_L_NB(
+    EW_nb_Arr, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
+
+    # Compute EW bin err and bias correction
+    EW_binning = np.linspace(0, 50, 50)
+    Lmask = nice_z & nice_lya
+    EW_bin_err, median_EW = compute_EW_bin_err(EW_nb_Arr[Lmask], EW_lya[Lmask], EW_binning)
 
     # Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
-    Lmask = nice_z & nice_lya & (L_lya > 43.2)
-    L_Lbin_err, median_L = compute_L_Lbin_err(
-        L_Arr[Lmask], L_lya[Lmask], L_binning
-    )
+    Lmask = nice_z & nice_lya & (L_lya > 43)
+    L_Lbin_err, median_L = compute_L_Lbin_err(L_Arr[Lmask], L_lya[Lmask], L_binning)
+    
     np.save('npy/L_nb_err.npy', L_Lbin_err)
     np.save('npy/L_bias.npy', median_L)
     np.save('npy/L_nb_err_binning.npy', L_binning)
+    np.save('npy/EW_nb_err.npy', EW_bin_err)
+    np.save('npy/EW_bias.npy', median_EW)
+    np.save('npy/EW_nb_err_binning.npy', EW_binning)
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
@@ -585,12 +614,22 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     L_Lbin_err = np.load('npy/L_nb_err.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
+    EW_bin_err = np.load('npy/EW_nb_err.npy')
+    median_EW = np.load('npy/EW_bias.npy')
+    EW_binning = np.load('npy/EW_nb_err_binning.npy')
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
+    EW_bin_c = [EW_binning[i: i + 2].sum() * 0.5 for i in range(len(EW_binning) - 1)]
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
     L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
                                    [mask_median_L], median_L[mask_median_L])
+
+    EW_binning_position = binned_statistic(EW_Arr, None, 'count',
+                                           bins=EW_binning).binnumber
+    EW_binning_position[EW_binning_position > len(EW_binning) - 2] = len(EW_binning) - 2
+    EW_Arr_err_corr = EW_bin_err[EW_binning_position]
+    EW_Arr_corr = EW_Arr - np.interp(EW_Arr, np.log10(EW_bin_c), median_EW)
 
     # Apply bin err
     L_binning_position = binned_statistic(
@@ -689,8 +728,8 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         'DEC': dec[nice_lya],
         'L_lya': L_Arr_corr[nice_lya],
         'L_lya_err': L_e_Arr[nice_lya],
-        'EW_lya': EW_Arr[nice_lya],
-        'EW_lya_err': EW_e_Arr[nice_lya],
+        'EW_lya': EW_Arr_corr[nice_lya],
+        'EW_lya_err': EW_Arr_err_corr[nice_lya],
         'puri': nice_puri_list,
         'r': mag[nice_lya],
         'other_lines': [other_lines[idx] for idx in np.where(nice_lya)[0]]
