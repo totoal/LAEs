@@ -30,6 +30,8 @@ filter_tags = load_filter_tags()
 
 z_nb_Arr = w_central[:-4] / w_lya - 1
 
+sf_frac = 0.1
+
 
 def load_mocks(add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
@@ -39,7 +41,6 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
-    sf_frac = 0.5
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _, L_NV = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
@@ -116,11 +117,12 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
             continue
         perc = np.nanpercentile((L_Arr - L_lya)[in_bin], [16, 50, 84])
         L_Lbin_err_plus[i] = perc[2] - perc[1]
+        L_Lbin_err_minus[i] = perc[1] - perc[1]
 
         last = [L_Lbin_err_plus[i], L_Lbin_err_minus[i]]
         median[i] = perc[1]
 
-    return L_Lbin_err_plus, median
+    return L_Lbin_err_plus, L_Lbin_err_minus, median
 
 def compute_EW_bin_err(EW_Arr, EW_lya, EW_binning):
     '''
@@ -269,7 +271,10 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_gal_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
 
     for k in range(N_iter):
-        L_perturbed = L_Arr + L_e_Arr * np.random.randn(len(L_e_Arr))
+        randN = np.random.randn(len(L_Arr))
+        L_perturbed = np.empty_like(L_Arr)
+        L_perturbed[randN <= 0] = (L_Arr + L_e_Arr[0] * randN)[randN <= 0]
+        L_perturbed[randN > 0] = (L_Arr + L_e_Arr[1] * randN)[randN > 0]
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
@@ -430,9 +435,11 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_binning = np.logspace(40, 47, 25 + 1)
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     Lmask = nice_z & nice_lya & (L_lya > 43)
-    L_Lbin_err, median_L = compute_L_Lbin_err(L_Arr[Lmask], L_lya[Lmask], L_binning)
+    L_Lbin_err_plus, L_Lbin_err_minus, median_L =\
+        compute_L_Lbin_err(L_Arr[Lmask], L_lya[Lmask], L_binning)
     
-    np.save('npy/L_nb_err.npy', L_Lbin_err)
+    np.save('npy/L_nb_err_plus.npy', L_Lbin_err_plus)
+    np.save('npy/L_nb_err_minus.npy', L_Lbin_err_minus)
     np.save('npy/L_bias.npy', median_L)
     np.save('npy/L_nb_err_binning.npy', L_binning)
     np.save('npy/EW_nb_err.npy', EW_bin_err)
@@ -450,14 +457,15 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_binning_position = binned_statistic(10 ** L_Arr, None,
                                           'count', bins=L_binning).binnumber
     L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
-    L_e_Arr = L_Lbin_err[L_binning_position]
+    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
+                  L_Lbin_err_plus[L_binning_position]]
 
     ew_cut = EW_lya > ew0_cut
 
     # Compute puri/comp 2D
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
     puri2d, comp2d, _, r_bins = puricomp_corrections(
-        mag_min, mag_max, L_Arr, L_e_Arr, nice_lya,
+        mag_min, mag_max, L_Arr, L_e_Arr_pm, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
         L_lya_NV, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
         good_qso_factor, gal_factor
@@ -607,11 +615,12 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     )
 
     # Estimate Luminosity
-    EW_Arr, EW_e_Arr, L_Arr, _, _, _ = EW_L_NB(
+    EW_Arr, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
-    L_Lbin_err = np.load('npy/L_nb_err.npy')
+    L_Lbin_err_plus = np.load('npy/L_nb_err_plus.npy')
+    L_Lbin_err_minus = np.load('npy/L_nb_err_minus.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
     EW_bin_err = np.load('npy/EW_nb_err.npy')
@@ -620,11 +629,6 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
     EW_bin_c = [EW_binning[i: i + 2].sum() * 0.5 for i in range(len(EW_binning) - 1)]
 
-    # Correct L_Arr with the median
-    mask_median_L = (median_L < 10)
-    L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
-                                   [mask_median_L], median_L[mask_median_L])
-
     EW_binning_position = binned_statistic(EW_Arr, None, 'count',
                                            bins=EW_binning).binnumber
     EW_binning_position[EW_binning_position > len(EW_binning) - 2] = len(EW_binning) - 2
@@ -632,12 +636,17 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     EW_Arr_corr = EW_Arr - np.interp(EW_Arr, np.log10(EW_bin_c), median_EW)
 
     # Apply bin err
-    L_binning_position = binned_statistic(
-        10 ** L_Arr, None, 'count', bins=L_binning
-    ).binnumber
-    L_binning_position[L_binning_position > len(
-        L_binning) - 2] = len(L_binning) - 2
-    L_e_Arr = L_Lbin_err[L_binning_position]
+    L_binning_position = binned_statistic(10 ** L_Arr, None,
+                                          'count', bins=L_binning).binnumber
+    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
+    L_e_Arr = (L_Lbin_err_plus + L_Lbin_err_minus)[L_binning_position] * 0.5
+    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
+                  L_Lbin_err_plus[L_binning_position]]
+
+    # Correct L_Arr with the median
+    mask_median_L = (median_L < 10)
+    corr_L = np.interp(L_Arr, np.log10(L_bin_c)[mask_median_L], median_L[mask_median_L])
+    L_Arr_corr = L_Arr - corr_L
 
     bins = np.log10(L_binning)
 
@@ -683,7 +692,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
         L_LF_err_percentiles, this_puri = LF_perturb_err(
-            L_Arr_corr[this_mask], L_Arr[this_mask], L_e_Arr[this_mask],
+            corr_L[this_mask], L_Arr[this_mask], L_e_Arr_pm[this_mask],
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
             return_puri=True, dirname=dirname
@@ -696,7 +705,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
 
     L_LF_err_percentiles, this_puri = LF_perturb_err(
         L_Arr_corr[~is_minijpas_source], L_Arr[~is_minijpas_source],
-        L_e_Arr[~is_minijpas_source], nice_lya[~is_minijpas_source],
+        L_e_Arr_pm[~is_minijpas_source], nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
         starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
         return_puri=True, dirname=dirname
@@ -727,6 +736,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
         'RA': ra[nice_lya],
         'DEC': dec[nice_lya],
         'L_lya': L_Arr_corr[nice_lya],
+        'L_lya_NV': L_Arr[nice_lya],
         'L_lya_err': L_e_Arr[nice_lya],
         'EW_lya': EW_Arr_corr[nice_lya],
         'EW_lya_err': EW_Arr_err_corr[nice_lya],
@@ -832,12 +842,14 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 12, 16, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 24, 30, 100, 'nb'),
+        # (17, 24, 1, 4, 30, 100, 'nb'),
+        # (17, 24, 4, 8, 30, 100, 'nb'),
+        # (17, 24, 8, 12, 30, 100, 'nb'),
+        # (17, 24, 12, 16, 30, 100, 'nb'),
+        # (17, 24, 16, 20, 30, 100, 'nb'),
+        # (17, 24, 20, 24, 30, 100, 'nb'),
+
+        (17, 24, 1, 24, 30, 100, 'nb'),
 
         # (17, 24, 8, 12, 30, 100, 'nb'),
         # (17, 24, 8, 12, 20, 100, 'nb'),
@@ -849,12 +861,11 @@ if __name__ == '__main__':
     for qso_frac in [1.0, 0.5]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
-            # gal_area = 5.54
             gal_area = 3
             bad_qso_area = 200
             good_qso_area = 400 / qso_frac
             hiL_qso_area = 4000 / qso_frac
-            sf_area = 200
+            sf_area = 400 * sf_frac
 
             # the proportional factors are made in relation to bad_qso
             # so bad_qso_factor = 1

@@ -34,22 +34,24 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
 
     return bin_centers, hist, volume, bin_width
 
-def LF_perturb_err(L_Arr_corr, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
+def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, survey_name, tile_id, which_w=[0, 2],
                    return_puri=False, dirname=''):
     N_bins = len(bins) - 1
 
-    N_iter = 1000
+    N_iter = 500
     hist_i_mat = np.zeros((N_iter, N_bins))
 
     puri_list = []
 
     for k in range(N_iter):
-        delta_L = L_e_Arr * np.random.randn(len(L_e_Arr))
-        L_perturbed = L_Arr + delta_L
+        randN = np.random.randn(len(L_Arr))
+        L_perturbed = np.empty_like(L_Arr)
+        L_perturbed[randN <= 0] = (L_Arr + L_e_Arr[0] * randN)[randN <= 0]
+        L_perturbed[randN > 0] = (L_Arr + L_e_Arr[1] * randN)[randN > 0]
         L_perturbed[np.isnan(L_perturbed)] = 0.
-        L_perturbed_corr = L_Arr_corr + delta_L
-        L_perturbed_corr[np.isnan(L_perturbed_corr)] = 0.
+        
+        L_perturbed_corr = L_perturbed - corr_L
 
         puri, comp = weights_LF(
             L_perturbed[nice_lya], mag[nice_lya],
@@ -58,7 +60,7 @@ def LF_perturb_err(L_Arr_corr, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         )
 
         w = np.random.rand(len(puri))
-        include_mask = (w < puri) & (comp > 0.2)
+        include_mask = (w < puri)
         w[:] = 1.
         w[~include_mask] = 0.
         w[include_mask] = 1. / comp[include_mask]
