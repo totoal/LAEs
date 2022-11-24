@@ -105,10 +105,10 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     '''
     Computes the errors due to dispersion of L_retrieved with some L_retrieved binning
     '''
-    L_Lbin_err_plus = np.ones(len(L_binning) - 1) * 99
-    L_Lbin_err_minus = np.ones(len(L_binning) - 1) * 99
-    median = np.ones(len(L_binning) - 1) * 99
-    last = [99., 99.]
+    L_Lbin_err_plus = np.ones(len(L_binning) - 1) * np.inf
+    L_Lbin_err_minus = np.ones(len(L_binning) - 1) * np.inf
+    median = np.ones(len(L_binning) - 1) * np.inf
+    last = [np.inf, np.inf]
     for i in range(len(L_binning) - 1):
         in_bin = (10 ** L_Arr >= L_binning[i]) & (10 ** L_Arr < L_binning[i + 1])
         if count_true(in_bin) == 0:
@@ -117,7 +117,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
             continue
         perc = np.nanpercentile((L_Arr - L_lya)[in_bin], [16, 50, 84])
         L_Lbin_err_plus[i] = perc[2] - perc[1]
-        L_Lbin_err_minus[i] = perc[1] - perc[1]
+        L_Lbin_err_minus[i] = perc[1] - perc[0]
 
         last = [L_Lbin_err_plus[i], L_Lbin_err_minus[i]]
         median[i] = perc[1]
@@ -215,7 +215,6 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     comp_qso = (hg_comp_qso_loL * good_qso_factor + hg_comp_qso_hiL * hiL_factor) / \
         (totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor)
     purity = hg_puri / (hg_puri + hb)
-    # F1score = 2 * purity * completeness / (purity + completeness)
     purity[(purity == 0.) | ~np.isfinite(purity)] = 0.
 
     ax.plot(b_c, comp_sf, color='C1', ls='--', label='Completeness (only SF)')
@@ -223,7 +222,6 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
             label='Completeness (only QSO)')
     ax.plot(b_c, completeness, marker='s', label='Completeness', c='C5')
     ax.plot(b_c, purity, marker='^', label='Purity', c='C6')
-    # ax.plot(b_c, F1score, marker='^', label='F1 score', zorder=-99, c='dimgray')
 
     # Save the arrays
     np.save(f'{dirname}/puri1d_{survey_name}.npy', purity)
@@ -241,9 +239,6 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     ax.set_xlim((42, 45.5))
     ax.set_ylim((0, 1))
     ax.legend(fontsize=12)
-    # ax.set_title(
-    #     f'r{mag_min}-{mag_max}, EW0_cut = {ew0_cut}, z{z_min:0.2f}-{z_max:0.2f}',
-    #     fontsize=12)
 
     plt.savefig(f'{dirname}/puricomp1d_{survey_name}.pdf',
                 bbox_inches='tight', facecolor='white')
@@ -256,8 +251,8 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          good_qso_factor, gal_factor):
     r_bins = np.linspace(mag_min, mag_max, 200 + 1)
 
-    r_bins_c = np.array([(r_bins[i] + r_bins[i + 1]) * 0.5 for i in range(len(r_bins) - 1)])
-    L_bins_c = np.array([(L_bins[i] + L_bins[i + 1]) * 0.5 for i in range(len(L_bins) - 1)])
+    r_bins_c = bin_centers(r_bins)
+    L_bins_c = bin_centers(L_bins)
 
     # Perturb L
     N_iter = 250
@@ -465,9 +460,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Compute puri/comp 2D
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
     puri2d, comp2d, _, r_bins = puricomp_corrections(
-        mag_min, mag_max, L_Arr, L_e_Arr_pm, nice_lya,
+        mag_min, mag_max, L_Arr_corr, L_e_Arr_pm, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
-        L_lya_NV, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
+        L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
         good_qso_factor, gal_factor
     )
 
@@ -640,8 +635,6 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
                                           'count', bins=L_binning).binnumber
     L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
     L_e_Arr = (L_Lbin_err_plus + L_Lbin_err_minus)[L_binning_position] * 0.5
-    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
-                  L_Lbin_err_plus[L_binning_position]]
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
@@ -654,20 +647,10 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     is_minijpas_source = np.ones(N_sources).astype(bool)
     is_minijpas_source[N_minijpas:] = False
 
-    # Compute EW_Arr
-    # EW_Arr = np.empty(L_Arr.shape)
-    # for src in range(N_sources):
-    #     l = lya_lines[src]
-    #     EW_Arr[src] = (pm_flx[l, src] / cont_est_lya[l, src] -
-    #                    1) * nb_fwhm_Arr[l]
-    # EW_Arr /= z_Arr
-
     print(f'nice miniJPAS = {count_true(nice_lya & is_minijpas_source)}')
     print(f'nice J-NEP = {count_true(nice_lya & ~is_minijpas_source)}')
 
     volume = effective_volume(nb_min, nb_max, 'both')
-    # volume_mj = effective_volume(nb_min, nb_max, 'minijpas')
-    # volume_jn = effective_volume(nb_min, nb_max, 'jnep')
 
     b = bins
 
@@ -691,8 +674,10 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
         this_mask = (tile_id == this_id)
+        L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][this_mask],
+                    L_Lbin_err_plus[L_binning_position][this_mask]]
         L_LF_err_percentiles, this_puri = LF_perturb_err(
-            corr_L[this_mask], L_Arr[this_mask], L_e_Arr_pm[this_mask],
+            corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
             return_puri=True, dirname=dirname
@@ -703,9 +688,11 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
 
         nice_puri_list[this_mask[nice_lya]] = this_puri
 
+    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][~is_minijpas_source],
+                L_Lbin_err_plus[L_binning_position][~is_minijpas_source]]
     L_LF_err_percentiles, this_puri = LF_perturb_err(
-        L_Arr_corr[~is_minijpas_source], L_Arr[~is_minijpas_source],
-        L_e_Arr_pm[~is_minijpas_source], nice_lya[~is_minijpas_source],
+        corr_L[~is_minijpas_source] * 0, L_Arr_corr[~is_minijpas_source],
+        L_e_Arr_pm, nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
         starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
         return_puri=True, dirname=dirname
@@ -842,14 +829,14 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        # (17, 24, 1, 4, 30, 100, 'nb'),
-        # (17, 24, 4, 8, 30, 100, 'nb'),
-        # (17, 24, 8, 12, 30, 100, 'nb'),
-        # (17, 24, 12, 16, 30, 100, 'nb'),
-        # (17, 24, 16, 20, 30, 100, 'nb'),
-        # (17, 24, 20, 24, 30, 100, 'nb'),
+        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 20, 24, 30, 100, 'nb'),
 
-        (17, 24, 1, 24, 30, 100, 'nb'),
+        # (17, 24, 1, 24, 30, 100, 'nb'),
 
         # (17, 24, 8, 12, 30, 100, 'nb'),
         # (17, 24, 8, 12, 20, 100, 'nb'),

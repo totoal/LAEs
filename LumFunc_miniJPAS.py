@@ -36,10 +36,10 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
 
 def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, survey_name, tile_id, which_w=[0, 2],
-                   return_puri=False, dirname=''):
+                   return_puri=False, dirname='', return_hist_i_mat=False,
+                   N_iter=500):
     N_bins = len(bins) - 1
 
-    N_iter = 500
     hist_i_mat = np.zeros((N_iter, N_bins))
 
     puri_list = []
@@ -75,6 +75,8 @@ def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     np.save(f'{dirname}/hist_i_mat_{survey_name}.npy', hist_i_mat)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
+    if return_hist_i_mat:
+        return hist_i_mat
     if not return_puri:
         return L_LF_err_percentiles
     else:

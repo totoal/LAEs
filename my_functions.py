@@ -762,4 +762,4 @@ def smooth_hist(values_Arr, value_min, value_max, step, d_value, weights=None):
     return out_Arr, centers
 
 def bin_centers(bins):
-    return np.array([bins[i : i+ 2].sum() * 0.5 for i in range(len(bins) - 1)])
+    return np.array([bins[i : i + 2].sum() * 0.5 for i in range(len(bins) - 1)])

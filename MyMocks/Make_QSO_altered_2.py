@@ -284,7 +284,7 @@ if __name__ == '__main__':
     
     z_min = 2
     z_max = 4.25
-    L_min = 43
+    L_min = 42
     L_max = 46
     area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
 
