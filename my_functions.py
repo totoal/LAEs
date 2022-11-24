@@ -16,6 +16,14 @@ from astropy.table import Table
 
 c = 29979245800  # cm / s
 
+tile_dict = {
+    'minijpasAEGIS001': 2241,
+    'minijpasAEGIS002': 2243,
+    'minijpasAEGIS003': 2406,
+    'minijpasAEGIS004': 2470,
+    'jnep': 2520
+}
+
 
 def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
@@ -705,11 +713,11 @@ def Zero_point_error(tile_id_Arr, catname):
     idx = np.empty(tile_id_Arr.shape).astype(int)
 
     zpt_id = zpt_cat['TILE_ID'].to_numpy()
+    where1 = np.where(zpt_cat['IS_REFERENCE_METHOD'] == 1)
     for src in range(len(tile_id_Arr)):
-        idx[src] = np.where(
-            (zpt_id == tile_id_Arr[src]) & (
-                zpt_cat['IS_REFERENCE_METHOD'] == 1)
-        )[0][0]
+        where2 = np.where(zpt_id[where1] == tile_id_Arr[src])
+        where_idx = where1[0][where2]
+        idx[src] = where_idx
 
     zpt_err = zpt_err[:, idx]
 

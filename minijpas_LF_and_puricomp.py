@@ -416,7 +416,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
                                cont_est_lya, z_Arr, mask=nice_lya_mask)
-    h, m, s = hms_since_t0(time.time() - t0)
+    h, m, s = hms_since_t0(t0)
     print('Selection: {}m {}s'.format(m, s))
 
     # Estimate Luminosity
@@ -445,7 +445,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/EW_bias.npy', median_EW)
     np.save('npy/EW_nb_err_binning.npy', EW_binning)
 
-    h, m, s = hms_since_t0(time.time() - t0)
+    h, m, s = hms_since_t0(t0)
     print('L_Lya estimation: {}m {}s'.format(m, s))
 
     # Correct L_Arr with the median
@@ -479,7 +479,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
     np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
 
-    h, m, s = hms_since_t0(time.time() - t0)
+    h, m, s = hms_since_t0(t0)
     print('PuriComp2D corrections: {}m {}s'.format(m, s))
 
     if not plot_it:
@@ -503,7 +503,6 @@ def make_corrections(params, qso_frac):
         load_mocks(add_errs=False, mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
-    print()
     for survey_name in survey_name_list:
         print(f'\n{survey_name}\n')
 
@@ -521,7 +520,7 @@ def make_corrections(params, qso_frac):
         t0 = time.time()
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
-        h, m, s = hms_since_t0(time.time() - t0)
+        h, m, s = hms_since_t0(t0)
         print('Photometry errors added: {}m {}s'.format(m, s))
 
         where_bad_flx = ~np.isfinite(pm_flx)
@@ -884,10 +883,10 @@ if __name__ == '__main__':
             print('\nBuilding the LF...')
             t0 = time.time()
             make_the_LF(params, qso_frac)
-            h, m, s = hms_since_t0(time.time() - t0)
+            h, m, s = hms_since_t0(t0)
             print('miniJPAS + J-NEP Lya LF: {}m {}s'.format(m, s))
 
             print('\n\n')
-            h, m, s = hms_since_t0(time.time() - t00)
+            h, m, s = hms_since_t0(t00)
             print(f'Total elapsed: {h}h {m}m {s}s')
             print('\n ########################## \n')
