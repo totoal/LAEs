@@ -396,6 +396,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
+    t0 = time.time()
     # Estimate continuum, search lines
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
@@ -415,8 +416,11 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
                                cont_est_lya, z_Arr, mask=nice_lya_mask)
+    h, m, s = hms_since_t0(time.time() - t0)
+    print('Selection: {}m {}s'.format(m, s))
 
     # Estimate Luminosity
+    t0 = time.time()
     EW_nb_Arr, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
@@ -441,6 +445,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/EW_bias.npy', median_EW)
     np.save('npy/EW_nb_err_binning.npy', EW_binning)
 
+    h, m, s = hms_since_t0(time.time() - t0)
+    print('L_Lya estimation: {}m {}s'.format(m, s))
+
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
     L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
@@ -458,6 +465,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ew_cut = EW_lya > ew0_cut
 
     # Compute puri/comp 2D
+    t0 = time.time()
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
     puri2d, comp2d, _, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr_corr, L_e_Arr_pm, nice_lya,
@@ -471,6 +479,9 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
     np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
 
+    h, m, s = hms_since_t0(time.time() - t0)
+    print('PuriComp2D corrections: {}m {}s'.format(m, s))
+
     if not plot_it:
         return
 
@@ -483,6 +494,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
 
 def make_corrections(params, qso_frac):
+
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
@@ -493,7 +505,7 @@ def make_corrections(params, qso_frac):
 
     print()
     for survey_name in survey_name_list:
-        print(survey_name)
+        print(f'\n{survey_name}\n')
 
         # # Comment this section if you don't want to recompute corrections
         # try:
@@ -506,8 +518,11 @@ def make_corrections(params, qso_frac):
         #     continue
         # ######
 
+        t0 = time.time()
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
+        h, m, s = hms_since_t0(time.time() - t0)
+        print('Photometry errors added: {}m {}s'.format(m, s))
 
         where_bad_flx = ~np.isfinite(pm_flx)
         pm_flx[where_bad_flx] = 0.
@@ -861,14 +876,18 @@ if __name__ == '__main__':
             hiL_factor = bad_qso_area / hiL_qso_area
             sf_factor = bad_qso_area / sf_area
 
-            t0 = time.time()
+            t00 = time.time()
             print(
                 'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
                 .format(*params))
             make_corrections(params, qso_frac)
             print('\nBuilding the LF...')
+            t0 = time.time()
             make_the_LF(params, qso_frac)
+            h, m, s = hms_since_t0(time.time() - t0)
+            print('miniJPAS + J-NEP Lya LF: {}m {}s'.format(m, s))
+
             print('\n\n')
-            m, s = divmod(int(time.time() - t0), 60)
-            print('Elapsed: {}m {}s'.format(m, s))
+            h, m, s = hms_since_t0(time.time() - t00)
+            print(f'Total elapsed: {h}h {m}m {s}s')
             print('\n ########################## \n')
