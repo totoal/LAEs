@@ -56,7 +56,7 @@ def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         puri, comp = weights_LF(
             L_perturbed[nice_lya], mag[nice_lya],
             z_Arr[nice_lya], starprob[nice_lya], tile_id[nice_lya],
-            survey_name, which_w, True
+            survey_name, dirname, which_w, True
         )
 
         w = np.random.rand(len(puri))

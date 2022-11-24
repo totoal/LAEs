@@ -365,9 +365,9 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     )
 
     # Make the mats smooooooth
-    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.3, 0.3)
-    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.3, 0.3)
-    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.3, 0.3)
+    h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.15, 0.3)
+    h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.3)
+    h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.3)
 
     puri2d = h2d_nice_smooth / h2d_sel_smooth
     comp2d = h2d_nice_smooth / h2d_parent_smooth
@@ -845,7 +845,7 @@ if __name__ == '__main__':
         # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
-    for qso_frac in [1.0, 0.5]:
+    for qso_frac in [1.0, 0.5, 0.8, 1.2]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 3
