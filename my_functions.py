@@ -688,36 +688,6 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
 
-# def Zero_point_error(tile_id_Arr, catname):
-#     # Load Zero Point magnitudes
-#     w_central = central_wavelength()
-#     zpt_cat = pd.read_csv(
-#         f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
-
-#     zpt_mag = zpt_cat['ZPT'].to_numpy()
-#     zpt_err = zpt_cat['ERRZPT'].to_numpy()
-
-#     ones = np.ones((len(w_central), len(zpt_mag)))
-
-#     zpt_err = (
-#         mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
-#         - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
-#     )
-
-#     # Duplicate rows to match the tile_ID of each source
-#     idx = np.empty(tile_id_Arr.shape).astype(int)
-
-#     zpt_id = zpt_cat['TILE_ID'].to_numpy()
-#     where1 = np.where(zpt_cat['IS_REFERENCE_METHOD'] == 1)
-#     for src in range(len(tile_id_Arr)):
-#         where2 = np.where(zpt_id[where1] == tile_id_Arr[src])
-#         where_idx = where1[0][where2]
-#         idx[src] = where_idx
-
-#     zpt_err = zpt_err[:, idx]
-
-#     return zpt_err
-
 def Zero_point_error(ref_tile_id_Arr, catname):
     # Load Zero Point magnitudes
     w_central = central_wavelength()
@@ -736,7 +706,6 @@ def Zero_point_error(ref_tile_id_Arr, catname):
     zpt_err_Arr = np.zeros((len(ref_tileids), 60))
     pm_zpt = np.zeros((60, len(ref_tile_id_Arr)))
     for kkk, ref_tid in enumerate(ref_tileids):
-        print(ref_tid)
         for fil in range(60):
             where = ((zpt_cat['REF_TILE_ID'] == ref_tid)
                      & (zpt_cat['FILTER_ID'] == fil + 1))
@@ -753,7 +722,6 @@ def Zero_point_error(ref_tile_id_Arr, catname):
         mask = (ref_tile_id_Arr == ref_tid)
         if not np.any(mask):
             continue
-        print(mask)
         pm_zpt[:, mask] = zpt_err_Arr[kkk].reshape(-1, 1)
     
     return pm_zpt
