@@ -54,7 +54,7 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
         else:
             good_src.append(src)
     good_src = np.array(good_src)
-    # print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
+    print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
 
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.

@@ -14,7 +14,6 @@ import numpy as np
 from my_utilities import *
 
 w_lya = 1215.67
-w_central = central_wavelength().reshape(-1, 1)
 
 def load_QSO_prior_mock():
     filename = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
@@ -216,7 +215,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
     pm_SEDs_DR16 = pd.read_csv(
         filename_pm_DR16, usecols=np.arange(1, 64)
-    ).to_numpy()[:, 1:61].T
+    ).to_numpy()[:, 0:60].T
 
     idx_closest, _, L_factor, new_z = duplicate_sources(area, z, L, z_min, z_max,
                                                         L_min, L_max, EW0)

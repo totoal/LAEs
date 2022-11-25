@@ -38,6 +38,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
     name_qso = 'QSO_100000_0'
     name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    # name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -462,7 +463,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
                   L_Lbin_err_plus[L_binning_position]]
 
-    ew_cut = EW_lya > ew0_cut
+    ew_cut = EW_lya > 0. # ew0_cut
 
     # Compute puri/comp 2D
     t0 = time.time()
