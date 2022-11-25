@@ -35,10 +35,11 @@ sf_frac = 0.1
 
 def load_mocks(add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
-    name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
     name_qso = 'QSO_100000_0'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
-    # name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
+    # name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
+    # name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES_loL'
+    name_qso_hiL = 'QSO_flat_z1.9-4.2_r16-24_LAES_hiL'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
