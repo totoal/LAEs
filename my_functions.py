@@ -485,14 +485,9 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     gr = g - r
     ri = r - i
     # For z > 3
-    # color_aux1 = (-1.5 * ri + 1.7 > gr)
     color_aux1 = (ri < 0.6) & (gr < 1.5)
     # For z < 3
-    # color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri < 1.)
     color_aux2 = (ri < 0.6) & (gr < 0.7)
-
-    # color_aux1 = np.ones(g.shape).astype(bool)
-    # color_aux2 = np.ones(g.shape).astype(bool)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -693,35 +688,75 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
 
-def Zero_point_error(tile_id_Arr, catname):
+# def Zero_point_error(tile_id_Arr, catname):
+#     # Load Zero Point magnitudes
+#     w_central = central_wavelength()
+#     zpt_cat = pd.read_csv(
+#         f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+
+#     zpt_mag = zpt_cat['ZPT'].to_numpy()
+#     zpt_err = zpt_cat['ERRZPT'].to_numpy()
+
+#     ones = np.ones((len(w_central), len(zpt_mag)))
+
+#     zpt_err = (
+#         mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
+#         - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
+#     )
+
+#     # Duplicate rows to match the tile_ID of each source
+#     idx = np.empty(tile_id_Arr.shape).astype(int)
+
+#     zpt_id = zpt_cat['TILE_ID'].to_numpy()
+#     where1 = np.where(zpt_cat['IS_REFERENCE_METHOD'] == 1)
+#     for src in range(len(tile_id_Arr)):
+#         where2 = np.where(zpt_id[where1] == tile_id_Arr[src])
+#         where_idx = where1[0][where2]
+#         idx[src] = where_idx
+
+#     zpt_err = zpt_err[:, idx]
+
+#     return zpt_err
+
+def Zero_point_error(ref_tile_id_Arr, catname):
     # Load Zero Point magnitudes
     w_central = central_wavelength()
     zpt_cat = pd.read_csv(
-        f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+        f'csv/{catname}.TileImage.csv', sep=',', header=1)
 
-    zpt_mag = zpt_cat['ZPT'].to_numpy()
-    zpt_err = zpt_cat['ERRZPT'].to_numpy()
+    # For each reference TILE_ID, we need an array with the ZPT_ERR for every filter
+    if catname == 'jnep':
+        ref_tileids = np.array([tile_dict['jnep']])
+    if catname == 'minijpas':
+        ref_tileids = np.array([tile_dict['minijpasAEGIS001'],
+                                tile_dict['minijpasAEGIS002'],
+                                tile_dict['minijpasAEGIS003'],
+                                tile_dict['minijpasAEGIS004']])
+    
+    zpt_err_Arr = np.zeros((len(ref_tileids), 60))
+    pm_zpt = np.zeros((60, len(ref_tile_id_Arr)))
+    for kkk, ref_tid in enumerate(ref_tileids):
+        print(ref_tid)
+        for fil in range(60):
+            where = ((zpt_cat['REF_TILE_ID'] == ref_tid)
+                     & (zpt_cat['FILTER_ID'] == fil + 1))
+            
+            zpt_mag = zpt_cat['ZPT'][where]
+            zpt_err = zpt_cat['ERRZPT'][where]
+            this_zpt_err = (
+                mag_to_flux(zpt_mag, w_central[fil])
+                - mag_to_flux(zpt_mag + zpt_err, w_central[fil])
+            )
+            zpt_err_Arr[kkk, fil] = this_zpt_err
 
-    ones = np.ones((len(w_central), len(zpt_mag)))
-
-    zpt_err = (
-        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
-        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
-    )
-
-    # Duplicate rows to match the tile_ID of each source
-    idx = np.empty(tile_id_Arr.shape).astype(int)
-
-    zpt_id = zpt_cat['TILE_ID'].to_numpy()
-    where1 = np.where(zpt_cat['IS_REFERENCE_METHOD'] == 1)
-    for src in range(len(tile_id_Arr)):
-        where2 = np.where(zpt_id[where1] == tile_id_Arr[src])
-        where_idx = where1[0][where2]
-        idx[src] = where_idx
-
-    zpt_err = zpt_err[:, idx]
-
-    return zpt_err
+        # The array of shape (60, N_src) with the zpt errors of the photometry
+        mask = (ref_tile_id_Arr == ref_tid)
+        if not np.any(mask):
+            continue
+        print(mask)
+        pm_zpt[:, mask] = zpt_err_Arr[kkk].reshape(-1, 1)
+    
+    return pm_zpt
 
 
 def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
