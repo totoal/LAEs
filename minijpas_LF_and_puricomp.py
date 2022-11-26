@@ -418,8 +418,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
                                cont_est_lya, z_Arr, mask=nice_lya_mask)
-    h, m, s = hms_since_t0(t0)
-    print('Selection: {}m {}s'.format(m, s))
+    # h, m, s = hms_since_t0(t0)
+    # print('Selection: {}m {}s'.format(m, s))
 
     # Estimate Luminosity
     t0 = time.time()
@@ -447,8 +447,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/EW_bias.npy', median_EW)
     np.save('npy/EW_nb_err_binning.npy', EW_binning)
 
-    h, m, s = hms_since_t0(t0)
-    print('L_Lya estimation: {}m {}s'.format(m, s))
+    # h, m, s = hms_since_t0(t0)
+    # print('L_Lya estimation: {}m {}s'.format(m, s))
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
@@ -464,7 +464,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
                   L_Lbin_err_plus[L_binning_position]]
 
-    ew_cut = EW_lya > 0. # ew0_cut
+    ew_cut = EW_lya > ew0_cut # ew0_cut
 
     # Compute puri/comp 2D
     t0 = time.time()
@@ -481,8 +481,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
     np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
 
-    h, m, s = hms_since_t0(t0)
-    print('PuriComp2D corrections: {}m {}s'.format(m, s))
+    # h, m, s = hms_since_t0(t0)
+    # print('PuriComp2D corrections: {}m {}s'.format(m, s))
 
     if not plot_it:
         return
@@ -522,8 +522,8 @@ def make_corrections(params, qso_frac):
         t0 = time.time()
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
-        h, m, s = hms_since_t0(t0)
-        print('Photometry errors added: {}m {}s'.format(m, s))
+        # h, m, s = hms_since_t0(t0)
+        # print('Photometry errors added: {}m {}s'.format(m, s))
 
         where_bad_flx = ~np.isfinite(pm_flx)
         pm_flx[where_bad_flx] = 0.
@@ -861,7 +861,7 @@ if __name__ == '__main__':
         # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
-    for qso_frac in [1.0, 0.7, 1.5, 2.0]:
+    for qso_frac in [1.0, 1.5, 2.0, 2.5]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 3
@@ -885,8 +885,8 @@ if __name__ == '__main__':
             print('\nBuilding the LF...')
             t0 = time.time()
             make_the_LF(params, qso_frac)
-            h, m, s = hms_since_t0(t0)
-            print('miniJPAS + J-NEP Lya LF: {}m {}s'.format(m, s))
+            # h, m, s = hms_since_t0(t0)
+            # print('miniJPAS + J-NEP Lya LF: {}m {}s'.format(m, s))
 
             print('\n\n')
             h, m, s = hms_since_t0(t00)
