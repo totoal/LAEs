@@ -36,10 +36,10 @@ sf_frac = 0.1
 def load_mocks(add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
     name_qso = 'QSO_100000_0'
-    # name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
-    # name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
-    name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
-    name_qso_hiL = 'QSO_flat_z1.9-4.2_r16-24_LAES_hiL'
+    name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
+    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    # name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
+    # name_qso_hiL = 'QSO_flat_z1.9-4.2_r16-24_LAES_hiL'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -506,7 +506,7 @@ def make_corrections(params, qso_frac):
     print(f'Mock len = {len(zspec)}')
 
     for survey_name in survey_name_list:
-        print(f'\n{survey_name}\n')
+        print(f'{survey_name}')
 
         # # Comment this section if you don't want to recompute corrections
         # try:
@@ -861,7 +861,7 @@ if __name__ == '__main__':
         # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
-    for qso_frac in [1.0, 1.5, 2.0, 2.5]:
+    for qso_frac in [1.0, 0.3, 0.5, 0.7]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 3
