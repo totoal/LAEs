@@ -18,7 +18,7 @@ from add_errors import add_errors
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.rcParams.update({'font.size': 13})
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 np.seterr(all='ignore')
 
@@ -42,7 +42,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
-        is_LAE, where_hiL, _, L_NV = ensemble_mock(name_qso, name_gal, name_sf,
+        is_LAE, where_hiL, _, L_NV, EW_NV = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
                                              qso_LAE_frac, sf_frac, mag_min, mag_max)
 
@@ -55,7 +55,7 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
           f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL,\
-        L_NV
+        L_NV, EW_NV
 
 
 def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
@@ -376,7 +376,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
-                    hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV,
+                    hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV,
                     plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
@@ -444,8 +444,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     mask_median_L = (median_L < 10)
     L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
                               [mask_median_L], median_L[mask_median_L])
-    # For the puricomp2d we include the L_NV
-    L_lya_NV = np.log10(10**L_lya + 10**L_NV)
 
     # Apply bin err
     L_binning_position = binned_statistic(10 ** L_Arr, None,
@@ -454,7 +452,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
                   L_Lbin_err_plus[L_binning_position]]
 
-    ew_cut = EW_lya > ew0_cut # ew0_cut
+    ew_cut = EW_lya + EW_NV > ew0_cut
 
     # Compute puri/comp 2D
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
@@ -487,7 +485,7 @@ def make_corrections(params, qso_frac):
                         'minijpasAEGIS004', 'jnep']
     
     mag_min, mag_max = params[:2]
-    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV =\
+    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV =\
         load_mocks(add_errs=False, mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
@@ -515,7 +513,7 @@ def make_corrections(params, qso_frac):
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
-            hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV
+            hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV
         )
 
 

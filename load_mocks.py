@@ -36,10 +36,12 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
         qso_L = data_qso['L_lya'].to_numpy()
         EW_qso = data_qso['EW0'].to_numpy()
         qso_L_NV = data_qso['L_NV'].to_numpy()
+        EW_NV_qso = data_qso['EW0_NV'].to_numpy()
     except:
         qso_L = np.zeros(qso_zspec.shape)
         qso_L_NV = np.zeros(qso_zspec.shape)
         EW_qso = np.zeros(qso_zspec.shape)
+        EW_NV_qso = np.zeros(qso_zspec.shape)
 
     # Remove bad sources
     good_src = []
@@ -58,16 +60,18 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
 
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.
+    EW_NV_qso[~np.isfinite(EW_NV_qso)] = 0.
 
     qso_flx = qso_flx[:, good_src].astype(float)
     qso_err = qso_err[:, good_src].astype(float)
 
     EW_qso = EW_qso[good_src].astype(float)
+    EW_NV_qso = EW_NV_qso[good_src].astype(float)
     qso_zspec = qso_zspec[good_src].astype(float)
     qso_L = qso_L[good_src].astype(float)
     qso_L_NV = qso_L_NV[good_src].astype(float)
 
-    return qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV
+    return qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso
 
 
 def angular_radius(R, z):
@@ -190,7 +194,7 @@ def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
                   add_errs=False, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99,
                   how_many_sf=-1):
-    qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV = load_QSO_mock(
+    qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso = load_QSO_mock(
         name_qso, add_errs, mag_min=mag_min, mag_max=mag_max)
     print('QSO mock loaded')
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
@@ -215,7 +219,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
     if len(name_qso_bad) > 0:
-        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad, qso_L_NV_bad =\
+        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad, qso_L_NV_bad, EW_NV_qso_bad =\
             load_QSO_mock(name_qso_bad)
 
         # Truncate LAE QSOs
@@ -226,6 +230,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
             qso_flx_bad = qso_flx_bad[:, choice]
             qso_err_bad = qso_err_bad[:, choice]
             EW_qso_bad = EW_qso_bad[choice]
+            EW_NV_qso_bad = EW_NV_qso_bad[choice]
             qso_zspec_bad = qso_zspec_bad[choice]
             qso_L_bad = qso_L_bad[choice]
             qso_L_NV_bad = qso_L_NV_bad[choice]
@@ -234,12 +239,13 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         qso_flx = np.hstack((qso_flx_bad, qso_flx[:, where_low_z]))
         qso_err = np.hstack((qso_err_bad, qso_err[:, where_low_z]))
         EW_qso = np.hstack((EW_qso_bad, EW_qso[where_low_z]))
+        EW_NV_qso = np.hstack((EW_NV_qso_bad, EW_NV_qso[where_low_z]))
         qso_zspec = np.hstack((qso_zspec_bad, qso_zspec[where_low_z]))
         qso_L = np.hstack((qso_L_bad, qso_L[where_low_z]))
         qso_L_NV = np.hstack((qso_L_NV_bad, qso_L_NV[where_low_z]))
 
     if len(name_qso_hiL) > 0:
-        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL, qso_L_NV_hiL =\
+        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL, qso_L_NV_hiL, EW_NV_qso_hiL =\
             load_QSO_mock(name_qso_hiL)
 
         # Truncate LAE QSOs
@@ -250,6 +256,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
             qso_flx_hiL = qso_flx_hiL[:, choice]
             qso_err_hiL = qso_err_hiL[:, choice]
             EW_qso_hiL = EW_qso_hiL[choice]
+            EW_NV_qso_hiL = EW_NV_qso_hiL[choice]
             qso_zspec_hiL = qso_zspec_hiL[choice]
             qso_L_hiL = qso_L_hiL[choice]
             qso_L_NV_hiL = qso_L_NV_hiL[choice]
@@ -258,6 +265,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         qso_flx = np.hstack((qso_flx[:, where_loL], qso_flx_hiL))
         qso_err = np.hstack((qso_err[:, where_loL], qso_err_hiL))
         EW_qso = np.hstack((EW_qso[where_loL], EW_qso_hiL))
+        EW_NV_qso = np.hstack((EW_NV_qso[where_loL], EW_NV_qso_hiL))
         qso_zspec = np.hstack((qso_zspec[where_loL], qso_zspec_hiL))
         qso_L = np.hstack((qso_L[where_loL], qso_L_hiL))
         qso_L_NV = np.hstack((qso_L_NV[where_loL], qso_L_NV_hiL))
@@ -273,6 +281,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
 
     L_lya = np.concatenate((qso_L, sf_L, gal_L))
     L_NV = np.concatenate((qso_L_NV, np.zeros_like(sf_L), np.zeros_like(gal_L)))
+    EW_NV = np.concatenate((EW_NV_qso, np.zeros_like(EW_sf), np.zeros_like(EW_gal)))
 
     is_qso = np.concatenate(
         (np.ones(N_qso), np.zeros(N_sf + N_gal))).astype(bool)
@@ -290,4 +299,4 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     ang_R[is_gal] = gal_R
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya.astype(float), is_qso,\
-        is_sf, is_gal, is_LAE, where_hiL, ang_R, L_NV
+        is_sf, is_gal, is_LAE, where_hiL, ang_R, L_NV, EW_NV
