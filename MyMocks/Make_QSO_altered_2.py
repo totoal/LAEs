@@ -207,7 +207,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     
     # Mask poorly measured EWs
     EW_snr = EW0 * (1 + z) / EW_err
-    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 5)
+    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0)
     L[mask_neg_EW0] = -1
     z[mask_neg_EW0] = -1
 

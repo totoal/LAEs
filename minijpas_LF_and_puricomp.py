@@ -38,8 +38,6 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     name_qso = 'QSO_100000_0'
     name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
     name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
-    # name_qso_bad = 'QSO_flat_z1.9-4.2_r16-24_LAES'
-    # name_qso_hiL = 'QSO_flat_z1.9-4.2_r16-24_LAES_hiL'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -53,7 +51,6 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     N_qso_loL = count_true(is_qso & ~where_hiL & is_LAE)
     N_qso_hiL = count_true(is_qso & where_hiL)
     N_sf = count_true(is_sf)
-    print(f'\nMock length: {len(L_lya)}')
     print(f'N_gal = {N_gal}, N_qso_cont = {N_qso_cont}, N_qso_loL = {N_qso_loL}, '
           f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
 
@@ -398,7 +395,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
 
-    t0 = time.time()
     # Estimate continuum, search lines
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
         search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
@@ -418,11 +414,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
                                cont_est_lya, z_Arr, mask=nice_lya_mask)
-    # h, m, s = hms_since_t0(t0)
-    # print('Selection: {}m {}s'.format(m, s))
 
     # Estimate Luminosity
-    t0 = time.time()
     EW_nb_Arr, _, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
@@ -447,9 +440,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save('npy/EW_bias.npy', median_EW)
     np.save('npy/EW_nb_err_binning.npy', EW_binning)
 
-    # h, m, s = hms_since_t0(t0)
-    # print('L_Lya estimation: {}m {}s'.format(m, s))
-
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
     L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
@@ -467,7 +457,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     ew_cut = EW_lya > ew0_cut # ew0_cut
 
     # Compute puri/comp 2D
-    t0 = time.time()
     L_bins_cor = np.log10(np.logspace(40, 47, 200 + 1))
     puri2d, comp2d, _, r_bins = puricomp_corrections(
         mag_min, mag_max, L_Arr_corr, L_e_Arr_pm, nice_lya,
@@ -480,9 +469,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     np.save(f'{dirname}/comp2d_{survey_name}.npy', comp2d)
     np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
     np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
-
-    # h, m, s = hms_since_t0(t0)
-    # print('PuriComp2D corrections: {}m {}s'.format(m, s))
 
     if not plot_it:
         return
@@ -519,11 +505,8 @@ def make_corrections(params, qso_frac):
         #     continue
         # ######
 
-        t0 = time.time()
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
-        # h, m, s = hms_since_t0(t0)
-        # print('Photometry errors added: {}m {}s'.format(m, s))
 
         where_bad_flx = ~np.isfinite(pm_flx)
         pm_flx[where_bad_flx] = 0.
@@ -828,10 +811,6 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
     ax.set_xlim(42.5, 45.5)
     ax.legend(fontsize=9)
 
-    # ax.set_title(
-    #     fr'r{mag_min}-{mag_max}, z {z_min:0.2f}-{z_max:0.2f}'
-    # )
-
     plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
                 facecolor='white')
     plt.close()
@@ -883,10 +862,7 @@ if __name__ == '__main__':
                 .format(*params))
             make_corrections(params, qso_frac)
             print('\nBuilding the LF...')
-            t0 = time.time()
             make_the_LF(params, qso_frac)
-            # h, m, s = hms_since_t0(t0)
-            # print('miniJPAS + J-NEP Lya LF: {}m {}s'.format(m, s))
 
             print('\n\n')
             h, m, s = hms_since_t0(t00)
