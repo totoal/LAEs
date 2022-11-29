@@ -268,34 +268,39 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
 
 
 if __name__ == '__main__':
-    t0 = time.time()
     part = sys.argv[1]
+    t00 = time.time()
     
     area_loL = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     area_hiL = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     nbs_list = [[1, 4], [4, 8], [8, 12], [12, 16], [16, 20], [20, 24]]
 
     for nb_min, nb_max in nbs_list:
+        if int(part) == 1:
+            print(f'nb_min, nb_max = {nb_min, nb_max}')
         z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
         z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
 
         L_min = 42
         L_max = 46
 
+        t0 = time.time()
         main(part, area_loL, z_min, z_max, L_min, L_max, 'loL_')
 
-        if part == 1:
+        if int(part) == 1:
             print('loL in: {0:0.0f} m {1:0.1f} s'.format(
                 *divmod(time.time() - t0, 60)))
 
-        t0 = time.time()
         L_min = 44
         L_max = 46
 
+        t0 = time.time()
         main(part, area_hiL, z_min, z_max, L_min, L_max, 'hiL_')
 
-        if part == 1:
+        if int(part) == 1:
             print('hiL in: {0:0.0f} m {1:0.1f} s'.format(
                 *divmod(time.time() - t0, 60)))
+        break
     
-    print(f'Part {part} done.')
+    print('Part ' + str(part) + ' done in: {0:0.0f} m {1:0.1f} s'.format(
+        *divmod(time.time() - t00, 60)))
