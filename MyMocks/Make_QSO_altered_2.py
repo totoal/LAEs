@@ -14,6 +14,8 @@ import numpy as np
 from my_utilities import *
 
 w_lya = 1215.67
+w_central = central_wavelength()
+nb_fwhm_Arr = nb_fwhm(range(60))
 
 def load_QSO_prior_mock():
     filename = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
@@ -60,7 +62,6 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
             np.interp(LF_p_cum_x, log_Lx, Phi), LF_p_cum_x
         ) * volume
     )
-    print(f'N_new_sources = {N_sources_LAE}')
     LF_p_cum = np.cumsum(np.interp(LF_p_cum_x, log_Lx, Phi))
     LF_p_cum /= np.max(LF_p_cum)
 
@@ -82,11 +83,10 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
-    print('Looking for the closest QSOs...')
 
     for src in range(N_sources_LAE):
-        if src % 500 == 0:
-            print(f'Part {part}: {src} / {N_sources_LAE}')
+        # if src % 500 == 0:
+            # print(f'Part {part}: {src} / {N_sources_LAE}')
         # Select sources with a redshift closer than 0.02
         closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.05)
                                  & (EW0 > 0) & np.isfinite(EW0))[0]
@@ -106,9 +106,6 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
 
     # The correction factor to achieve the desired L
     L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
-
-    # Re-convert idx_closest to initial units pre randomization
-    # idx_closest = perm[slc][idx_closest]
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
@@ -139,7 +136,6 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     # lya_band = np.zeros(N_sources)
 
     # Do the integrated photometry
-    # print('Extracting band fluxes from the spectra...')
     print('Making lya_band Arr')
     plate = plate.astype(int)
     mjd = mjd.astype(int)
@@ -174,9 +170,9 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     return z
 
 
-def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, surname):
+def main(part, area, z_min, z_max, L_min, L_max, surname):
     dirname = '/home/alberto/almacen/Source_cats'
-    filename = f'{dirname}/QSO_double_{train_or_test}_{survey_name}_DR16_{surname}0'
+    filename = f'{dirname}/QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_{surname}0'
     os.makedirs(filename, exist_ok=True)
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
@@ -202,11 +198,10 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     F_line_NV = np.array(Lya_fts['NVF']) * 1e-17
     F_line_NV_err = np.array(Lya_fts['NVF_err']) * 1e-17
     EW0_NV = np.array(Lya_fts['NVEW']) / (1 + z)
-    EW_NV_err = np.array(Lya_fts['NVFEW_err'])
     L_NV = np.log10(F_line_NV * 4*np.pi * dL ** 2)
     
     # Mask poorly measured EWs
-    EW_snr = EW0 * (1 + z) / EW_err
+    # EW_snr = EW0 * (1 + z) / EW_err
     mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0)
     L[mask_neg_EW0] = -1
     z[mask_neg_EW0] = -1
@@ -220,9 +215,7 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     idx_closest, _, L_factor, new_z = duplicate_sources(area, z, L, z_min, z_max,
                                                         L_min, L_max, EW0)
 
-    print('Sampling from DR16 pm...')
     pm_SEDs = pm_SEDs_DR16[:, idx_closest] * np.array(L_factor)
-    print('Ok')
 
     new_L = L[idx_closest] + np.log10(L_factor)
     new_F_line = F_line[idx_closest] * L_factor
@@ -237,8 +230,6 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
     where_out_of_range = (pm_SEDs > 1) | ~np.isfinite(pm_SEDs)
 
     # Add infinite errors to bands out of the range of SDSS
-    # pm_SEDs, pm_SEDs_err = add_errors(
-    #     pm_SEDs, apply_err=False, survey_name=survey_name)
     pm_SEDs_err = np.zeros_like(pm_SEDs)
 
     pm_SEDs[where_out_of_range] = 0.
@@ -254,7 +245,6 @@ def main(part, area, z_min, z_max, L_min, L_max, survey_name, train_or_test, sur
 
     # Let's remove the sources with very low r magnitudes
     low_r_mask = (pm_SEDs[-2] > 1e-21)
-    print(f'Final N_sources = {len(np.where(low_r_mask)[0])}')
 
     pd.DataFrame(
         data=np.hstack(
@@ -281,32 +271,31 @@ if __name__ == '__main__':
     t0 = time.time()
     part = sys.argv[1]
     
-    z_min = 2
-    z_max = 4.25
-    L_min = 42
-    L_max = 46
-    area = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+    area_loL = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+    area_hiL = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+    nbs_list = [[1, 4], [4, 8], [8, 12], [12, 16], [16, 20], [20, 24]]
 
-    for survey_name in ['jnep']:
-        for train_or_test in ['train']:
-            main(part, area, z_min, z_max, L_min, L_max,
-                 survey_name, train_or_test, 'good2_')
+    for nb_min, nb_max in nbs_list:
+        z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
+        z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(
-        *divmod(time.time() - t0, 60)))
+        L_min = 42
+        L_max = 46
 
-    t0 = time.time()
-    L_min = 44
-    L_max = 46
+        main(part, area_loL, z_min, z_max, L_min, L_max, 'loL_')
 
-    z_min, z_max = 2, 4.25
+        if part == 1:
+            print('loL in: {0:0.0f} m {1:0.1f} s'.format(
+                *divmod(time.time() - t0, 60)))
 
-    area = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
+        t0 = time.time()
+        L_min = 44
+        L_max = 46
 
-    survey_name = 'jnep'
-    train_or_test = 'train'
-        
-    main(part, area, z_min, z_max, L_min, L_max, survey_name,
-            train_or_test, 'highL_good2_')
+        main(part, area_hiL, z_min, z_max, L_min, L_max, 'hiL_')
 
-    print('Elapsed: {0:0.0f} m {1:0.1f} s'.format(*divmod(time.time() - t0, 60)))
+        if part == 1:
+            print('hiL in: {0:0.0f} m {1:0.1f} s'.format(
+                *divmod(time.time() - t0, 60)))
+    
+    print(f'Part {part} done.')

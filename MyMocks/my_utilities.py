@@ -526,3 +526,17 @@ def Zero_point_error(tile_id_Arr, catname):
     zpt_err = zpt_err[:, idx]
 
     return zpt_err
+
+def nb_fwhm(nb_ind, give_fwhm=True):
+    '''
+    Returns the FWHM of a filter in tcurves if give_fwhm is True. If it is False, the
+    function returns a tuple with (w_central - fwhm/2, w_central + fwhm/2)
+    '''
+    data_tab = Table.read('../fits/FILTERs_table.fits', format='fits')
+    w_central = data_tab['wavelength'][nb_ind]
+    fwhm = data_tab['width'][nb_ind]
+
+    if give_fwhm == False:
+        return w_central + fwhm / 2, w_central - fwhm / 2
+    if give_fwhm == True:
+        return fwhm
