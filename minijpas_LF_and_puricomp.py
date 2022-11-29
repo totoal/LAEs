@@ -33,11 +33,14 @@ z_nb_Arr = w_central[:-4] / w_lya - 1
 sf_frac = 0.1
 
 
-def load_mocks(add_errs=True, qso_LAE_frac=1., 
+def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
+    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
+    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
+
     name_qso = 'QSO_100000_0'
-    name_qso_hiL = f'QSO_double_train_jnep_DR16_highL_good2_0'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    name_qso_hiL = f'QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_hiL_0'
+    name_qso_bad = f'QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_loL_0'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -408,7 +411,6 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     for src in range(N_sources):
         l = lya_lines[src]
         snr[src] = pm_flx[l, src] / pm_err[l, src]
-    # nice_lya_mask = z_cut_nice & mag_cut & (snr > 6)
     nice_lya_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
 
     # Nice lya selection
@@ -486,7 +488,8 @@ def make_corrections(params, qso_frac):
     
     mag_min, mag_max = params[:2]
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV =\
-        load_mocks(add_errs=False, mag_min=mag_min, mag_max=mag_max)
+        load_mocks(params[2], params[3], add_errs=False,
+                   mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
     for survey_name in survey_name_list:
