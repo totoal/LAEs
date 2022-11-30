@@ -8,7 +8,8 @@ import time
 
 import matplotlib.pyplot as plt
 
-from scipy.integrate import simpson
+from scipy.integrate import simpson, dblquad
+from scipy.interpolate import interp2d
 
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
@@ -783,3 +784,45 @@ def hms_since_t0(t0):
     m, s = divmod(int(time.time() - t0), 60)
     h, m = divmod(m, 60)
     return h, m, s
+
+
+def trim_r_distribution(m_Arr, z_Arr, area_obs):
+    '''
+    Input
+    m_Arr: Array of r magnitudes
+    z_Arr: Array of redshifts
+
+    Returns:
+    Mask to apply to the sample
+    '''
+    model = pd.read_csv('MyMocks/csv/PD2016-QSO_LF.csv')
+    counts_model_2D = model.to_numpy()[:-1, 1:-1].astype(float) * 1e-4 * area_obs
+    r_yy = np.arange(15.75, 24.25, 0.5)
+    z_xx = np.arange(0.5, 6, 1)
+    f_counts = interp2d(z_xx, r_yy, counts_model_2D)
+
+    # Trim in bins of r and z
+    r_bins = np.linspace(15.5, 25, 50)
+    z_bins = np.linspace(1.5, 4.5, 10)
+    to_delete = np.array([])
+    for i in range(len(r_bins) - 1):
+        for j in range(len(z_bins) - 1):
+            bin_2d_mask = (
+                (m_Arr > r_bins[i]) & (m_Arr <= r_bins[i + 1])
+                & (z_Arr > z_bins[j]) & (z_Arr <= z_bins[j + 1])
+            )
+            in_counts = sum(bin_2d_mask) # N of objects in this bin
+            out_counts = dblquad(f_counts,
+                                 z_bins[j], z_bins[j + 1],
+                                 r_bins[i], r_bins[i + 1])[0]
+            count_diff = np.floor(in_counts - out_counts).astype(int)
+            if count_diff > 0:
+                to_delete = np.concatenate(
+                    [to_delete,
+                    np.random.choice(np.where(bin_2d_mask)[0], count_diff)]
+                )
+
+    trim_mask = np.ones_like(m_Arr).astype(bool)
+    trim_mask[to_delete.astype(int)] = False
+
+    return trim_mask

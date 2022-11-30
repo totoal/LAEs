@@ -34,7 +34,8 @@ sf_frac = 0.1
 
 
 def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1., 
-               mag_min=0, mag_max=99):
+               mag_min=0, mag_max=99, bad_qso_area=None, good_qso_area=None,
+               hiL_qso_area=None):
     z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
 
@@ -47,7 +48,9 @@ def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1.,
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _, L_NV, EW_NV = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_min, mag_max)
+                                             qso_LAE_frac, sf_frac, mag_min, mag_max,
+                                             qso_area=bad_qso_area, qso_area_bad=good_qso_area,
+                                             qso_area_hiL=hiL_qso_area)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -151,7 +154,7 @@ def compute_EW_bin_err(EW_Arr, EW_lya, EW_binning):
 
 def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
-                                mag_min, ew0_cut, is_gal, is_sf, is_qso, is_LAE,
+                                mag_min, is_gal, is_sf, is_qso, is_LAE,
                                 zspec, L_lya, dirname, ew_cut, where_hiL, survey_name):
     fig, ax = plt.subplots(figsize=(8, 4))
 
@@ -275,20 +278,20 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         L_perturbed[np.isnan(L_perturbed)] = 0.
 
         h2d_nice_sf_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & z_cut & is_sf],
-            mag[nice_lya & nice_z & z_cut & is_sf],
+            L_perturbed[nice_lya & nice_z & z_cut & is_sf & ew_cut],
+            mag[nice_lya & nice_z & z_cut & is_sf & ew_cut],
             bins=[L_bins, r_bins]
         )
 
         h2d_nice_qso_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & z_cut & is_qso & ~where_hiL],
-            mag[nice_lya & nice_z & z_cut & is_qso & ~where_hiL],
+            L_perturbed[nice_lya & nice_z & z_cut & is_qso & ~where_hiL & ew_cut],
+            mag[nice_lya & nice_z & z_cut & is_qso & ~where_hiL & ew_cut],
             bins=[L_bins, r_bins]
         )
 
         h2d_nice_qso_hiL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & z_cut & is_qso & where_hiL],
-            mag[nice_lya & nice_z & z_cut & is_qso & where_hiL],
+            L_perturbed[nice_lya & nice_z & z_cut & is_qso & where_hiL & ew_cut],
+            mag[nice_lya & nice_z & z_cut & is_qso & where_hiL & ew_cut],
             bins=[L_bins, r_bins]
         )
 
@@ -476,12 +479,12 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     nbs_to_consider = np.arange(nb_min, nb_max + 1)
 
     purity_or_completeness_plot(mag, nbs_to_consider, lya_lines, nice_lya,
-                                nice_z, L_Arr_corr, mag_max, mag_min, ew0_cut, is_gal,
+                                nice_z, L_Arr_corr, mag_max, mag_min, is_gal,
                                 is_sf, is_qso, is_LAE, zspec, L_lya, dirname,
                                 ew_cut, where_hiL, survey_name)
 
 
-def make_corrections(params, qso_frac):
+def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area):
 
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
@@ -489,7 +492,8 @@ def make_corrections(params, qso_frac):
     mag_min, mag_max = params[:2]
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV =\
         load_mocks(params[2], params[3], add_errs=False,
-                   mag_min=mag_min, mag_max=mag_max)
+                   mag_min=mag_min, mag_max=mag_max,
+                   good_qso_area=good_qso_area, hiL_qso_area=hiL_qso_area)
     print(f'Mock len = {len(zspec)}')
 
     for survey_name in survey_name_list:
@@ -832,17 +836,13 @@ if __name__ == '__main__':
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
 
-        # (17, 24, 1, 24, 30, 100, 'nb'),
-
-        # (17, 24, 8, 12, 30, 100, 'nb'),
         # (17, 24, 8, 12, 20, 100, 'nb'),
         # (17, 24, 8, 12, 50, 100, 'nb'),
         # (17, 24, 8, 12, 30, 200, 'nb'),
         # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
-    # for qso_frac in [1.0, 0.3, 0.5, 0.7]:
-    for qso_frac in [1.0]:
+    for qso_frac in [1.0, 2, 0.5, 0.3, 0.7]:
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 3
@@ -862,11 +862,10 @@ if __name__ == '__main__':
             print(
                 'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
                 .format(*params))
-            make_corrections(params, qso_frac)
+            make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area)
             print('\nBuilding the LF...')
             make_the_LF(params, qso_frac)
 
-            print('\n\n')
             h, m, s = hms_since_t0(t00)
-            print(f'Total elapsed: {h}h {m}m {s}s')
+            print(f'\nTotal elapsed: {h}h {m}m {s}s')
             print('\n ########################## \n')

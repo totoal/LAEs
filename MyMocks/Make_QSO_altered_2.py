@@ -7,6 +7,9 @@ import time
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
 
+from scipy.interpolate import interp2d
+from scipy.integrate import dblquad
+
 import pandas as pd
 
 import numpy as np
@@ -170,6 +173,48 @@ def lya_band_z(fits_dir, plate, mjd, fiber, t_or_t):
     return z
 
 
+def trim_r_distribution(m_Arr, z_Arr, area_obs):
+    '''
+    Input
+    m_Arr: Array of r magnitudes
+    z_Arr: Array of redshifts
+
+    Returns:
+    Mask to apply to the sample
+    '''
+    model = pd.read_csv('csv/PD2016-QSO_LF.csv')
+    counts_model_2D = model.to_numpy()[:-1, 1:-1].astype(float) * 1e-4 * area_obs
+    r_yy = np.arange(15.75, 24.25, 0.5)
+    z_xx = np.arange(0.5, 6, 1)
+    f_counts = interp2d(z_xx, r_yy, counts_model_2D)
+
+    # Trim in bins of r and z
+    r_bins = np.linspace(15.5, 25, 50)
+    z_bins = np.linspace(1.5, 4.5, 10)
+    to_delete = np.array([])
+    for i in range(len(r_bins) - 1):
+        for j in range(len(z_bins) - 1):
+            bin_2d_mask = (
+                (m_Arr > r_bins[i]) & (m_Arr <= r_bins[i + 1])
+                & (z_Arr > z_bins[j]) & (z_Arr <= z_bins[j + 1])
+            )
+            in_counts = sum(bin_2d_mask) # N of objects in this bin
+            out_counts = dblquad(f_counts,
+                                 z_bins[j], z_bins[j + 1],
+                                 r_bins[i], r_bins[i + 1])[0] # N of objects that should be
+            count_diff = np.floor(in_counts - out_counts).astype(int)
+            if count_diff > 0:
+                to_delete = np.concatenate(
+                    [to_delete,
+                    np.random.choice(np.where(bin_2d_mask)[0], count_diff)]
+                )
+
+    trim_mask = np.ones_like(m_Arr).astype(bool)
+    trim_mask[to_delete.astype(int)] = False
+
+    return trim_mask
+
+
 def main(part, area, z_min, z_max, L_min, L_max, surname):
     dirname = '/home/alberto/almacen/Source_cats'
     filename = f'{dirname}/QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_{surname}0'
@@ -201,8 +246,8 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
     L_NV = np.log10(F_line_NV * 4*np.pi * dL ** 2)
     
     # Mask poorly measured EWs
-    # EW_snr = EW0 * (1 + z) / EW_err
-    mask_neg_EW0 = (EW0 < 0) | ~np.isfinite(EW0)
+    EW_snr = EW0 * (1 + z) / EW_err
+    mask_neg_EW0 = ((EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 5))
     L[mask_neg_EW0] = -1
     z[mask_neg_EW0] = -1
 
@@ -243,8 +288,13 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
         + ['mjd', 'fiber', 'plate']
     )
 
+    # # Trim the distribution to match the r-band distribution
+    # new_mag = flux_to_mag(pm_SEDs[-2], w_central[-2])
+    # trim_mask = trim_r_distribution(new_mag, new_z, area)
+
     # Let's remove the sources with very low r magnitudes
     low_r_mask = (pm_SEDs[-2] > 1e-21)
+    print(f'Final N_src = {sum(low_r_mask)}')
 
     pd.DataFrame(
         data=np.hstack(
@@ -274,9 +324,10 @@ if __name__ == '__main__':
     area_loL = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     area_hiL = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     nbs_list = [[1, 4], [4, 8], [8, 12], [12, 16], [16, 20], [20, 24]]
+    # nbs_list = [[1, 4]]
 
     for nb_min, nb_max in nbs_list:
-        if int(part) == 1:
+        if int(part) == 1 or int(part) == 17:
             print(f'nb_min, nb_max = {nb_min, nb_max}')
         z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
         z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
@@ -284,23 +335,12 @@ if __name__ == '__main__':
         L_min = 42
         L_max = 46
 
-        t0 = time.time()
         main(part, area_loL, z_min, z_max, L_min, L_max, 'loL_')
-
-        if int(part) == 1:
-            print('loL in: {0:0.0f} m {1:0.1f} s'.format(
-                *divmod(time.time() - t0, 60)))
 
         L_min = 44
         L_max = 46
 
-        t0 = time.time()
         main(part, area_hiL, z_min, z_max, L_min, L_max, 'hiL_')
-
-        if int(part) == 1:
-            print('hiL in: {0:0.0f} m {1:0.1f} s'.format(
-                *divmod(time.time() - t0, 60)))
-        break
     
     print('Part ' + str(part) + ' done in: {0:0.0f} m {1:0.1f} s'.format(
         *divmod(time.time() - t00, 60)))

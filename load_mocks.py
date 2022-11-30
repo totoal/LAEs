@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 import numpy as np
 
-from my_functions import flux_to_mag, central_wavelength
+from my_functions import flux_to_mag, central_wavelength, trim_r_distribution
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u
@@ -10,7 +10,7 @@ import astropy.units as u
 w_central = central_wavelength()
 
 
-def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
+def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99, area_obs=None):
     filename = f'/home/alberto/almacen/Source_cats/{name}/'
     files = glob.glob(filename + 'data*')
     files.sort()
@@ -24,7 +24,6 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
     data_qso = pd.concat(fi, axis=0, ignore_index=True)
 
     qso_flx = data_qso.to_numpy()[:, 1: 60 + 1].T
-    # qso_err = data_qso.to_numpy()[:, 60 + 1: 120 + 1].T
     qso_err = np.zeros(qso_flx.shape)
     mag = flux_to_mag(qso_flx[-2], w_central[-2])
 
@@ -43,6 +42,11 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
         EW_qso = np.zeros(qso_zspec.shape)
         EW_NV_qso = np.zeros(qso_zspec.shape)
 
+    if area_obs is not None:
+        trim_mask = trim_r_distribution(mag, qso_zspec, area_obs)
+    else:
+        trim_mask = np.ones_like(qso_L).astype(bool)
+
     # Remove bad sources
     good_src = []
     for src in range(qso_err.shape[1]):
@@ -50,13 +54,13 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
             (mag[src] < mag_min - 0.25)
             | (mag[src] > mag_max + 0.25)
             | np.any(~np.isfinite(qso_flx[1:-4, src]))
+            | ~trim_mask[src]
         )
         if bad_src:
             continue
         else:
             good_src.append(src)
     good_src = np.array(good_src)
-    # print(f'Bad QSO removed: {len(qso_L) - len(good_src)}')
 
     qso_flx[qso_err > 1] = 0.
     EW_qso[~np.isfinite(EW_qso)] = 0.
@@ -193,9 +197,10 @@ def load_SF_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99):
 
 def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
                   add_errs=False, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99,
-                  how_many_sf=-1):
+                  how_many_sf=-1, qso_area=None, qso_area_bad=None,
+                  qso_area_hiL=None):
     qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso = load_QSO_mock(
-        name_qso, add_errs, mag_min=mag_min, mag_max=mag_max)
+        name_qso, add_errs, mag_min=mag_min, mag_max=mag_max, area_obs=qso_area)
     print('QSO mock loaded')
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
         name_gal, add_errs, mag_min=mag_min, mag_max=mag_max)
@@ -220,7 +225,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     # number: one with z < 2, another with z > 2
     if len(name_qso_bad) > 0:
         qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad, qso_L_NV_bad, EW_NV_qso_bad =\
-            load_QSO_mock(name_qso_bad)
+            load_QSO_mock(name_qso_bad, area_obs=qso_area_bad)
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
@@ -246,7 +251,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
 
     if len(name_qso_hiL) > 0:
         qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL, qso_L_NV_hiL, EW_NV_qso_hiL =\
-            load_QSO_mock(name_qso_hiL)
+            load_QSO_mock(name_qso_hiL, area_obs=qso_area_hiL)
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
