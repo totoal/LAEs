@@ -40,17 +40,17 @@ def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1.,
     z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
 
     name_qso = 'QSO_100000_0'
-    name_qso_hiL = f'QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_hiL_0'
-    name_qso_bad = f'QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_loL_0'
+    name_qso_hiL = f'QSO_400deg_merged_DR16_hiL_0'
+    name_qso_bad = f'QSO_400deg_merged_DR16_loL_0'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
         is_LAE, where_hiL, _, L_NV, EW_NV = ensemble_mock(name_qso, name_gal, name_sf,
                                              name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_min, mag_max,
-                                             qso_area=bad_qso_area, qso_area_bad=good_qso_area,
-                                             qso_area_hiL=hiL_qso_area)
+                                             qso_LAE_frac, sf_frac, mag_min, mag_max)
+                                            #  qso_area=bad_qso_area, qso_area_bad=good_qso_area,
+                                            #  qso_area_hiL=hiL_qso_area)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -186,6 +186,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                nice_z & is_qso & where_hiL & totals_mask]
     badh_to_corr = L_Arr[nice_lya & ~nice_z & (
         is_qso & is_LAE & ~where_hiL) & nb_mask & this_mag_cut]
+    badh_hiL = L_Arr[nice_lya & ~nice_z & (
+        is_qso & is_LAE & where_hiL) & nb_mask & this_mag_cut]
     badh_normal_qso = L_Arr[nice_lya & ~nice_z & (is_qso & ~is_LAE) & nb_mask & this_mag_cut]
     badh_sf = L_Arr[nice_lya & ~nice_z & is_sf & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
@@ -197,6 +199,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     hg_comp_qso_loL, _ = np.histogram(goodh_comp_qso_loL, bins=bins2)
     hg_comp_qso_hiL, _ = np.histogram(goodh_comp_qso_hiL, bins=bins2)
     hb_to_corr, _ = np.histogram(badh_to_corr, bins=bins2)
+    hb_hiL, _ = np.histogram(badh_hiL, bins=bins2)
     hb_normal_qso, _ = np.histogram(badh_normal_qso, bins=bins2)
     hb_sf, _ = np.histogram(badh_sf, bins=bins2)
     hb_gal, _ = np.histogram(badh_gal, bins=bins2)
@@ -205,7 +208,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
         good_qso_factor + hg_puri_qso_hiL * hiL_factor
     hg_comp = hg_comp_sf * sf_factor + hg_comp_qso_loL * \
         good_qso_factor + hg_comp_qso_hiL * hiL_factor
-    hb = hb_normal_qso + hb_sf * sf_factor + hb_to_corr * good_qso_factor + hb_gal * gal_factor
+    hb = hb_normal_qso + hb_sf * sf_factor + hb_to_corr * good_qso_factor +\
+         hb_gal * gal_factor + hb_hiL * hiL_factor
     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
     totals_qso_loL, _ = np.histogram(
         L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
@@ -396,7 +400,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Make the directory if it doesn't exist
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_{qso_frac}'
+        f'_{cont_est_m}_{qso_frac:0.1f}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
@@ -670,7 +674,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
 
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_{qso_frac}'
+        f'_{cont_est_m}_{qso_frac:0.1f}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
@@ -829,12 +833,12 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 12, 16, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 24, 30, 100, 'nb'),
+        (17, 22, 1, 4, 30, 100, 'nb'),
+        (17, 22, 4, 8, 30, 100, 'nb'),
+        (17, 22, 8, 12, 30, 100, 'nb'),
+        (17, 22, 12, 16, 30, 100, 'nb'),
+        (17, 22, 16, 20, 30, 100, 'nb'),
+        (17, 22, 20, 24, 30, 100, 'nb'),
 
         # (17, 24, 8, 12, 20, 100, 'nb'),
         # (17, 24, 8, 12, 50, 100, 'nb'),

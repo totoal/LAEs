@@ -47,7 +47,7 @@ def schechter(L, phistar, Lstar, alpha):
     return (phistar / Lstar) * (L / Lstar)**alpha * np.exp(-L / Lstar)
 
 
-def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
+def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0, r_flx_in):
     volume = z_volume(z_min, z_max, area)
 
     Lx = np.logspace(L_min, L_max, 10000)
@@ -74,41 +74,73 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0):
     # r-band LF from Palanque-Delabrouille (2016) PLE+LEDE model
     # We use the total values over all the magnitude bins
     # The original counts are for an area of 10000 deg2
-    PD_z_Arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5, 5.5])
-    PD_counts_Arr = np.array([975471, 2247522, 1282573, 280401, 31368, 4322])
+    # PD_z_Arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5, 5.5])
+    # PD_counts_Arr = np.array([975471, 2247522, 1282573, 280401, 31368, 4322])
 
-    PD_z_cum_x = np.linspace(z_min, z_max, 1000)
-    PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
-    PD_counts_cum /= PD_counts_cum.max()
+    # PD_z_cum_x = np.linspace(z_min, z_max, 1000)
+    # PD_counts_cum = np.cumsum(np.interp(PD_z_cum_x, PD_z_Arr, PD_counts_Arr))
+    # PD_counts_cum /= PD_counts_cum.max()
 
-    my_z_Arr = np.interp(np.random.rand(N_sources_LAE),
-                         PD_counts_cum, PD_z_cum_x)
+    # my_z_Arr = np.interp(np.random.rand(N_sources_LAE),
+    #                      PD_counts_cum, PD_z_cum_x)
+
+    # Compute a preliminary r
+    model = pd.read_csv('csv/PD2016-QSO_LF.csv')
+    counts_model_2D = model.to_numpy()[:-1, 1:-1].astype(float) * 1e-4 * area
+    r_yy = np.arange(15.75, 24.25, 0.5)
+    z_xx = np.arange(0.5, 6, 1)
+    f_counts = interp2d(z_xx, r_yy, counts_model_2D)
+    # Re-bin distribution
+    z_xx_new, r_yy_new = (np.linspace(z_min, z_max, 100), np.linspace(15.75, 24.25, 100))
+    model_2D_interpolated = f_counts(z_xx_new, r_yy_new).flatten()
+    model_2D_interpolated /= np.sum(model_2D_interpolated) # Normalize
+    idx_sample = np.random.choice(np.arange(len(model_2D_interpolated)), N_sources_LAE * 10,
+                                  p=model_2D_interpolated)
+    idx_sample = np.unravel_index(idx_sample, (len(z_xx_new), len(r_yy_new)))
+    my_z_Arr = z_xx_new[idx_sample[1]]
+    my_r_Arr = r_yy_new[idx_sample[0]]
 
     # Index of the original mock closest source in redshift
     idx_closest = np.zeros(N_sources_LAE).astype(int)
 
-    for src in range(N_sources_LAE):
-        # if src % 500 == 0:
-            # print(f'Part {part}: {src} / {N_sources_LAE}')
+    src = 0
+    iii = -1
+    iii_Arr = np.zeros(N_sources_LAE).astype(int)
+    while True:
+        iii += 1
+        if src == N_sources_LAE:
+            break
         # Select sources with a redshift closer than 0.02
-        closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[src]) < 0.05)
+        closest_z_Arr = np.where((np.abs(z_Arr - my_z_Arr[iii]) < 0.06)
                                  & (EW0 > 0) & np.isfinite(EW0))[0]
         # If less than 10 objects found with that z_diff, then select the 10 closer
         if len(closest_z_Arr) < 1:
-            closest_z_Arr = np.abs(z_Arr - my_z_Arr[src]).argsort()
-            print(z_Arr[closest_z_Arr[0]], my_z_Arr[src])
-            print(f'Best I can do is: delta_z = {z_Arr[closest_z_Arr[0]] - my_z_Arr[src]:0.4f}')
+            closest_z_Arr = np.abs(z_Arr - my_z_Arr[iii]).argsort()
+            print(z_Arr[closest_z_Arr[0]], my_z_Arr[iii])
+            print(f'Best I can do is: delta_z = {z_Arr[closest_z_Arr[0]] - my_z_Arr[iii]:0.4f}')
 
-        closest_L_Arr = np.abs(L_Arr[closest_z_Arr] - my_L_Arr[src]).argsort()
+        # Compute the resulting r band of the closest z sources
+        L_factor_pre = 10 ** (my_L_Arr[src] - L_Arr[closest_z_Arr])
+        r_out_pre = flux_to_mag(r_flx_in[closest_z_Arr] * L_factor_pre, w_central[-2])
+
+        closest_L_Arr = np.abs(my_r_Arr[iii] - r_out_pre).argsort()
+        # if np.abs(my_r_Arr[iii] - r_out_pre)[closest_L_Arr][0] > 1:
+        #     continue
 
         # Pick the closest in L
         idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        iii_Arr[src] = iii
+        src += 1
+    
+    mask_bad_src = idx_closest >= 0
+    idx_closest = idx_closest[mask_bad_src]
+    iii_Arr = iii_Arr[mask_bad_src]
 
     # The amount of w that we have to correct
-    w_factor = (1 + my_z_Arr) / (1 + z_Arr[idx_closest])
+    w_factor = (1 + my_z_Arr[iii_Arr]) / (1 + z_Arr[idx_closest])
 
     # The correction factor to achieve the desired L
-    L_factor = 10 ** (my_L_Arr - L_Arr[idx_closest])
+    L_factor = 10 ** (my_L_Arr[mask_bad_src] - L_Arr[idx_closest])
 
     # So, I need the source idx_closest, then correct its wavelength by adding w_offset
     # and finally multiplying its flux by L_factor
@@ -217,7 +249,8 @@ def trim_r_distribution(m_Arr, z_Arr, area_obs):
 
 def main(part, area, z_min, z_max, L_min, L_max, surname):
     dirname = '/home/alberto/almacen/Source_cats'
-    filename = f'{dirname}/QSO_400deg_z{z_min:0.1f}-{z_max:0.1f}_DR16_{surname}0'
+    filename = f'{dirname}/QSO_400deg_merged_DR16_{surname}0'
+    subpart = str(int(z_min * 100)) + str(int(z_max * 100))
     os.makedirs(filename, exist_ok=True)
 
     tcurves = np.load('../npy/tcurves.npy', allow_pickle=True).item()
@@ -257,8 +290,10 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
         filename_pm_DR16, usecols=np.arange(1, 64)
     ).to_numpy()[:, 0:60].T
 
+    r_flx_in = pm_SEDs_DR16[-2]
+
     idx_closest, _, L_factor, new_z = duplicate_sources(area, z, L, z_min, z_max,
-                                                        L_min, L_max, EW0)
+                                                        L_min, L_max, EW0, r_flx_in)
 
     pm_SEDs = pm_SEDs_DR16[:, idx_closest] * np.array(L_factor)
 
@@ -314,7 +349,7 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
                 plate[idx_closest][low_r_mask].reshape(-1, 1),
             )
         )
-    ).to_csv(filename + f'/data{part}.csv', header=hdr)
+    ).to_csv(filename + f'/data{subpart}{part}.csv', header=hdr)
 
 
 if __name__ == '__main__':
@@ -324,7 +359,6 @@ if __name__ == '__main__':
     area_loL = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     area_hiL = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
     nbs_list = [[1, 4], [4, 8], [8, 12], [12, 16], [16, 20], [20, 24]]
-    # nbs_list = [[1, 4]]
 
     for nb_min, nb_max in nbs_list:
         if int(part) == 1 or int(part) == 17:
