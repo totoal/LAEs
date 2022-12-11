@@ -124,11 +124,10 @@ def duplicate_sources(area, z_Arr, L_Arr, z_min, z_max, L_min, L_max, EW0, r_flx
         r_out_pre = flux_to_mag(r_flx_in[closest_z_Arr] * L_factor_pre, w_central[-2])
 
         closest_L_Arr = np.abs(my_r_Arr[iii] - r_out_pre).argsort()
-        # if np.abs(my_r_Arr[iii] - r_out_pre)[closest_L_Arr][0] > 1:
-        #     continue
 
         # Pick the closest in L
-        idx_closest[src] = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        this_idx_close = np.random.choice(closest_z_Arr[closest_L_Arr], 1)
+        idx_closest[src] = this_idx_close
         iii_Arr[src] = iii
         src += 1
     
@@ -279,10 +278,10 @@ def main(part, area, z_min, z_max, L_min, L_max, surname):
     L_NV = np.log10(F_line_NV * 4*np.pi * dL ** 2)
     
     # Mask poorly measured EWs
-    EW_snr = EW0 * (1 + z) / EW_err
-    mask_neg_EW0 = ((EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 5))
-    L[mask_neg_EW0] = -1
-    z[mask_neg_EW0] = -1
+    # EW_snr = EW0 * (1 + z) / EW_err
+    # mask_neg_EW0 = ((EW0 < 0) | ~np.isfinite(EW0) | (EW_snr < 5))
+    # L[mask_neg_EW0] = -1
+    # z[mask_neg_EW0] = -1
 
     # Load the DR16 PM
     filename_pm_DR16 = ('../csv/J-SPECTRA_QSO_Superset_DR16_v2.csv')
@@ -356,17 +355,16 @@ if __name__ == '__main__':
     part = sys.argv[1]
     t00 = time.time()
     
-    area_loL = 400 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
-    area_hiL = 4000 / (16 * 2)  # We have to do 2 runs of 16 parallel processes
-    nbs_list = [[1, 4], [4, 8], [8, 12], [12, 16], [16, 20], [20, 24]]
+    area_loL = 200 / (16 * 1)  # We have to do 2 runs of 16 parallel processes
+    area_hiL = 2000 / (16 * 1)  # We have to do 2 runs of 16 parallel processes
+    zs_list = [[1.9, 2.25], [2.25, 2.5], [2.5, 2.75], [2.75, 3],
+               [3, 3.25], [3.25, 3.5], [3.5, 3.75], [3.75, 4], [4, 4.5]]
 
-    for nb_min, nb_max in nbs_list:
+    for z_min, z_max in zs_list:
         if int(part) == 1 or int(part) == 17:
-            print(f'nb_min, nb_max = {nb_min, nb_max}')
-        z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
-        z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
+            print(f'nb_min, nb_max = {z_min, z_max}')
 
-        L_min = 42
+        L_min = 41
         L_max = 46
 
         main(part, area_loL, z_min, z_max, L_min, L_max, 'loL_')

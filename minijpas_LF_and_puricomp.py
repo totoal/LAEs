@@ -36,9 +36,6 @@ sf_frac = 0.1
 def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99, bad_qso_area=None, good_qso_area=None,
                hiL_qso_area=None):
-    z_min = (w_central[nb_min] - nb_fwhm_Arr[nb_min] * 0.5) / w_lya - 1 - 0.1
-    z_max = (w_central[nb_max] + nb_fwhm_Arr[nb_max] * 0.5) / w_lya - 1 + 0.1
-
     name_qso = 'QSO_100000_0'
     name_qso_hiL = f'QSO_400deg_merged_DR16_hiL_0'
     name_qso_bad = f'QSO_400deg_merged_DR16_loL_0'
@@ -46,11 +43,12 @@ def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1.,
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
-        is_LAE, where_hiL, _, L_NV, EW_NV = ensemble_mock(name_qso, name_gal, name_sf,
-                                             name_qso_bad, name_qso_hiL, add_errs,
-                                             qso_LAE_frac, sf_frac, mag_min, mag_max)
-                                            #  qso_area=bad_qso_area, qso_area_bad=good_qso_area,
-                                            #  qso_area_hiL=hiL_qso_area)
+        is_LAE, where_hiL, _, L_NV, EW_NV, hiL_qso_area, good_qso_area  =\
+             ensemble_mock(name_qso, name_gal, name_sf,
+                           name_qso_bad, name_qso_hiL, add_errs,
+                           qso_LAE_frac, sf_frac, mag_min, mag_max)
+                        #    qso_area=bad_qso_area, qso_area_bad=good_qso_area,
+                        #    qso_area_hiL=hiL_qso_area)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -61,7 +59,7 @@ def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1.,
           f'N_qso_hiL = {N_qso_hiL}, N_sf = {N_sf}')
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL,\
-        L_NV, EW_NV
+        L_NV, EW_NV, good_qso_area, hiL_qso_area
 
 
 def nb_or_3fm_cont(pm_flx, pm_err, cont_est_m):
@@ -155,7 +153,8 @@ def compute_EW_bin_err(EW_Arr, EW_lya, EW_binning):
 def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, is_gal, is_sf, is_qso, is_LAE,
-                                zspec, L_lya, dirname, ew_cut, where_hiL, survey_name):
+                                zspec, L_lya, dirname, ew_cut, where_hiL, survey_name,
+                                good_qso_factor, hiL_factor, gal_factor):
     fig, ax = plt.subplots(figsize=(8, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
@@ -258,6 +257,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
                          good_qso_factor, gal_factor):
+    print(good_qso_factor, hiL_factor, gal_factor)
     r_bins = np.linspace(mag_min, mag_max, 200 + 1)
 
     r_bins_c = bin_centers(r_bins)
@@ -387,8 +387,13 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
                     hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV,
+                    good_qso_area, hiL_qso_area,
                     plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
+
+    # Re-compute factors
+    # good_qso_factor = good_qso_area / ref_area
+    # hiL_factor = hiL_qso_area / ref_area
 
     # Vector of magnitudes in r band
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -485,16 +490,17 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     purity_or_completeness_plot(mag, nbs_to_consider, lya_lines, nice_lya,
                                 nice_z, L_Arr_corr, mag_max, mag_min, is_gal,
                                 is_sf, is_qso, is_LAE, zspec, L_lya, dirname,
-                                ew_cut, where_hiL, survey_name)
+                                ew_cut, where_hiL, survey_name,
+                                good_qso_factor, hiL_factor, gal_factor)
 
 
 def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area):
-
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
     mag_min, mag_max = params[:2]
-    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV =\
+    pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
+        good_qso_area, hiL_qso_area =\
         load_mocks(params[2], params[3], add_errs=False,
                    mag_min=mag_min, mag_max=mag_max,
                    good_qso_area=good_qso_area, hiL_qso_area=hiL_qso_area)
@@ -524,7 +530,8 @@ def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area
         all_corrections(
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
-            hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV
+            hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV,
+            good_qso_area, hiL_qso_area
         )
 
 
@@ -850,23 +857,26 @@ if __name__ == '__main__':
         print(f'QSO_frac = {qso_frac}\n')
         for params in LF_parameters:
             gal_area = 3
-            bad_qso_area = 200
-            good_qso_area = 400 / qso_frac
-            hiL_qso_area = 4000 / qso_frac
+            bad_qso_area_0 = 200
+            good_qso_area_0 = 200 / qso_frac
+            hiL_qso_area_0 = 2000 / qso_frac
             sf_area = 400 * sf_frac
+            ref_area = 200
 
             # the proportional factors are made in relation to bad_qso
             # so bad_qso_factor = 1
-            gal_factor = bad_qso_area / gal_area
-            good_qso_factor = bad_qso_area / good_qso_area
-            hiL_factor = bad_qso_area / hiL_qso_area
-            sf_factor = bad_qso_area / sf_area
+            gal_factor = bad_qso_area_0 / gal_area
+            good_qso_factor = bad_qso_area_0 / good_qso_area_0
+            hiL_factor = bad_qso_area_0 / hiL_qso_area_0
+            sf_factor = bad_qso_area_0 / sf_area
+
+            print(good_qso_factor, hiL_factor, gal_factor)
 
             t00 = time.time()
             print(
                 'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
                 .format(*params))
-            make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area)
+            make_corrections(params, qso_frac, good_qso_area_0, bad_qso_area_0, hiL_qso_area_0)
             print('\nBuilding the LF...')
             make_the_LF(params, qso_frac)
 

@@ -75,7 +75,12 @@ def load_QSO_mock(name, add_errs=True, how_many=-1, mag_min=0, mag_max=99, area_
     qso_L = qso_L[good_src].astype(float)
     qso_L_NV = qso_L_NV[good_src].astype(float)
 
-    return qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso
+    if area_obs is not None:
+        new_area = area_obs * sum(trim_mask) / len(trim_mask)
+    else:
+        new_area = None
+
+    return qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso, new_area
 
 
 def angular_radius(R, z):
@@ -199,8 +204,8 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
                   add_errs=False, qso_LAE_frac=1., sf_frac=1., mag_min=0, mag_max=99,
                   how_many_sf=-1, qso_area=None, qso_area_bad=None,
                   qso_area_hiL=None):
-    qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso = load_QSO_mock(
-        name_qso, add_errs, mag_min=mag_min, mag_max=mag_max, area_obs=qso_area)
+    qso_flx, qso_err, EW_qso, qso_zspec, qso_L, qso_L_NV, EW_NV_qso, _ = load_QSO_mock(
+        name_qso, add_errs, mag_min=mag_min, mag_max=mag_max)
     print('QSO mock loaded')
     gal_flx, gal_err, EW_gal, gal_zspec, gal_L, gal_R = load_GAL_mock(
         name_gal, add_errs, mag_min=mag_min, mag_max=mag_max)
@@ -224,8 +229,9 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     # If name_qso_bad given, load two catalogs of qso and give the relative
     # number: one with z < 2, another with z > 2
     if len(name_qso_bad) > 0:
-        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad, qso_L_NV_bad, EW_NV_qso_bad =\
+        qso_flx_bad, qso_err_bad, EW_qso_bad, qso_zspec_bad, qso_L_bad, qso_L_NV_bad, EW_NV_qso_bad, qso_area_bad =\
             load_QSO_mock(name_qso_bad, area_obs=qso_area_bad)
+        print('QSO mock 2 loaded')
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
@@ -250,8 +256,9 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
         qso_L_NV = np.hstack((qso_L_NV_bad, qso_L_NV[where_low_z]))
 
     if len(name_qso_hiL) > 0:
-        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL, qso_L_NV_hiL, EW_NV_qso_hiL =\
+        qso_flx_hiL, qso_err_hiL, EW_qso_hiL, qso_zspec_hiL, qso_L_hiL, qso_L_NV_hiL, EW_NV_qso_hiL, qso_area_hiL =\
             load_QSO_mock(name_qso_hiL, area_obs=qso_area_hiL)
+        print('QSO mock 3 loaded')
 
         # Truncate LAE QSOs
         if qso_LAE_frac < 1:
@@ -304,4 +311,4 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
     ang_R[is_gal] = gal_R
 
     return pm_flx, pm_err, zspec, EW_lya, L_lya.astype(float), is_qso,\
-        is_sf, is_gal, is_LAE, where_hiL, ang_R, L_NV, EW_NV
+        is_sf, is_gal, is_LAE, where_hiL, ang_R, L_NV, EW_NV, qso_area_hiL, qso_area_bad
