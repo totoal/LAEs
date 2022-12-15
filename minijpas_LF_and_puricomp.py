@@ -37,10 +37,8 @@ def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1.,
                mag_min=0, mag_max=99, bad_qso_area=None, good_qso_area=None,
                hiL_qso_area=None):
     name_qso = 'QSO_100000_0'
-    # name_qso_hiL = f'QSO_400deg_merged_DR16_hiL_0'
-    # name_qso_bad = f'QSO_400deg_merged_DR16_loL_0'
-    name_qso_bad = 'QSO_flat_z1.9-4.2_r18-23_LAES'
-    name_qso_hiL = 'QSO_flat_z1.9-4.2_r18-23_LAES_hiL'
+    name_qso_bad = 'QSO_LAES'
+    name_qso_hiL = 'QSO_LAES_hiL'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -855,11 +853,6 @@ if __name__ == '__main__':
         (17, 22, 12, 16, 30, 400, 'nb'),
         (17, 22, 16, 20, 30, 400, 'nb'),
         (17, 22, 20, 24, 30, 400, 'nb'),
-
-        # (17, 24, 8, 12, 20, 100, 'nb'),
-        # (17, 24, 8, 12, 50, 100, 'nb'),
-        # (17, 24, 8, 12, 30, 200, 'nb'),
-        # (17, 24, 8, 12, 30, 50, 'nb'),
     ]
     
     for qso_frac in [1.0]:

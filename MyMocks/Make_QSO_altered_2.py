@@ -357,8 +357,9 @@ if __name__ == '__main__':
     
     area_loL = 200 / (16 * 1)  # We have to do 2 runs of 16 parallel processes
     area_hiL = 2000 / (16 * 1)  # We have to do 2 runs of 16 parallel processes
-    zs_list = [[1.9, 2.25], [2.25, 2.5], [2.5, 2.75], [2.75, 3],
-               [3, 3.25], [3.25, 3.5], [3.5, 3.75], [3.75, 4], [4, 4.5]]
+    # zs_list = [[1.9, 2.25], [2.25, 2.5], [2.5, 2.75], [2.75, 3],
+    #            [3, 3.25], [3.25, 3.5], [3.5, 3.75], [3.75, 4], [4, 4.5]]
+    zs_list = [[1.9, 4.2]]
 
     for z_min, z_max in zs_list:
         if int(part) == 1 or int(part) == 17:

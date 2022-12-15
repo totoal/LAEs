@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch() 
 
-    times_selected = np.load('tmp/times_selected.npy')
+    # times_selected = np.load('tmp/times_selected.npy')
 
     # Directory of the spectra .fits files
     fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/miniJPAS_Xmatch'
@@ -355,22 +355,23 @@ if __name__ == '__main__':
         photoz_name = r'$z_\mathrm{phot}$'
 
         # Direct info from the catalogs and method
-        ts = times_selected[src] * 0.2
-        if ts >= 50:
-            ts_color = 'green'
-        else:
-            ts_color = 'red'
+        # ts = times_selected[src] * 0.2
+        # if ts >= 50:
+        #     ts_color = 'green'
+        # else:
+        #     ts_color = 'red'
         text_plot_0 = (f'#{n}\n'
                        f'\n{z_NB_name} = {z_src:0.2f}'
                        f'\n{Log_LLya_name} = {selection["L_lya"][n]:0.2f}'
                        f'\n{EW_name} = {selection["EW_lya"][n]:0.2f} $\AA$'
                        f'\nstarprob = {starprob[where_mjj]}'
-                       f'\nTimes selected = {ts:0.1f} %'
+                    #    f'\nTimes selected = {ts:0.1f} %'
                        f'\npuri = {puri[n]:0.2f}')
 
         # SDSS spectroscopic info
         text_plot_1 = (f'{z_spec_name} = {selection["SDSS_zspec"][n]:0.2f}'
-                       f'\nspCl = {selection["SDSS_spCl"][n]}')
+                       f'\nspCl = {selection["SDSS_spCl"][n]}'
+                       f'\nPLATE: {plate}\nMJD: {mjd}\nFIBER: {fiber}')
 
         # Photo_z
         text_plot_2 = (f'{photoz_name} = {photoz[where_mjj]:0.2f}'
