@@ -549,11 +549,11 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
     '''
 
     if survey_name == 'jnep':
-        area = 0.24
+        area = 0.23
     elif survey_name == 'minijpas':
         area = 0.895
     elif survey_name == 'both':
-        area = 0.24 + 0.895
+        area = 0.23 + 0.895
     else:
         # If the survey name is not known, try to use the given value as area
         try:
@@ -840,19 +840,19 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 22, 1, 4, 30, 100, 'nb'),
-        (17, 22, 4, 8, 30, 100, 'nb'),
-        (17, 22, 8, 12, 30, 100, 'nb'),
-        (17, 22, 12, 16, 30, 100, 'nb'),
-        (17, 22, 16, 20, 30, 100, 'nb'),
-        (17, 22, 20, 24, 30, 100, 'nb'),
+        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 8, 12, 30, 100, 'nb'),
+        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 20, 24, 30, 100, 'nb'),
 
-        (17, 22, 1, 4, 30, 400, 'nb'),
-        (17, 22, 4, 8, 30, 400, 'nb'),
-        (17, 22, 8, 12, 30, 400, 'nb'),
-        (17, 22, 12, 16, 30, 400, 'nb'),
-        (17, 22, 16, 20, 30, 400, 'nb'),
-        (17, 22, 20, 24, 30, 400, 'nb'),
+        (17, 24, 1, 4, 30, 400, 'nb'),
+        (17, 24, 4, 8, 30, 400, 'nb'),
+        (17, 24, 8, 12, 30, 400, 'nb'),
+        (17, 24, 12, 16, 30, 400, 'nb'),
+        (17, 24, 16, 20, 30, 400, 'nb'),
+        (17, 24, 20, 24, 30, 400, 'nb'),
     ]
     
     for qso_frac in [1.0]:
