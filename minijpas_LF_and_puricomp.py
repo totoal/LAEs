@@ -34,9 +34,8 @@ sf_frac = 0.1
 
 
 def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1., 
-               mag_min=0, mag_max=99, bad_qso_area=None, good_qso_area=None,
-               hiL_qso_area=None):
-    name_qso = 'QSO_100000_0'
+               mag_min=0, mag_max=99):
+    name_qso = 'QSO_contaminants'
     name_qso_bad = 'QSO_LAES'
     name_qso_hiL = 'QSO_LAES_hiL'
     name_gal = f'GAL_LC_lines_0'
@@ -154,7 +153,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
                                 nice_lya, nice_z, L_Arr, mag_max,
                                 mag_min, is_gal, is_sf, is_qso, is_LAE,
                                 zspec, L_lya, dirname, ew_cut, where_hiL, survey_name,
-                                good_qso_factor, hiL_factor, gal_factor):
+                                good_qso_factor, hiL_factor, gal_factor, good_LAEs_frac):
     fig, ax = plt.subplots(figsize=(8, 4))
 
     bins2 = np.linspace(42, 45.5, 15)
@@ -222,7 +221,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     comp_sf = (hg_comp_sf * sf_factor) / totals_sf
     comp_qso = (hg_comp_qso_loL * good_qso_factor + hg_comp_qso_hiL * hiL_factor) / \
         (totals_qso_loL * good_qso_factor + totals_qso_hiL * hiL_factor)
-    purity = hg_puri / (hg_puri + hb)
+    purity = hg_puri / (hg_puri + hb / good_LAEs_frac)
     purity[(purity == 0.) | ~np.isfinite(purity)] = 0.
 
     ax.plot(b_c, comp_sf, color='C1', ls='--', label='Completeness (only SF)')
@@ -256,8 +255,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
-                         good_qso_factor, gal_factor):
-    print(good_qso_factor, hiL_factor, gal_factor)
+                         good_qso_factor, gal_factor, good_LAEs_frac):
     r_bins = np.linspace(mag_min, mag_max, 200 + 1)
 
     r_bins_c = bin_centers(r_bins)
@@ -300,33 +298,33 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
 
         h2d_sel_sf_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & z_cut & is_sf],
-            mag[nice_lya & z_cut & is_sf],
+            L_perturbed[nice_lya & z_cut & is_sf & ~nice_z],
+            mag[nice_lya & z_cut & is_sf & ~nice_z],
             bins=[L_bins, r_bins]
         )
         h2d_sel_normal_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & z_cut & (is_qso & ~is_LAE)],
-            mag[nice_lya & z_cut & (is_qso & ~is_LAE)],
+            L_perturbed[nice_lya & z_cut & (is_qso & ~is_LAE) & ~nice_z],
+            mag[nice_lya & z_cut & (is_qso & ~is_LAE) & ~nice_z],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_loL_i[..., k], _, _ = np.histogram2d(
             L_perturbed[nice_lya & z_cut &
-                        is_qso & is_LAE & ~where_hiL],
-            mag[nice_lya & z_cut & is_qso & is_LAE & ~where_hiL],
+                        is_qso & is_LAE & ~where_hiL & ~nice_z],
+            mag[nice_lya & z_cut & is_qso & is_LAE & ~where_hiL & ~nice_z],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_hiL_i[..., k], _, _ = np.histogram2d(
             L_perturbed[nice_lya & z_cut &
-                        is_qso & is_LAE & where_hiL],
-            mag[nice_lya & z_cut & is_qso & is_LAE & where_hiL],
+                        is_qso & is_LAE & where_hiL & ~nice_z],
+            mag[nice_lya & z_cut & is_qso & is_LAE & where_hiL & ~nice_z],
             bins=[L_bins, r_bins]
         )
 
         h2d_sel_gal_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & is_gal & z_cut],
-            mag[nice_lya & is_gal & z_cut],
+            L_perturbed[nice_lya & is_gal & z_cut & ~nice_z],
+            mag[nice_lya & is_gal & z_cut & ~nice_z],
             bins=[L_bins, r_bins]
         )
 
@@ -378,7 +376,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.3)
     h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.3)
 
-    puri2d = h2d_nice_smooth / h2d_sel_smooth
+    puri2d = (1 + h2d_sel_smooth / (h2d_nice_smooth * good_LAEs_frac)) ** -1
     comp2d = h2d_nice_smooth / h2d_parent_smooth
 
     return puri2d, comp2d, L_bins, r_bins
@@ -387,13 +385,8 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
 def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                     is_qso, is_sf, is_LAE, where_hiL, survey_name,
                     hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV,
-                    good_qso_area, hiL_qso_area,
-                    plot_it=True):
+                    good_LAEs_frac, plot_it=True):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
-
-    # Re-compute factors
-    # good_qso_factor = good_qso_area / ref_area
-    # hiL_factor = hiL_qso_area / ref_area
 
     # Vector of magnitudes in r band
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
@@ -405,7 +398,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Make the directory if it doesn't exist
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_{qso_frac:0.1f}'
+        f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
@@ -474,7 +467,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         mag_min, mag_max, L_Arr_corr, L_e_Arr_pm, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
         L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
-        good_qso_factor, gal_factor
+        good_qso_factor, gal_factor, good_LAEs_frac
     )
 
     np.save(f'{dirname}/puri2d_{survey_name}.npy', puri2d)
@@ -491,10 +484,11 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
                                 nice_z, L_Arr_corr, mag_max, mag_min, is_gal,
                                 is_sf, is_qso, is_LAE, zspec, L_lya, dirname,
                                 ew_cut, where_hiL, survey_name,
-                                good_qso_factor, hiL_factor, gal_factor)
+                                good_qso_factor, hiL_factor, gal_factor,
+                                good_LAEs_frac)
 
 
-def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area):
+def make_corrections(params, qso_frac, good_LAEs_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
@@ -502,8 +496,7 @@ def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
         good_qso_area, hiL_qso_area =\
         load_mocks(params[2], params[3], add_errs=False,
-                   mag_min=mag_min, mag_max=mag_max,
-                   good_qso_area=good_qso_area, hiL_qso_area=hiL_qso_area)
+                   mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
     for survey_name in survey_name_list:
@@ -531,7 +524,7 @@ def make_corrections(params, qso_frac, good_qso_area, bad_qso_area, hiL_qso_area
             params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
             is_qso, is_sf, is_LAE, where_hiL, survey_name,
             hiL_factor, good_qso_factor, gal_factor, qso_frac, L_NV, EW_NV,
-            good_qso_area, hiL_qso_area
+            good_LAEs_frac
         )
 
 
@@ -580,7 +573,8 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
     return volume_abs + volume_overlap * 0.5
 
 
-def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=False):
+def make_the_LF(params, qso_frac, good_LAEs_frac,
+                cat_list=['minijpas', 'jnep'], return_hist=False):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -681,7 +675,7 @@ def make_the_LF(params, qso_frac, cat_list=['minijpas', 'jnep'], return_hist=Fal
 
     folder_name = (
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_{qso_frac:0.1f}'
+        f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
     os.makedirs(dirname, exist_ok=True)
@@ -846,17 +840,12 @@ if __name__ == '__main__':
         (17, 24, 12, 16, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
         (17, 24, 20, 24, 30, 100, 'nb'),
-
-        (17, 24, 1, 4, 30, 400, 'nb'),
-        (17, 24, 4, 8, 30, 400, 'nb'),
-        (17, 24, 8, 12, 30, 400, 'nb'),
-        (17, 24, 12, 16, 30, 400, 'nb'),
-        (17, 24, 16, 20, 30, 400, 'nb'),
-        (17, 24, 20, 24, 30, 400, 'nb'),
     ]
     
-    for qso_frac in [1.0]:
-        print(f'QSO_frac = {qso_frac}\n')
+    qso_frac = 1.
+    for good_LAEs_frac in [1.0, 1.5, 2.0, 3.0]:
+        print(f'QSO_frac = {qso_frac}')
+        print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
             gal_area = 3
             bad_qso_area_0 = 200
@@ -872,16 +861,14 @@ if __name__ == '__main__':
             hiL_factor = bad_qso_area_0 / hiL_qso_area_0
             sf_factor = bad_qso_area_0 / sf_area
 
-            print(good_qso_factor, hiL_factor, gal_factor)
-
             t00 = time.time()
             print(
                 'mag{0}-{1}, nb{2}-{3}, ew0_lya={4}, ew_oth={5}, cont_est_method={6}'
                 .format(*params))
-            make_corrections(params, qso_frac, good_qso_area_0, bad_qso_area_0, hiL_qso_area_0)
+            make_corrections(params, qso_frac, good_LAEs_frac)
             print('\nBuilding the LF...')
-            make_the_LF(params, qso_frac)
+            make_the_LF(params, qso_frac, good_LAEs_frac)
 
             h, m, s = hms_since_t0(t00)
-            print(f'\nTotal elapsed: {h}h {m}m {s}s')
-            print('\n ########################## \n')
+            print(f'Total elapsed: {h}h {m}m {s}s')
+            print(' ########################## \n')

@@ -229,7 +229,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_name = 'LF_r17-22_nb1-4_ew30_ewoth100_nb_1.0'
+    LF_name = 'LF_r17-24_nb1-4_ew30_ewoth100_nb_1.0'
     LF_dirname = f'Luminosity_functions/{LF_name}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{LF_name}'
 
