@@ -247,7 +247,7 @@ def ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad='', name_qso_hiL='',
             qso_L_bad = qso_L_bad[choice]
             qso_L_NV_bad = qso_L_NV_bad[choice]
 
-        where_low_z = (qso_zspec < 1.9)
+        where_low_z = (qso_zspec <= 1.9)
         qso_flx = np.hstack((qso_flx_bad, qso_flx[:, where_low_z]))
         qso_err = np.hstack((qso_err_bad, qso_err[:, where_low_z]))
         EW_qso = np.hstack((EW_qso_bad, EW_qso[where_low_z]))

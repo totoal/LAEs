@@ -33,7 +33,7 @@ z_nb_Arr = w_central[:-4] / w_lya - 1
 sf_frac = 0.1
 
 
-def load_mocks(nb_min, nb_max, add_errs=True, qso_LAE_frac=1., 
+def load_mocks(add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
     name_qso = 'QSO_contaminants'
     name_qso_bad = 'QSO_LAES'
@@ -495,7 +495,7 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max = params[:2]
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
         good_qso_area, hiL_qso_area =\
-        load_mocks(params[2], params[3], add_errs=False,
+        load_mocks(add_errs=False,
                    mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 

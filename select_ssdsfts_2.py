@@ -14,6 +14,10 @@ with fits.open(filename) as fread:
     mjd = fread[1].data['MJD'][good_qso]
     fiber = fread[1].data['FIBERID'][good_qso]
 
+    # The array of redshifts is taken from this file
+    z_qso = fread[1].data['Z'][good_qso]
+
+
 N_sources = len(fiber)
 
 lya_cont = np.zeros(N_sources)
@@ -69,7 +73,7 @@ data = {
     'NVFEW_err': NV_EW_err,
     'LyaCont': lya_cont,
     'LyaCont_err': lya_cont_err,
-    'Lya_z': lya_z,
+    'Lya_z': z_qso,
     'mjd': mjd,
     'plate': plate,
     'fiberid': fiber

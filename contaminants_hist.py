@@ -142,17 +142,18 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
 
 if __name__ == '__main__':
-    field_name = 'minijpasAEGIS001'
-    name_qso = 'QSO_flat_z0.001-2_r16-28_deep'
-    name_qso_bad = f'QSO_double_train_jnep_DR16_good2_0'
+    name_qso = 'QSO_contaminants'
+    name_qso_bad = 'QSO_LAES'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
-    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, _ =\
-        ensemble_mock(name_qso, name_gal, name_sf, name_qso_bad, add_errs=False)
+    pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
+        is_LAE, where_hiL, _, L_NV, EW_NV, hiL_qso_area, good_qso_area  =\
+             ensemble_mock(name_qso, name_gal, name_sf,
+                           name_qso_bad, add_errs=False)
 
     pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
-                                survey_name='minijpasAEGIS001')
+                                survey_name='minijpasAEGIS003')
 
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
     mag[np.isnan(mag)] = 99.
@@ -160,12 +161,6 @@ if __name__ == '__main__':
     N_sources = pm_flx.shape[1]
 
     params = [
-        (30, 100, 1, 4),
-        (30, 100, 4, 8),
-        (30, 100, 8, 12),
-        (30, 100, 12, 16),
-        (30, 100, 16, 20),
-        (30, 100, 20, 24),
         (30, 100, 1, 24),
     ]
     
