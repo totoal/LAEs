@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+from matplotlib import rc
+rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+rc('text', usetex=True)
 import numpy as np
 from my_functions import *
 
@@ -38,11 +41,11 @@ data_tab = Table.read('fits/FILTERs_table.fits', format='fits')
 # PLOT
 fig, ax = plt.subplots(figsize=(4, 4))
 
-NB_idx = np.arange(56)
+NB_idx = np.arange(1, 56)
 BB_idx = np.arange(56, 60)
 
-L_min_minijpas = L_lim(np.arange(60), 30, 'minijpas')
-L_min_jnep = L_lim(np.arange(60), 30, 'jnep')
+L_min_minijpas = L_lim(np.arange(1, 60), 30, 'minijpas')
+L_min_jnep = L_lim(np.arange(1, 60), 30, 'jnep')
 
 for nb in NB_idx:
     ax.plot(
@@ -57,8 +60,14 @@ for nb in NB_idx:
         label='J-NEP' if nb == 13 else ''
     )
 
-ax.set_xlabel(r'$\lambda_\mathrm{NB}$ ($\AA$)')
-ax.set_ylabel(r'$\log L_{\mathrm{Ly}\alpha}^\mathrm{min}$ (erg$\,$s$^{-1}$)')
+ax.set_xlabel(r'$\lambda_\mathrm{NB}$ ($\mathrm{\AA}$)', fontsize=15)
+ax.set_ylabel(r'$\log L_{\mathrm{Ly}\alpha}^\mathrm{min}$ (erg$\,$s$^{-1}$)', fontsize=15)
+ax.tick_params(direction='in', which='both', labelsize=11)
+ax.set_ylim(43.3, 45)
+ax.set_xlim(3500, 9500)
+ax.yaxis.set_ticks_position('both')
+ax.xaxis.set_ticks_position('both')
+ax.set_axisbelow(False)
 
 ax.legend()
 
