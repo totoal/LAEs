@@ -1,5 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+matplotlib.rc('text', usetex=True)
+matplotlib.rcParams.update({'font.size': 15})
 import seaborn as sns
 
 tile_dict = {
@@ -28,9 +32,9 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     # ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])
     axc0 = fig.add_axes([width + 0.02, 0, cbar_width, height])
-    ax1 = fig.add_axes([width + 0.02 + 0.15 + cbar_width,
+    ax1 = fig.add_axes([width + 0.02 + 0.12 + cbar_width,
                        0, width, height], sharey=ax0)
-    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.15 +
+    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.12 +
                         cbar_width, 0, cbar_width, height])
 
     # Mask puri and comp where at least one of them is zero or nan
@@ -41,8 +45,10 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
 
     # PLOT STUFF
     cmap = 'Spectral'
-    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1, cbar_ax=axc0, cmap=cmap, rasterized=True)
-    sns.heatmap(comp.T, ax=ax1, vmin=0, vmax=2, cbar_ax=axc1, cmap=cmap, rasterized=True)
+    sns.heatmap(puri.T, ax=ax0, vmin=0, vmax=1,
+                cbar_ax=axc0, cmap=cmap, rasterized=True)
+    sns.heatmap(1 / comp.T, ax=ax1, vmin=0, vmax=5,
+                cbar_ax=axc1, cmap=cmap, rasterized=True)
 
     # If L_Arr is not None, plot the selected sources
     # Change units to plot:
@@ -67,6 +73,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
                     for n in L_bins][1::7]  # Only odd xticks
     ytick_labels = ['{0:0.1f}'.format(n)
                     for n in r_bins][1::15]  # Only odd yticks
+    comp_cbar_ticks = np.arange(6)
+    comp_cbar_tick_labels = [0, 1, 2, 3, 4, '$>$5']
 
     ax0.set_yticks(yticks)
     ax0.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -76,6 +84,8 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     ax0.xaxis.set_ticks_position('both')
     ax0.tick_params(axis='y', direction='in', labelsize=16)
     ax0.tick_params(axis='x', direction='in', labelsize=16)
+    axc1.set_yticks(comp_cbar_ticks)
+    axc1.set_yticklabels(comp_cbar_tick_labels)
 
     ax1.set_yticks(yticks)
     ax1.set_yticklabels(ytick_labels, rotation='horizontal')
@@ -95,11 +105,11 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
 
     # TITLES
     ax0.set_title('Purity', fontsize=25)
-    ax1.set_title('Completeness', fontsize=25)
+    ax1.set_title('N correction', fontsize=25)
 
     # AXES LABELS
-    ax0.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
-    ax1.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax0.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax1.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
     ax0.set_ylabel('$r$ (magAB)', fontsize=22)
     # ax1.set_ylabel('$r$ (magAB)', fontsize=22)
 
@@ -149,7 +159,7 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     ax.tick_params(axis='x', direction='in', labelsize=16)
     ax_cbar.tick_params(labelsize=12)
     ax.spines[:].set_visible(True)
-    ax.set_xlabel(r'$\logL_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
     ax.set_ylabel('$r$ (magAB)', fontsize=22)
     ax.set_xlim(90, 160)
     ax.set_ylim(199, 20)
@@ -229,7 +239,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_name = 'LF_r17-24_nb8-12_ew30_ewoth100_nb_1.0'
+    LF_name = 'LF_r17-24_nb16-20_ew30_ewoth100_nb_1.0'
     LF_dirname = f'Luminosity_functions/{LF_name}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{LF_name}'
 

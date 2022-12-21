@@ -12,8 +12,8 @@ matplotlib.use('TkAgg')
 qso_LAEs_frac = 1.
 
 gal_area = 3
-bad_qso_area = 200
-good_qso_area = 200 / qso_LAEs_frac
+bad_qso_area = 400
+good_qso_area = 400 / qso_LAEs_frac
 
 # the proportional factors are made in relation to bad_qso
 # so bad_qso_factor = 1

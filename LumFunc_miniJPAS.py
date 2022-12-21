@@ -64,6 +64,7 @@ def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         w[:] = 1.
         w[~include_mask] = 0.
         w[include_mask] = 1. / comp[include_mask]
+        w[comp < 0.2] = 0. # Mask very low completeness
         w[np.isnan(w) | np.isinf(w)] = 0.
 
         hist_i_mat[k], _ = np.histogram(L_perturbed_corr[nice_lya], bins=bins, weights=w)

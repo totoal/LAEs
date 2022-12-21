@@ -46,8 +46,6 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
              ensemble_mock(name_qso, name_gal, name_sf,
                            name_qso_bad, name_qso_hiL, add_errs,
                            qso_LAE_frac, sf_frac, mag_min, mag_max)
-                        #    qso_area=bad_qso_area, qso_area_bad=good_qso_area,
-                        #    qso_area_hiL=hiL_qso_area)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -492,26 +490,32 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
     
-    mag_min, mag_max = params[:2]
+    mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
+
+    # # Comment this section if you don't want to recompute corrections
+    # folder_name = (
+    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+    #     f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
+    # )
+    # dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    # try:
+    #     np.load(f'{dirname}/puri2d_minijpasAEGIS001.npy')
+    #     np.load(f'{dirname}/comp2d_minijpasAEGIS001.npy')
+    # except:
+    #     print('Making puricomp...')
+    # else:
+    #     print('Corrections loaded.')
+    #     return
+    # ######
+
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
-        good_qso_area, hiL_qso_area =\
+        _, _ =\
         load_mocks(add_errs=False,
                    mag_min=mag_min, mag_max=mag_max)
     print(f'Mock len = {len(zspec)}')
 
     for survey_name in survey_name_list:
         print(f'{survey_name}')
-
-        # # Comment this section if you don't want to recompute corrections
-        # try:
-        #     np.load(f'npy/puri2d_{survey_name}.npy')
-        #     np.load(f'npy/comp2d_{survey_name}.npy')
-        # except:
-        #     print('Making puricomp...')
-        # else:
-        #     print('Loaded.')
-        #     continue
-        # ######
 
         pm_flx, pm_err = add_errors(pm_flx_0, apply_err=True,
                                     survey_name=survey_name)
@@ -834,23 +838,23 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 4, 30, 100, 'nb'),
+        (17, 24, 1, 5, 30, 100, 'nb'),
         (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 8, 12, 30, 100, 'nb'),
-        (17, 24, 12, 16, 30, 100, 'nb'),
+        (17, 24, 7, 11, 30, 100, 'nb'),
+        (17, 24, 10, 14, 30, 100, 'nb'),
+        (17, 24, 13, 17, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 24, 30, 100, 'nb'),
     ]
     
     qso_frac = 1.
-    for good_LAEs_frac in [1.0, 1.5, 2.0, 3.0]:
+    for good_LAEs_frac in [1.0, 1.5, 0.5]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
             gal_area = 3
             bad_qso_area_0 = 200
-            good_qso_area_0 = 200 / qso_frac
-            hiL_qso_area_0 = 2000 / qso_frac
+            good_qso_area_0 = 400 / qso_frac
+            hiL_qso_area_0 = 4000 / qso_frac
             sf_area = 400 * sf_frac
             ref_area = 200
 
