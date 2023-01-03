@@ -586,14 +586,14 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         ra, dec =\
         load_minijpas_jnep(cat_list)
     mag = flux_to_mag(pm_flx[-2], w_central[-2])
-    mask = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
+    mask_pm = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
         nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya,
-                         cont_err_lya, ew0_cut, mask=mask)
+                         cont_err_lya, ew0_cut)
     lya_lines, lya_cont_lines, _ = identify_lines(
         line, pm_flx, cont_est_lya, first=True, return_line_width=True
     )
@@ -601,7 +601,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
     # Other lines
     line_other = is_there_line(pm_flx, pm_err, cont_est_other, cont_err_other,
-                               ew_oth, obs=True, mask=mask, sigma=5)
+                               ew_oth, obs=True, sigma=5)
     other_lines = identify_lines(line_other, pm_flx, cont_est_other)
 
     N_sources = pm_flx.shape[1]
@@ -617,10 +617,22 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         l = lya_lines[src]
         snr[src] = pm_flx[l, src] / pm_err[l, src]
 
-    mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
-    nice_lya = nice_lya_select(
-        lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr, mask=mask
+    # Drop bad NB image rows
+    bad_NB_image = np.array([4380, 30395, 30513, 30977, 40306, 43721, 11771, 2583])
+    mask_bad_NB = np.ones(N_sources).astype(bool)
+    for bad_nb_src in bad_NB_image:
+        mask_bad_NB[bad_nb_src] = False
+
+    mask_snr = (snr > 6)
+    lya_lines_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
+    mask = (lya_lines_mask & mag_cut & mask_snr & mask_bad_NB & mask_pm)
+
+    nice_lya_raw, c_mask, ml_mask = nice_lya_select(
+        lya_lines, other_lines, pm_flx, pm_err, cont_est_lya, z_Arr,
+        return_color_mask=True
     )
+    nice_lya_raw = lya_lines_mask & nice_lya_raw & mask_bad_NB & mag_cut
+    nice_lya = nice_lya_raw & mask & c_mask & ml_mask
 
     # Estimate Luminosity
     EW_Arr, _, L_Arr, _, _, _ = EW_L_NB(
@@ -726,23 +738,28 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
     # Save the selection
     selection = {
-        'src': np.where(nice_lya)[0],
-        'tile_id': tile_id[nice_lya],
-        'x_im': x_im[nice_lya],
-        'y_im': y_im[nice_lya],
-        'nb_sel': lya_lines[nice_lya],
-        'SDSS_spCl': spCl[nice_lya],
-        'SDSS_zspec': zsp[nice_lya],
-        'RA': ra[nice_lya],
-        'DEC': dec[nice_lya],
-        'L_lya': L_Arr_corr[nice_lya],
-        'L_lya_NV': L_Arr[nice_lya],
-        'L_lya_err': L_e_Arr[nice_lya],
-        'EW_lya': EW_Arr_corr[nice_lya],
-        'EW_lya_err': EW_Arr_err_corr[nice_lya],
+        'src': np.where(nice_lya_raw)[0],
+        'tile_id': tile_id[nice_lya_raw],
+        'x_im': x_im[nice_lya_raw],
+        'y_im': y_im[nice_lya_raw],
+        'nb_sel': lya_lines[nice_lya_raw],
+        'SDSS_spCl': spCl[nice_lya_raw],
+        'SDSS_zspec': zsp[nice_lya_raw],
+        'RA': ra[nice_lya_raw],
+        'DEC': dec[nice_lya_raw],
+        'L_lya': L_Arr_corr[nice_lya_raw],
+        'L_lya_NV': L_Arr[nice_lya_raw],
+        'L_lya_err': L_e_Arr[nice_lya_raw],
+        'EW_lya': EW_Arr_corr[nice_lya_raw],
+        'EW_lya_err': EW_Arr_err_corr[nice_lya_raw],
         'puri': nice_puri_list,
-        'r': mag[nice_lya],
-        'other_lines': [other_lines[idx] for idx in np.where(nice_lya)[0]]
+        'r': mag[nice_lya_raw],
+        'other_lines': [other_lines[idx] for idx in np.where(nice_lya_raw)[0]],
+        'color_mask': c_mask[nice_lya_raw],
+        'pm_mask': mask_pm[nice_lya_raw],
+        'snr_mask': mask_snr[nice_lya_raw],
+        'ml_mask': ml_mask[nice_lya_raw],
+        'nice_nice': nice_lya[nice_lya_raw]
     }
 
     with open(f'{dirname}/selection.npy', 'wb') as f:
@@ -844,10 +861,11 @@ if __name__ == '__main__':
         (17, 24, 10, 14, 30, 100, 'nb'),
         (17, 24, 13, 17, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 21, 50, 30, 100, 'nb'),
     ]
     
     qso_frac = 1.
-    for good_LAEs_frac in [1.0, 1.5, 0.5]:
+    for good_LAEs_frac in [1.0]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:

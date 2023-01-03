@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from my_functions import Zero_point_error
 
-def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False):
+def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False,
+                       flags_mask=True):
     # If selection, return the valuable items for visual_inspection.py only
     pm_flx = np.array([]).reshape(60, 0)
     pm_err = np.array([]).reshape(60, 0)
@@ -33,7 +34,9 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False):
             5: sum_flags})
 
         cat = cat[np.array([len(x) for x in cat['FLUX_APER_3_0']]) != 0] # Drop bad rows due to bad query
-        cat = cat[(cat.FLAGS == 0) & (cat.MASK_FLAGS == 0)] # Drop flagged
+
+        if flags_mask:
+            cat = cat[(cat.FLAGS == 0) & (cat.MASK_FLAGS == 0)] # Drop flagged
         cat = cat.reset_index()
 
         tile_id_i = cat['TILE_ID'].to_numpy()
@@ -89,7 +92,7 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False):
 
     if selection:
         return pm_flx, pm_err, x_im, y_im, tile_id, number, starprob, spCl,\
-            photoz, photoz_chi_best, photoz_odds
+            photoz, photoz_chi_best, photoz_odds, RA, DEC
     else:
         return pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, starlhood,\
             spCl, zsp, photoz, photoz_chi_best, photoz_odds, N_minijpas, x_im, y_im, RA, DEC
@@ -98,4 +101,4 @@ def load_sdss_xmatch():
     filename = 'csv/xmatch_sdss_dr12.csv'
     cat = pd.read_csv(filename, sep=',', header=1)
 
-    return cat['NUMBER'], cat['TILE_ID'], cat['SpObjID']
+    return cat['NUMBER'], cat['TILE_ID'], cat['SpObjID'], cat['f_zsp']

@@ -4,15 +4,26 @@ import pandas as pd
 
 import csv
 
+import time
+
 import matplotlib.pyplot as plt
 
-from scipy.integrate import simpson
+from scipy.integrate import simpson, dblquad
+from scipy.interpolate import interp2d
 
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 from astropy.table import Table
 
 c = 29979245800  # cm / s
+
+tile_dict = {
+    'minijpasAEGIS001': 2241,
+    'minijpasAEGIS002': 2243,
+    'minijpasAEGIS003': 2406,
+    'minijpasAEGIS004': 2470,
+    'jnep': 2520
+}
 
 
 def mag_to_flux(m, w):
@@ -215,8 +226,8 @@ def z_volume(z_min, z_max, area):
     '''
     z_x = np.linspace(z_min, z_max, 1000)
     dV = cosmo.differential_comoving_volume(z_x).to(u.Mpc**3 / u.sr).value
-    area *= (2 * np.pi / 360) ** 2
-    theta = np.arccos(1 - area / (2 * np.pi))
+    area_rad = area * (2 * np.pi / 360) ** 2
+    theta = np.arccos(1 - area_rad / (2 * np.pi))
     Omega = 2 * np.pi * (1 - np.cos(theta))
     vol = simpson(dV, z_x) * Omega
     return vol
@@ -455,7 +466,8 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     return line
 
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None,
+                    return_color_mask=False):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -475,14 +487,11 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     gr = g - r
     ri = r - i
     # For z > 3
-    # color_aux1 = (-1.5 * ri + 1.7 > gr)
     color_aux1 = (ri < 0.6) & (gr < 1.5)
     # For z < 3
-    # color_aux2 = (-1.5 * ri + 2.5 > gr) & (ri < 1.)
-    color_aux2 = (ri < 0.6) & (gr < 0.7)
+    color_aux2 = (ri < 0.6) & (gr < 0.6)
 
-    # color_aux1 = np.ones(g.shape).astype(bool)
-    # color_aux2 = np.ones(g.shape).astype(bool)
+    color_mask = np.ones_like(color_aux2).astype(bool)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -520,12 +529,12 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             fwhm = fwhm_Arr[l]
 
             good_l = (
-                (np.abs(w_obs_l - w_obs_lya) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 1.5)
-                | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 1.5)
+                (np.abs(w_obs_l - w_obs_lya) < fwhm * 1.)
+                | (np.abs(w_obs_l - w_obs_lyb) < fwhm * 1.)
+                | (np.abs(w_obs_l - w_obs_SiIV) < fwhm * 1.)
+                | (np.abs(w_obs_l - w_obs_CIV) < fwhm * 1.)
+                | (np.abs(w_obs_l - w_obs_CIII) < fwhm * 1.)
+                | (np.abs(w_obs_l - w_obs_MgII) < fwhm * 1.)
                 | (w_obs_l > w_obs_MgII + fwhm)
             )
 
@@ -543,13 +552,18 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             else:
                 good_colors = color_aux1[src]
             if ~good_colors:
-                this_nice = False
+                if return_color_mask:
+                    color_mask[src] = False
+                else:
+                    this_nice = False
 
         if this_nice:
             nice_lya[src] = True
 
-    if mask is None:
+    if mask is None and not return_color_mask:
         return nice_lya
+    elif mask is None and return_color_mask:
+        return nice_lya, color_mask
     else:
         return nice_lya & mask
 
@@ -683,35 +697,43 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
 
-def Zero_point_error(tile_id_Arr, catname):
+def Zero_point_error(ref_tile_id_Arr, catname):
     # Load Zero Point magnitudes
     w_central = central_wavelength()
     zpt_cat = pd.read_csv(
-        f'csv/{catname}.CalibTileImage.csv', sep=',', header=1)
+        f'csv/{catname}.TileImage.csv', sep=',', header=1)
 
-    zpt_mag = zpt_cat['ZPT'].to_numpy()
-    zpt_err = zpt_cat['ERRZPT'].to_numpy()
+    # For each reference TILE_ID, we need an array with the ZPT_ERR for every filter
+    if catname == 'jnep':
+        ref_tileids = np.array([tile_dict['jnep']])
+    if catname == 'minijpas':
+        ref_tileids = np.array([tile_dict['minijpasAEGIS001'],
+                                tile_dict['minijpasAEGIS002'],
+                                tile_dict['minijpasAEGIS003'],
+                                tile_dict['minijpasAEGIS004']])
+    
+    zpt_err_Arr = np.zeros((len(ref_tileids), 60))
+    pm_zpt = np.zeros((60, len(ref_tile_id_Arr)))
+    for kkk, ref_tid in enumerate(ref_tileids):
+        for fil in range(60):
+            where = ((zpt_cat['REF_TILE_ID'] == ref_tid)
+                     & (zpt_cat['FILTER_ID'] == fil + 1))
+            
+            zpt_mag = zpt_cat['ZPT'][where]
+            zpt_err = zpt_cat['ERRZPT'][where]
+            this_zpt_err = (
+                mag_to_flux(zpt_mag, w_central[fil])
+                - mag_to_flux(zpt_mag + zpt_err, w_central[fil])
+            )
+            zpt_err_Arr[kkk, fil] = this_zpt_err
 
-    ones = np.ones((len(w_central), len(zpt_mag)))
-
-    zpt_err = (
-        mag_to_flux(ones * zpt_mag, w_central.reshape(-1, 1))
-        - mag_to_flux(ones * (zpt_mag + zpt_err), w_central.reshape(-1, 1))
-    )
-
-    # Duplicate rows to match the tile_ID of each source
-    idx = np.empty(tile_id_Arr.shape).astype(int)
-
-    zpt_id = zpt_cat['TILE_ID'].to_numpy()
-    for src in range(len(tile_id_Arr)):
-        idx[src] = np.where(
-            (zpt_id == tile_id_Arr[src]) & (
-                zpt_cat['IS_REFERENCE_METHOD'] == 1)
-        )[0][0]
-
-    zpt_err = zpt_err[:, idx]
-
-    return zpt_err
+        # The array of shape (60, N_src) with the zpt errors of the photometry
+        mask = (ref_tile_id_Arr == ref_tid)
+        if not np.any(mask):
+            continue
+        pm_zpt[:, mask] = zpt_err_Arr[kkk].reshape(-1, 1)
+    
+    return pm_zpt
 
 
 def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
@@ -725,8 +747,8 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
     new_Mat = np.zeros_like(Mat)
     for i in range(0, Mat.shape[0]):
         for j in range(0, Mat.shape[1]):
-            mask_i = (X_Arr > X_Arr[i] - 0.5 * Dx) * (X_Arr < X_Arr[i] + 0.5 * Dx)
-            mask_j = (Y_Arr > Y_Arr[j] - 0.5 * Dy) * (Y_Arr < Y_Arr[j] + 0.5 * Dy)
+            mask_i = (X_Arr > X_Arr[i] - 0.5 * Dx) * (X_Arr <= X_Arr[i] + 0.5 * Dx)
+            mask_j = (Y_Arr > Y_Arr[j] - 0.5 * Dy) * (Y_Arr <= Y_Arr[j] + 0.5 * Dy)
 
             index_i_Arr = np.arange(0, len(mask_i))
             index_j_Arr = np.arange(0, len(mask_j))
@@ -736,7 +758,7 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
             i_max = np.amax(index_i_Arr[mask_i])
             j_max = np.amax(index_j_Arr[mask_j])
 
-            new_Mat[i, j] = np.sum(Mat[i_min:i_max, j_min:j_max])
+            new_Mat[i, j] = np.sum(Mat[i_min : i_max + 1, j_min : j_max + 1])
 
     return new_Mat
 
@@ -762,4 +784,53 @@ def smooth_hist(values_Arr, value_min, value_max, step, d_value, weights=None):
     return out_Arr, centers
 
 def bin_centers(bins):
-    return np.array([bins[i : i+ 2].sum() * 0.5 for i in range(len(bins) - 1)])
+    return np.array([bins[i : i + 2].sum() * 0.5 for i in range(len(bins) - 1)])
+
+
+def hms_since_t0(t0):
+    t0 = int(t0)
+    m, s = divmod(int(time.time() - t0), 60)
+    h, m = divmod(m, 60)
+    return h, m, s
+
+
+def trim_r_distribution(m_Arr, z_Arr, area_obs):
+    '''
+    Input
+    m_Arr: Array of r magnitudes
+    z_Arr: Array of redshifts
+
+    Returns:
+    Mask to apply to the sample
+    '''
+    model = pd.read_csv('MyMocks/csv/PD2016-QSO_LF.csv')
+    counts_model_2D = model.to_numpy()[:-1, 1:-1].astype(float) * 1e-4 * area_obs
+    r_yy = np.arange(15.75, 24.25, 0.5)
+    z_xx = np.arange(0.5, 6, 1)
+    f_counts = interp2d(z_xx, r_yy, counts_model_2D)
+
+    # Trim in bins of r and z
+    r_bins = np.linspace(15.5, 25, 50)
+    z_bins = np.linspace(1.5, 4.5, 10)
+    to_delete = np.array([])
+    for i in range(len(r_bins) - 1):
+        for j in range(len(z_bins) - 1):
+            bin_2d_mask = (
+                (m_Arr > r_bins[i]) & (m_Arr <= r_bins[i + 1])
+                & (z_Arr > z_bins[j]) & (z_Arr <= z_bins[j + 1])
+            )
+            in_counts = sum(bin_2d_mask) # N of objects in this bin
+            out_counts = dblquad(f_counts,
+                                 z_bins[j], z_bins[j + 1],
+                                 r_bins[i], r_bins[i + 1])[0]
+            count_diff = np.floor(in_counts - out_counts).astype(int)
+            if count_diff > 0:
+                to_delete = np.concatenate(
+                    [to_delete,
+                    np.random.choice(np.where(bin_2d_mask)[0], count_diff)]
+                )
+
+    trim_mask = np.ones_like(m_Arr).astype(bool)
+    trim_mask[to_delete.astype(int)] = False
+
+    return trim_mask

@@ -466,7 +466,8 @@ def is_there_line(pm_flx, pm_err, cont_est, cont_err, ew0min,
     return line
 
 
-def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None):
+def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mask=None,
+                    return_color_mask=False):
     N_sources = len(lya_lines)
     w_central = central_wavelength()
     fwhm_Arr = nb_fwhm(range(56))
@@ -488,7 +489,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     # For z > 3
     color_aux1 = (ri < 0.6) & (gr < 1.5)
     # For z < 3
-    color_aux2 = (ri < 0.6) & (gr < 0.7)
+    color_aux2 = (ri < 0.6) & (gr < 0.6)
+
+    color_mask = np.ones_like(color_aux2).astype(bool)
+    mlines_mask = np.ones_like(color_aux2).astype(bool)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -536,7 +540,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             )
 
             if ~good_l:
-                this_nice = False
+                if return_color_mask:
+                    mlines_mask[src] = False
+                else:
+                    this_nice = False
                 break
 
         if not this_nice:
@@ -549,13 +556,18 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             else:
                 good_colors = color_aux1[src]
             if ~good_colors:
-                this_nice = False
+                if return_color_mask:
+                    color_mask[src] = False
+                else:
+                    this_nice = False
 
         if this_nice:
             nice_lya[src] = True
 
-    if mask is None:
+    if mask is None and not return_color_mask:
         return nice_lya
+    elif mask is None and return_color_mask:
+        return nice_lya, color_mask, mlines_mask
     else:
         return nice_lya & mask
 

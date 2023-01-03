@@ -291,7 +291,8 @@ if __name__ == '__main__':
 
     print('Loading catalogs...')
     pm_flx, pm_err, x_im, y_im, tile_id, number, starprob, spCl,\
-            photoz, photoz_chi_best, photoz_odds = load_minijpas_jnep(selection=True)
+            photoz, photoz_chi_best, photoz_odds, RA, DEC\
+                = load_minijpas_jnep(selection=True)
     N_sel = len(selection['src'])
 
     # Estimate the continuum to plot it
@@ -376,7 +377,9 @@ if __name__ == '__main__':
         # Photo_z
         text_plot_2 = (f'{photoz_name} = {photoz[where_mjj]:0.2f}'
                        f'\nodds = {photoz_odds[where_mjj]:0.2f}'
-                       f'\n$\chi^2$ = {photoz_chi_best[where_mjj]:0.2f}')
+                       f'\n$\chi^2$ = {photoz_chi_best[where_mjj]:0.2f}'
+                       f'\nRA = {RA[where_mjj]:0.2f}'
+                       f'\nDEC = {DEC[where_mjj]:0.2f}')
 
         # r band and NB S/N
         text_plot_3 = (f'$r$ = {selection["r"][n]:0.2f}'

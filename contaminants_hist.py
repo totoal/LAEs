@@ -6,7 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 np.seterr(all='ignore')
 
-matplotlib.rcParams.update({'font.size': 13})
+import matplotlib
+matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+matplotlib.rc('text', usetex=True)
+matplotlib.rcParams.update({'font.size': 18})
 matplotlib.use('TkAgg')
 
 qso_LAEs_frac = 1.
@@ -32,9 +35,10 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     mask = nice_lya & is_gal & z_cut
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
 
-    bin_min = 1400
+    bin_min = 890
     bin_max = 6000
-    bins = np.linspace(bin_min, bin_max, 70)
+
+    bins = np.linspace(bin_min, bin_max, 100)
     bins_c = [bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)]
 
     hist, _ = np.histogram(w0, bins)
@@ -50,20 +54,20 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
         else:
             ax.text(w - 20, 340, name, fontsize=13)
 
-    ax.set_xlim(bin_min, bin_max)
-    ax.set_ylim(1e-2, 300)
+    ax.set_xlim(1400, 6000)
+    ax.set_ylim(1e-1, 300)
     ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=14)
-    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=14)
+    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=16)
+    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=16)
+    ax.tick_params(labelsize=14, direction='in', which='both')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
 
     fig.tight_layout()
     fig.savefig(f'figures/GAL_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
                 bbox_inches='tight', facecolor='w', edgecolor='w')
 
     fig, ax = plt.subplots(figsize=(8, 4))
-
-    bins = np.linspace(890, 3700, 70)
-    bins_c = [bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)]
 
     mask = nice_lya & is_qso & (zspec < 2)
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
@@ -77,21 +81,25 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
     qso_line_w = [1549.48, 1908.73, 2799.12, 2326.00, 1215.67, 1025, 1399.8]
     qso_line_name = ['CIV', 'CIII', 'MgII', 'CII',
-                     r'Ly$\alpha$\n+NV', 'OVI', r'SiIV\n+OIV']
+                     r'Ly$\alpha$+NV', 'OVI', 'SiIV\n+OIV']
 
     for w, name in zip(qso_line_w, qso_line_name):
         ax.axvline(w, color='orange', linestyle='--', zorder=-99)
-        if name == r'SiIV\n+OIV':
+        if name == 'SiIV\n+OIV':
             ax.text(w - 120, 70, name, fontsize=13)
-        elif name == r'Ly$\alpha$\n+NV':
-            ax.text(w - 50, 70, name, fontsize=13)
+        elif name == r'Ly$\alpha$+NV':
+            ax.text(w - 100, 340, name, fontsize=13)
         else:
             ax.text(w - 70, 340, name, fontsize=13)
 
     ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=14)
-    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=14)
+    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=16)
+    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=16)
     ax.set_ylim(1e-2, 300)
+    ax.set_xlim(890, 3500)
+    ax.tick_params(labelsize=14, direction='in', which='both')
+    ax.yaxis.set_ticks_position('both')
+    ax.xaxis.set_ticks_position('both')
 
     # fig.tight_layout()
     fig.savefig(f'figures/QSO_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
@@ -123,6 +131,8 @@ if __name__ == '__main__':
 
     params = [
         (30, 100, 1, 24),
+        (30, 100, 1, 5),
+        (30, 100, 5, 10),
     ]
     
     for params_set in params:

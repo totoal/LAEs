@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 matplotlib.rc('text', usetex=True)
-matplotlib.rcParams.update({'font.size': 15})
+matplotlib.rcParams.update({'font.size': 20})
 import seaborn as sns
 
 tile_dict = {
@@ -23,18 +23,20 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     selec_L = select['L_lya'][mask_this_tile]
     selec_L_err = select['L_lya_err'][mask_this_tile]
 
-    fig = plt.figure(figsize=(5, 5))
+    fig = plt.figure(figsize=(3.75, 3.75))
 
     width = 1
     height = 1
     cbar_width = 0.06
+    sep = 0.02
+    sep2 = 0.12
 
     # ADD AXES
     ax0 = fig.add_axes([0, 0, width, height])
-    axc0 = fig.add_axes([width + 0.02, 0, cbar_width, height])
-    ax1 = fig.add_axes([width + 0.02 + 0.12 + cbar_width,
+    axc0 = fig.add_axes([width + sep, 0, cbar_width, height])
+    ax1 = fig.add_axes([width + sep + sep2 + cbar_width,
                        0, width, height], sharey=ax0)
-    axc1 = fig.add_axes([width * 2 + 0.02 * 2 + 0.12 +
+    axc1 = fig.add_axes([width * 2 + sep * 2 + sep2 +
                         cbar_width, 0, cbar_width, height])
 
     # Mask puri and comp where at least one of them is zero or nan
@@ -108,9 +110,9 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     ax1.set_title('N correction', fontsize=25)
 
     # AXES LABELS
-    ax0.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
-    ax1.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
-    ax0.set_ylabel('$r$ (magAB)', fontsize=22)
+    ax0.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ [erg s$^{-1}$]', fontsize=22)
+    ax1.set_xlabel(r'Measured $\log L_{\mathrm{Ly}\alpha}$ [erg s$^{-1}$]', fontsize=22)
+    ax0.set_ylabel('$r$ [magAB]', fontsize=22)
     # ax1.set_ylabel('$r$ (magAB)', fontsize=22)
 
     # AXES LIMITS
@@ -120,7 +122,7 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     ax1.set_ylim(199, 20)
 
     plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
-                bbox_inches='tight', facecolor='white',)
+                bbox_inches='tight', facecolor='white', pad_inches=0)
     plt.close()
 
     ####################
@@ -239,7 +241,7 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_name = 'LF_r17-24_nb16-20_ew30_ewoth100_nb_1.0'
+    LF_name = 'LF_r17-24_nb4-8_ew30_ewoth100_nb_1.0'
     LF_dirname = f'Luminosity_functions/{LF_name}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{LF_name}'
 
