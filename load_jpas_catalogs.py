@@ -101,4 +101,4 @@ def load_sdss_xmatch():
     filename = 'csv/xmatch_sdss_dr12.csv'
     cat = pd.read_csv(filename, sep=',', header=1)
 
-    return cat['NUMBER'], cat['TILE_ID'], cat['SpObjID'], cat['f_zsp']
+    return cat['NUMBER'], cat['TILE_ID'], cat['SpObjID'], cat['f_zsp'], cat['zsp']

@@ -492,6 +492,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     color_aux2 = (ri < 0.6) & (gr < 0.6)
 
     color_mask = np.ones_like(color_aux2).astype(bool)
+    mlines_mask = np.ones_like(color_aux2).astype(bool)
 
     for src in np.where(np.array(lya_lines) != -1)[0]:
         # l_lya = lya_lines[src]
@@ -539,7 +540,10 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
             )
 
             if ~good_l:
-                this_nice = False
+                if return_color_mask:
+                    mlines_mask[src] = False
+                else:
+                    this_nice = False
                 break
 
         if not this_nice:
@@ -563,7 +567,7 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
     if mask is None and not return_color_mask:
         return nice_lya
     elif mask is None and return_color_mask:
-        return nice_lya, color_mask
+        return nice_lya, color_mask, mlines_mask
     else:
         return nice_lya & mask
 
