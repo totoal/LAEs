@@ -60,3 +60,5 @@ csv
 pkl
 *.out
 *.pem
+package/dist
+package/src
