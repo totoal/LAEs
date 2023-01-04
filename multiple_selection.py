@@ -1,6 +1,6 @@
-from load_mocks import ensemble_mock
-from minijpas_LF_and_puricomp import add_errors
-from my_functions import *
+from lLAEs.oad_mocks import ensemble_mock
+from mLAEs.inijpas_LF_and_puricomp import add_errors
+from LAEs.my_functions import *
 
 import threading
 import time

@@ -1,10 +1,10 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "miniLAEs"
-version = "0.0.2"
+version = "0.1.0"
 authors = [
   { name="Alberto Torralba", email="alberto.torralba@uv.es" },
 ]

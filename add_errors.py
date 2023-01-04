@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from my_functions import central_wavelength, Zero_point_error, mag_to_flux, flux_to_mag
+from LAEs.my_functions import central_wavelength, Zero_point_error, mag_to_flux, flux_to_mag
 
 
 def add_errors(pm_SEDs, apply_err=True, survey_name='minijpasAEGIS001'):

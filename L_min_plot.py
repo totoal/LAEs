@@ -3,7 +3,7 @@ from matplotlib import rc
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 import numpy as np
-from my_functions import *
+from LAEs.my_functions import *
 
 w_central = central_wavelength()
 w_lya = 1215.67

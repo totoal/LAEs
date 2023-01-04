@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from my_functions import Zero_point_error
+from LAEs.my_functions import Zero_point_error
 
 def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False,
                        flags_mask=True):

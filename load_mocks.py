@@ -2,7 +2,7 @@ import glob
 import pandas as pd
 import numpy as np
 
-from my_functions import flux_to_mag, central_wavelength, trim_r_distribution
+from LAEs.my_functions import flux_to_mag, central_wavelength, trim_r_distribution
 
 from astropy.cosmology import Planck18 as cosmo
 import astropy.units as u

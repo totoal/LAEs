@@ -1,6 +1,6 @@
-from minijpas_LF_and_puricomp import add_errors, search_lines
-from load_mocks import ensemble_mock
-from my_functions import *
+from LAEs.minijpas_LF_and_puricomp import add_errors, search_lines
+from LAEs.load_mocks import ensemble_mock
+from LAEs.my_functions import *
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np

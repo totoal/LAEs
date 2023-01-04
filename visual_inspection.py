@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from my_functions import *
-from load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
+from LAEs.load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
 import os
 
 w_lya = 1215.67

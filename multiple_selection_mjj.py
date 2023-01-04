@@ -1,7 +1,7 @@
-from load_mocks import ensemble_mock
-from load_jpas_catalogs import load_minijpas_jnep
-from minijpas_LF_and_puricomp import add_errors
-from my_functions import *
+from LAEs.load_mocks import ensemble_mock
+from LAEs.load_jpas_catalogs import load_minijpas_jnep
+from LAEs.minijpas_LF_and_puricomp import add_errors
+from LAEs.my_functions import *
 
 import threading
 import time
