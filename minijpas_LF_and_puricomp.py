@@ -8,12 +8,12 @@ from scipy.stats import binned_statistic
 import os
 import time
 
-from three_filter import cont_est_3FM
-from LumFunc_miniJPAS import LF_perturb_err
-from load_jpas_catalogs import load_minijpas_jnep
-from load_mocks import ensemble_mock
-from my_functions import *
-from add_errors import add_errors
+from LAEs.three_filter import cont_est_3FM
+from LAEs.LumFunc_miniJPAS import LF_perturb_err
+from LAEs.load_jpas_catalogs import load_minijpas_jnep
+from LAEs.load_mocks import ensemble_mock
+from LAEs.my_functions import *
+from LAEs.add_errors import add_errors
 
 import matplotlib
 import matplotlib.pyplot as plt

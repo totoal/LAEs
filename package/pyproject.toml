@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "miniLAEs"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Alberto Torralba", email="alberto.torralba@uv.es" },
 ]
