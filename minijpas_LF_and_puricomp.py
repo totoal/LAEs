@@ -837,7 +837,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
     ax.set_yscale('log')
     ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
-    ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\logL^{-1}$)')
+    ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\log L^{-1}$)')
     ax.set_ylim(1e-8, 5e-3)
     ax.set_xlim(42.5, 45.5)
     ax.legend(fontsize=9)
