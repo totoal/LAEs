@@ -5,6 +5,8 @@ import pandas as pd
 from my_functions import *
 from LAEs.load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
 import os
+import os.path as op
+from astropy.table import Table
 
 w_lya = 1215.67
 
@@ -25,7 +27,8 @@ nb_exp_time = 120
 
 def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                          tile_id, number, x_im, y_im, nb_sel, other_lines,
-                         plot_text, n_src, dirname, spec=None, g_band=None):
+                         plot_text, n_src, dirname, spec_sdss=None, g_band_sdss=None,
+                         spec_flx_hetdex=None, spec_w_hetdex=None, g_band_hetdex=None):
 
     if tile_id == 2520:
         survey_name = 'jnep'
@@ -92,13 +95,17 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                 yerr=cont_err[1:40] * 1e17, c='k', ls='-')
 
     #### Plot SDSS spectrum if available ####
-    if g_band is not None and spec is not None:
+    if g_band_sdss is not None and spec_sdss is not None:
         # Normalizing factor:
-        norm = pm_flx[-3] / g_band
-        spec_flx = spec['MODEL'] * norm
-        spec_w = 10 ** spec['LOGLAM']
+        norm = pm_flx[-3] / g_band_sdss
+        spec_flx_sdss = spec_sdss['MODEL'] * norm
+        spec_w_sdss = 10 ** spec_sdss['LOGLAM']
 
-        ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
+        ax.plot(spec_w_sdss, spec_flx_sdss, c='dimgray', zorder=-99, alpha=0.7)
+    if spec_flx_hetdex is not None:
+        norm = pm_flx[-3] / g_band_hetdex
+        spec_flx_hetdex = spec_flx_hetdex * norm
+        ax.plot(spec_w_hetdex, spec_flx_hetdex, c='orange', zorder=-100, alpha=0.7)
 
     #########################################
 
@@ -135,7 +142,7 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     
     ypos = ax.get_ylim()[1] * 1.05
     for iii, [xpos, string] in enumerate(plot_text):
-        if spec is None:
+        if spec_sdss is None:
             if iii == 1:
                 continue
         ax.text(xpos, ypos, string)
@@ -294,16 +301,60 @@ if __name__ == '__main__':
             photoz, photoz_chi_best, photoz_odds, RA, DEC\
                 = load_minijpas_jnep(selection=True)
     N_sel = len(selection['src'])
+    N_sources = len(tile_id)
 
     # Estimate the continuum to plot it
     cont_est_lya, cont_err_lya = estimate_continuum(pm_flx, pm_err, IGM_T_correct=False)
 
-    sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch() 
+    sdss_xm_num, sdss_xm_tid, sdss_xm_spObjID = load_sdss_xmatch()[:3]
 
     # times_selected = np.load('tmp/times_selected.npy')
 
     # Directory of the spectra .fits files
     fits_dir = '/home/alberto/almacen/SDSS_spectra_fits/miniJPAS_Xmatch'
+
+    # HETDEX spectra
+    path_to_cat = '/home/alberto/almacen/HETDEX_catalogs/hetdex_source_catalog_1'
+    version = 'v3.2'
+    hdu_hetdex_spec = fits.open(op.join(path_to_cat, f'hetdex_sc1_spec_{version}.fits'))
+
+    path_to_agn = '/home/alberto/almacen/HETDEX_catalogs/agn_catalog_v1.0'
+
+    source_table = Table.read(op.join(path_to_cat, f'hetdex_sc1_{version}.ecsv'))
+    det_table = Table.read(op.join(path_to_cat, 'hetdex_sc1_detinfo_{}.ecsv'.format(version)))
+    xm_hetdex_id = np.load('npy/hetdex_crossmatch_ids.npy')
+
+    fname = f'{path_to_agn}/hetdex_agn.fits'
+    agn = Table.read(fname, format='fits', hdu=1)
+    z_hetdex = np.ones(N_sources) * -1
+    L_lya_hetdex = np.ones(N_sources) * -1
+    EW_lya_hetdex = np.ones(N_sources) * -9999999999999
+    EW_lya_hetdex_err = np.ones(N_sources) * 9999
+    type_hetdex = np.zeros(N_sources).astype(str)
+    for src in range(N_sources):
+        if xm_hetdex_id[src] > 0:
+            wh = np.where(xm_hetdex_id[src] == source_table['source_id'])[0][0]
+            wh_det = np.where(xm_hetdex_id[src] == det_table['source_id'])[0][0]
+            wh_agn = np.where(xm_hetdex_id[src] == agn['detectid_best'])[0]
+
+            z_hetdex[src] = source_table['z_hetdex'][wh]
+            type_hetdex[src] = source_table['source_type'][wh]
+            if len(wh_agn) > 0:
+                wh_agn = wh_agn[0]
+                F_lya = agn['flux_LyA'] * 1e-17
+                print(F_lya)
+                dL = cosmo.luminosity_distance(z_hetdex[src]).to(u.cm).value
+                L_lya_hetdex[src] = np.log10(F_lya * 4*np.pi * dL ** 2)
+            else:
+                L_lya_hetdex[src] = np.log10(source_table['lum_lya'][wh])
+                if type_hetdex[src] == 'lae':
+                    EW_lya_hetdex[src] = det_table['flux'][wh_det] / det_table['continuum'][wh_det]
+                    EW_lya_hetdex_err[src] = (
+                        (det_table['flux_err'][wh_det] / det_table['continuum'][wh_det]) ** 2
+                        + (det_table['flux'][wh_det] * det_table['continuum'][wh_det]**-2
+                        * det_table['continuum_err'][wh_det]) ** 2
+                    ) ** 0.5
+
 
     for n in range(N_sel):
         print(f'Plotting {n + 1} / {N_sel}')
@@ -326,14 +377,16 @@ if __name__ == '__main__':
             spec_name = f'spec-{plate:04d}-{mjd:05d}-{fiber:04d}.fits'
             print(spec_name)
             spec_bool = True
-            spec = Table.read(f'{fits_dir}/{spec_name}', hdu=1, format='fits')
-            g_band = Table.read(f'{fits_dir}/{spec_name}', hdu=2, format='fits')['SPECTROFLUX']
-            g_band = nanomaggie_to_flux(np.array(g_band)[0][1], 4750)
+            spec_sdss = Table.read(f'{fits_dir}/{spec_name}', hdu=1, format='fits')
+            g_band_sdss = Table.read(f'{fits_dir}/{spec_name}', hdu=2, format='fits')['SPECTROFLUX']
+            g_band_sdss = nanomaggie_to_flux(np.array(g_band_sdss)[0][1], 4750)
 
         except:
             spec_bool = False
-            print('No spectrum')
+            spec_sdss = None
+            g_band_sdss = None
 
+        # Look for the source in the HETDEX Xmatch
         src = selection['src'][n].astype(int)
         this_x_im = selection['x_im'][n].astype(int)
         this_y_im = selection['y_im'][n].astype(int)
@@ -341,6 +394,21 @@ if __name__ == '__main__':
         other_lines = selection['other_lines'][n]
         z_src = z_NB(nb)[0]
         NB_snr = pm_flx[nb, src] / pm_err[nb, src]
+
+
+        if xm_hetdex_id[where_mjj] > 0:
+            spec_bool = True
+
+            wh_hetdex = np.where(xm_hetdex_id[where_mjj] == source_table['source_id'])[0][0]
+
+            spec_hetdex = hdu_hetdex_spec['SPEC'].data[wh_hetdex]
+            spec_w_hetdex = hdu_hetdex_spec['WAVELENGTH'].data
+            g_band_hetdex = mag_to_flux(source_table['gmag'][wh_hetdex], w_central[-3])
+        else:
+            wh_hetdex = None
+            spec_w_hetdex = None
+            spec_hetdex = None
+            g_band_hetdex = None
 
         oth_raw_list = other_lines[1:-1].split()
         if len(oth_raw_list) == 0:
@@ -350,29 +418,26 @@ if __name__ == '__main__':
 
         # Text to write besides the plot for info
         z_NB_name = '$z_\mathrm{NB}$'
-        z_spec_name = '$z_\mathrm{spec}$'
+        z_spec_name = '$z_\mathrm{spec}^\mathrm{SDSS}$'
+        z_spec_hetdex_name = '$z_\mathrm{spec}^\mathrm{HETDEX}$'
         Log_LLya_name = r'$\log L_{\mathrm{Ly}\alpha}$'
         EW_name = r'EW$_{\mathrm{Ly}\alpha, 0}$'
         photoz_name = r'$z_\mathrm{phot}$'
 
         # Direct info from the catalogs and method
-        # ts = times_selected[src] * 0.2
-        # if ts >= 50:
-        #     ts_color = 'green'
-        # else:
-        #     ts_color = 'red'
         text_plot_0 = (f'#{n}\n'
                        f'\n{z_NB_name} = {z_src:0.2f}'
                        f'\n{Log_LLya_name} = {selection["L_lya"][n]:0.2f}'
                        f'\n{EW_name} = {selection["EW_lya"][n]:0.2f} $\AA$'
                        f'\nstarprob = {starprob[where_mjj]}'
-                    #    f'\nTimes selected = {ts:0.1f} %'
                        f'\npuri = {puri[n]:0.2f}')
 
-        # SDSS spectroscopic info
+        # SDSS & HETDEX spectroscopic info
         text_plot_1 = (f'{z_spec_name} = {selection["SDSS_zspec"][n]:0.2f}'
                        f'\nspCl = {selection["SDSS_spCl"][n]}'
-                       f'\nPLATE: {plate}\nMJD: {mjd}\nFIBER: {fiber}')
+                       f'\nPLATE: {plate}\nMJD: {mjd}\nFIBER: {fiber}'
+                       f'\n{z_spec_hetdex_name} = {z_hetdex[where_mjj]:0.2f}, '
+                       f'\ntype_HD = {type_hetdex[where_mjj]}')
 
         # Photo_z
         text_plot_2 = (f'{photoz_name} = {photoz[where_mjj]:0.2f}'
@@ -386,7 +451,7 @@ if __name__ == '__main__':
                       f'\nNB S/N = {NB_snr:0.1f}')
 
         text_plot = [[3000, text_plot_0],
-                     [5050, text_plot_1],
+                     [4900, text_plot_1],
                      [6100, text_plot_2],
                      [9000, text_plot_3],]
 
@@ -400,14 +465,15 @@ if __name__ == '__main__':
                     this_tile_id, this_number, this_x_im, this_y_im, nb,
                     oth_list, text_plot, n, dirname)
 
-            plot_jspectra_images(*args, spec, g_band)
+            plot_jspectra_images(*args, spec_sdss, g_band_sdss, spec_hetdex,
+                spec_w_hetdex, g_band_hetdex)
 
-            dirname = '/home/alberto/almacen/Selected_LAEs/paper_no_other_lines'
-            args = (pm_flx[:, src], pm_err[:, src],
-                    cont_est_lya[:, src], cont_err_lya[:, src],
-                    this_tile_id, this_number, this_x_im, this_y_im, nb,
-                    oth_list, text_plot, n, dirname)
-            plot_paper(*args, z_src, spec, g_band)
+            # dirname = '/home/alberto/almacen/Selected_LAEs/paper_no_other_lines'
+            # args = (pm_flx[:, src], pm_err[:, src],
+            #         cont_est_lya[:, src], cont_err_lya[:, src],
+            #         this_tile_id, this_number, this_x_im, this_y_im, nb,
+            #         oth_list, text_plot, n, dirname)
+            # plot_paper(*args, z_src, spec, g_band)
             
         ####
 
