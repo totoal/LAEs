@@ -142,12 +142,11 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     
     ypos = ax.get_ylim()[1] * 1.05
     for iii, [xpos, string] in enumerate(plot_text):
-        if spec_sdss is None:
+        if spec_sdss is None and spec_flx_hetdex is None:
             if iii == 1:
                 continue
         ax.text(xpos, ypos, string)
 
-    # plt.show(block=True)
     os.makedirs(dirname, exist_ok=True)
     plt.savefig(f'{dirname}/{n_src}-{tile_name}-{src}.png',
                 bbox_inches='tight', facecolor='w',
