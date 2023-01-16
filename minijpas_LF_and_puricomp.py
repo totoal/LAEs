@@ -549,6 +549,14 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
         area = 0.23
     elif survey_name == 'minijpas':
         area = 0.895
+    elif survey_name == 'minijpasAEGIS001':
+        area = 0.230933
+    elif survey_name == 'minijpasAEGIS002':
+        area = 0.243056
+    elif survey_name == 'minijpasAEGIS003':
+        area = 0.248159
+    elif survey_name == 'minijpasAEGIS004':
+        area = 0.242195
     elif survey_name == 'both':
         area = 0.23 + 0.895
     else:
