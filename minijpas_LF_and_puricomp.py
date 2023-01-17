@@ -253,7 +253,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
 def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
                          mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins, L_lya,
                          is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
-                         good_qso_factor, gal_factor, good_LAEs_frac):
+                         good_qso_factor, gal_factor, good_LAEs_frac, dirname,
+                         survey_name):
     r_bins = np.linspace(mag_min, mag_max, 200 + 1)
 
     r_bins_c = bin_centers(r_bins)
@@ -373,6 +374,10 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.15, 0.3)
     h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.3)
     h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.3)
+    
+    np.save(f'{dirname}/h2d_nice_smooth_{survey_name}', h2d_nice_smooth)
+    np.save(f'{dirname}/h2d_sel_smooth_{survey_name}', h2d_sel_smooth)
+    np.save(f'{dirname}/h2d_parent_smooth_{survey_name}', h2d_parent_smooth)
 
     puri2d = (1 + h2d_sel_smooth / (h2d_nice_smooth * good_LAEs_frac)) ** -1
     comp2d = h2d_nice_smooth / h2d_parent_smooth
@@ -465,7 +470,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
         mag_min, mag_max, L_Arr_corr, L_e_Arr_pm, nice_lya,
         nice_z, mag, zspec_cut, z_cut, mag_cut, ew_cut, L_bins_cor,
         L_lya, is_gal, is_sf, is_qso, is_LAE, where_hiL, hiL_factor,
-        good_qso_factor, gal_factor, good_LAEs_frac
+        good_qso_factor, gal_factor, good_LAEs_frac, dirname, survey_name
     )
 
     np.save(f'{dirname}/puri2d_{survey_name}.npy', puri2d)
@@ -493,19 +498,35 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you don't want to recompute corrections
-    # folder_name = (
-    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-    #     f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
-    # )
-    # dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    # try:
-    #     np.load(f'{dirname}/puri2d_minijpasAEGIS001.npy')
-    #     np.load(f'{dirname}/comp2d_minijpasAEGIS001.npy')
-    # except:
-    #     print('Making puricomp...')
-    # else:
-    #     print('Corrections loaded.')
-    #     return
+    folder_name_search = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}_1.0'
+    )
+    folder_name = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
+    )
+    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    try:
+        for survey_name in survey_name_list:
+            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}')
+            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}')
+            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}')
+            L_bins_cor = np.load(f'{dirname}/puricomp2d_L_bins.npy')
+            r_bins = np.load(f'{dirname}/puricomp2d_r_bins.npy')
+
+            puri2d = (1 + h2d_sel_smooth / (h2d_nice_smooth * good_LAEs_frac)) ** -1
+            comp2d = h2d_nice_smooth / h2d_parent_smooth
+            np.save(f'{dirname}/puri2d_{survey_name}.npy', puri2d)
+            np.save(f'{dirname}/comp2d_{survey_name}.npy', comp2d)
+            np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
+            np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
+    except:
+        print('Making puricomp...')
+    else:
+        print('Corrections loaded.')
+        return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -873,7 +894,7 @@ if __name__ == '__main__':
     ]
     
     qso_frac = 1.
-    for good_LAEs_frac in [1.0]:
+    for good_LAEs_frac in [1.0] + list(np.arange(0.1, 10.1, 0.1)):
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
