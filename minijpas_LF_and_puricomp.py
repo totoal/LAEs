@@ -508,13 +508,15 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     )
     dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
+    os.makedirs(dirname, exist_ok=True)
+
     try:
         for survey_name in survey_name_list:
-            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}')
-            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}')
-            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}')
-            L_bins_cor = np.load(f'{dirname}/puricomp2d_L_bins.npy')
-            r_bins = np.load(f'{dirname}/puricomp2d_r_bins.npy')
+            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+            L_bins_cor = np.load(f'{dirname_search}/puricomp2d_L_bins.npy')
+            r_bins = np.load(f'{dirname_search}/puricomp2d_r_bins.npy')
 
             puri2d = (1 + h2d_sel_smooth / (h2d_nice_smooth * good_LAEs_frac)) ** -1
             comp2d = h2d_nice_smooth / h2d_parent_smooth
@@ -890,7 +892,6 @@ if __name__ == '__main__':
         (17, 24, 10, 14, 30, 100, 'nb'),
         (17, 24, 13, 17, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 21, 50, 30, 100, 'nb'),
     ]
     
     qso_frac = 1.
