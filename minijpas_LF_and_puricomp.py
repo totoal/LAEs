@@ -609,7 +609,8 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
-                cat_list=['minijpas', 'jnep'], return_hist=False):
+                cat_list=['minijpas', 'jnep'], return_hist=False,
+                save_stuff=True, rho=None, N_iter=500):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -725,7 +726,8 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
     )
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    os.makedirs(dirname, exist_ok=True)
+    if save_stuff:
+        os.makedirs(dirname, exist_ok=True)
 
     tile_id_list = [2241, 2243, 2406, 2470]
     for i, this_id in enumerate(tile_id_list):
@@ -736,7 +738,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
             corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
-            return_puri=True, dirname=dirname
+            return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter
         )
         L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
         L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -751,7 +753,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         L_e_Arr_pm, nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
         starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
-        return_puri=True, dirname=dirname
+        return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter
     )
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -793,13 +795,12 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         'nice_nice': nice_lya[nice_lya_raw]
     }
 
-    with open(f'{dirname}/selection.npy', 'wb') as f:
-        pickle.dump(selection, f)
+    if save_stuff:
+        with open(f'{dirname}/selection.npy', 'wb') as f:
+            pickle.dump(selection, f)
 
     # Initialize dict to save the LFs
     LFs_dict = {'LF_bins': LF_bins}
-
-    fig, ax = plt.subplots(figsize=(7, 5))
 
     # Plot the corrected total LF
     yerr_cor_plus = (hist_median + L_LF_err_plus **
@@ -808,77 +809,85 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
                       2) ** 0.5 / bin_width / volume
     xerr = bin_width / 2
     LF_values = hist_median / bin_width / volume
-    ax.errorbar(LF_bins, LF_values,
-                yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
-                marker='s', linestyle='', color='r', capsize=4,
-                label='miniJPAS + J-NEP (corrected)', zorder=99)
     LFs_dict['LF_total'] = LF_values
     LFs_dict['LF_total_err'] = [yerr_cor_minus, yerr_cor_plus, xerr]
 
     # Plot the total raw LF
-    ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
-            marker='^', markersize=11, zorder=4, label='miniJPAS + J-NEP (raw)')
     LFs_dict['LF_total_raw'] = LF_raw
 
     # Save the dict
     dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    os.makedirs(dirname, exist_ok=True)
+    if save_stuff:
+        os.makedirs(dirname, exist_ok=True)
 
-    dict_filename = f'{dirname}/LFs.pkl'
-    with open(dict_filename, 'wb') as file:
-        pickle.dump(LFs_dict, file)
+    if save_stuff:
+        fig, ax = plt.subplots(figsize=(7, 5))
 
-    # Plot the reference LF curves
-    Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
-    phistar1 = 3.33e-6
-    Lstar1 = 44.65
-    alpha1 = -1.35
+        ax.errorbar(LF_bins, LF_values,
+                    yerr=[yerr_cor_minus, yerr_cor_plus], xerr=xerr,
+                    marker='s', linestyle='', color='r', capsize=4,
+                    label='miniJPAS + J-NEP (corrected)', zorder=99)
 
-    phistar2 = -3.45
-    Lstar2 = 42.93
-    alpha2 = -1.93
+        ax.plot(LF_bins, LF_raw, ls='', markerfacecolor='none', markeredgecolor='dimgray',
+                marker='^', markersize=11, zorder=4, label='miniJPAS + J-NEP (raw)')
 
-    Phi_center = double_schechter(
-        Lx, phistar1, 10 ** Lstar1, alpha1, 10 ** phistar2, 10 ** Lstar2, alpha2
-    ) * Lx * np.log(10)
+        dict_filename = f'{dirname}/LFs.pkl'
+        with open(dict_filename, 'wb') as file:
+            pickle.dump(LFs_dict, file)
 
-    ax.plot(
-        np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Spinoso2020 (2.2 < z < 3.25)', zorder=1,
-        color='C6'
-    )
+        # Plot the reference LF curves
+        Lx = np.linspace(10 ** 42, 10 ** 46, 10000)
+        phistar1 = 3.33e-6
+        Lstar1 = 44.65
+        alpha1 = -1.35
 
-    phistar1 = 10 ** -3.41
-    Lstar1 = 10 ** 42.87
-    alpha1 = -1.7
+        phistar2 = -3.45
+        Lstar2 = 42.93
+        alpha2 = -1.93
 
-    phistar2 = 10 ** -5.85
-    Lstar2 = 10 ** 44.6
-    alpha2 = -1.2
+        Phi_center = double_schechter(
+            Lx, phistar1, 10 ** Lstar1, alpha1, 10 ** phistar2, 10 ** Lstar2, alpha2
+        ) * Lx * np.log(10)
 
-    Phi_center = double_schechter(
-        Lx, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2
-    ) * Lx * np.log(10)
+        ax.plot(
+            np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
+            label='Spinoso2020 (2.2 < z < 3.25)', zorder=1,
+            color='C6'
+        )
 
-    ax.plot(
-        np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
-        label='Zhang2021 (2 < z < 3.2)', zorder=0,
-        color='C7'
-    )
+        phistar1 = 10 ** -3.41
+        Lstar1 = 10 ** 42.87
+        alpha1 = -1.7
 
-    ax.set_yscale('log')
-    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
-    ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\log L^{-1}$)')
-    ax.set_ylim(1e-8, 5e-3)
-    ax.set_xlim(42.5, 45.5)
-    ax.legend(fontsize=9)
+        phistar2 = 10 ** -5.85
+        Lstar2 = 10 ** 44.6
+        alpha2 = -1.2
 
-    plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
-                facecolor='white')
-    plt.close()
+        Phi_center = double_schechter(
+            Lx, phistar1, Lstar1, alpha1, phistar2, Lstar2, alpha2
+        ) * Lx * np.log(10)
+
+        ax.plot(
+            np.log10(Lx), Phi_center, ls='-.', alpha=0.7,
+            label='Zhang2021 (2 < z < 3.2)', zorder=0,
+            color='C7'
+        )
+
+        ax.set_yscale('log')
+        ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg$\,$s$^{-1}$)')
+        ax.set_ylabel(r'$\Phi$ (Mpc$^{-3}\,\Delta\log L^{-1}$)')
+        ax.set_ylim(1e-8, 5e-3)
+        ax.set_xlim(42.5, 45.5)
+        ax.legend(fontsize=9)
+
+        plt.savefig(f'{dirname}/LumFunc.pdf', bbox_inches='tight',
+                    facecolor='white')
+        plt.close()
 
     if return_hist:
         return hist_median, bins
+    if not save_stuff:
+        return LFs_dict
 
 
 if __name__ == '__main__':
@@ -887,15 +896,15 @@ if __name__ == '__main__':
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
         (17, 24, 1, 5, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 7, 11, 30, 100, 'nb'),
-        (17, 24, 10, 14, 30, 100, 'nb'),
-        (17, 24, 13, 17, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
+        # (17, 24, 4, 8, 30, 100, 'nb'),
+        # (17, 24, 7, 11, 30, 100, 'nb'),
+        # (17, 24, 10, 14, 30, 100, 'nb'),
+        # (17, 24, 13, 17, 30, 100, 'nb'),
+        # (17, 24, 16, 20, 30, 100, 'nb'),
     ]
     
-    qso_frac = 1.
-    for good_LAEs_frac in [1.0] + list(np.arange(0.1, 10.1, 0.1)):
+    good_LAEs_frac = 1.
+    for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
