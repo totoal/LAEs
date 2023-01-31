@@ -652,7 +652,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     nice_lya = nice_lya_raw & mask & c_mask & ml_mask
 
     # Estimate Luminosity
-    EW_Arr, _, L_Arr, _, _, _ = EW_L_NB(
+    EW_Arr, EW_Arr_err, L_Arr, _, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
@@ -660,7 +660,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     L_Lbin_err_minus = np.load('npy/L_nb_err_minus.npy')
     median_L = np.load('npy/L_bias.npy')
     L_binning = np.load('npy/L_nb_err_binning.npy')
-    EW_bin_err = np.load('npy/EW_nb_err.npy')
+    # EW_bin_err = np.load('npy/EW_nb_err.npy')
     median_EW = np.load('npy/EW_bias.npy')
     EW_binning = np.load('npy/EW_nb_err_binning.npy')
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
@@ -669,7 +669,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     EW_binning_position = binned_statistic(EW_Arr, None, 'count',
                                            bins=EW_binning).binnumber
     EW_binning_position[EW_binning_position > len(EW_binning) - 2] = len(EW_binning) - 2
-    EW_Arr_err_corr = EW_bin_err[EW_binning_position]
+    # EW_Arr_err_corr = EW_bin_err[EW_binning_position]
     EW_Arr_corr = EW_Arr - np.interp(EW_Arr, np.log10(EW_bin_c), median_EW)
 
     # Apply bin err
@@ -769,7 +769,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         'L_lya_NV': L_Arr[nice_lya_raw],
         'L_lya_err': L_e_Arr[nice_lya_raw],
         'EW_lya': EW_Arr_corr[nice_lya_raw],
-        'EW_lya_err': EW_Arr_err_corr[nice_lya_raw],
+        'EW_lya_err': EW_Arr_err[nice_lya_raw],
         'puri': nice_puri_list,
         'r': mag[nice_lya_raw],
         'other_lines': [other_lines[idx] for idx in np.where(nice_lya_raw)[0]],
