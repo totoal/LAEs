@@ -502,28 +502,13 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
         f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
         f'_{cont_est_m}_1.0'
     )
-    folder_name = (
-        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_{good_LAEs_frac:0.1f}'
-    )
     dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
-    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name}'
-    os.makedirs(dirname, exist_ok=True)
 
     try:
         for survey_name in survey_name_list:
             h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
             h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
             h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-            L_bins_cor = np.load(f'{dirname_search}/puricomp2d_L_bins.npy')
-            r_bins = np.load(f'{dirname_search}/puricomp2d_r_bins.npy')
-
-            puri2d = (1 + h2d_sel_smooth / (h2d_nice_smooth * good_LAEs_frac)) ** -1
-            comp2d = h2d_nice_smooth / h2d_parent_smooth
-            np.save(f'{dirname}/puri2d_{survey_name}.npy', puri2d)
-            np.save(f'{dirname}/comp2d_{survey_name}.npy', comp2d)
-            np.save(f'{dirname}/puricomp2d_L_bins.npy', L_bins_cor)
-            np.save(f'{dirname}/puricomp2d_r_bins.npy', r_bins)
     except:
         print('Making puricomp...')
     else:
@@ -895,12 +880,12 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 5, 30, 100, 'nb'),
-        # (17, 24, 4, 8, 30, 100, 'nb'),
-        # (17, 24, 7, 11, 30, 100, 'nb'),
-        # (17, 24, 10, 14, 30, 100, 'nb'),
-        # (17, 24, 13, 17, 30, 100, 'nb'),
-        # (17, 24, 16, 20, 30, 100, 'nb'),
+        # (17, 24, 1, 5, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 7, 11, 30, 100, 'nb'),
+        (17, 24, 10, 14, 30, 100, 'nb'),
+        (17, 24, 13, 17, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
     ]
     
     good_LAEs_frac = 1.
