@@ -652,7 +652,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     nice_lya = nice_lya_raw & mask & c_mask & ml_mask
 
     # Estimate Luminosity
-    EW_Arr, EW_Arr_err, L_Arr, _, _, _ = EW_L_NB(
+    EW_Arr, EW_Arr_err, L_Arr, L_Arr_err_table, _, _ = EW_L_NB(
         pm_flx, pm_err, cont_est_lya, cont_err_lya, z_Arr, lya_lines, N_nb=0
     )
 
@@ -767,7 +767,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         'DEC': dec[nice_lya_raw],
         'L_lya': L_Arr_corr[nice_lya_raw],
         'L_lya_NV': L_Arr[nice_lya_raw],
-        'L_lya_err': L_e_Arr[nice_lya_raw],
+        'L_lya_err': L_Arr_err_table[nice_lya_raw],
         'EW_lya': EW_Arr_corr[nice_lya_raw],
         'EW_lya_err': EW_Arr_err[nice_lya_raw],
         'puri': nice_puri_list,
@@ -880,7 +880,7 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        # (17, 24, 1, 5, 30, 100, 'nb'),
+        (17, 24, 1, 5, 30, 100, 'nb'),
         (17, 24, 4, 8, 30, 100, 'nb'),
         (17, 24, 7, 11, 30, 100, 'nb'),
         (17, 24, 10, 14, 30, 100, 'nb'),
