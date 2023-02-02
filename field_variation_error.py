@@ -17,10 +17,10 @@ bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
 survey_list_0 = np.array([f'minijpasAEGIS00{i}' for i in range(1, 4 + 1)] + ['jnep'])
 
-def mask_puricomp(puri, comp, min_puri=0.2, min_comp=0.2):
+def mask_puricomp(puri, comp, min_puri=0.0, min_comp=0.0):
     return (puri > min_puri) & (comp > min_comp)
 
-min_N_bin = 1
+min_N_bin = 0
 
 
 def bootstrapped_LFs(nb1, nb2, survey_list_indices):
@@ -41,7 +41,7 @@ def bootstrapped_LFs(nb1, nb2, survey_list_indices):
 
     for survey_name in survey_list:
         pathname = f'Luminosity_functions/LF_r17-24_nb{nb1}-{nb2}_ew30_ewoth100_nb_1.0'
-        filename_hist = f'{pathname}/hist_i_mat_{survey_name}.npy'
+        filename_hist = f'{pathname}/hist_i_mat_{survey_name}_boots.npy'
         hist_i_mat = np.load(filename_hist)
 
         this_field_LF = hist_i_mat / effective_volume(nb1, nb2, survey_name) / bin_width
