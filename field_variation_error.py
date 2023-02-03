@@ -17,10 +17,10 @@ bin_width = np.array([b[i + 1] - b[i] for i in range(len(b) - 1)])
 
 survey_list_0 = np.array([f'minijpasAEGIS00{i}' for i in range(1, 4 + 1)] + ['jnep'])
 
-def mask_puricomp(puri, comp, min_puri=0.0, min_comp=0.0):
+def mask_puricomp(puri, comp, min_puri=0.2, min_comp=0.2):
     return (puri > min_puri) & (comp > min_comp)
 
-min_N_bin = 0
+min_N_bin = 0.0001
 
 
 def bootstrapped_LFs(nb1, nb2, survey_list_indices):

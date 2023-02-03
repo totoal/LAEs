@@ -497,23 +497,23 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
-    # # Comment this section if you don't want to recompute corrections
-    # folder_name_search = (
-    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-    #     f'_{cont_est_m}_1.0'
-    # )
-    # dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    # # Comment this section if you want to recompute corrections
+    folder_name_search = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}_1.0'
+    )
+    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
 
-    # try:
-    #     for survey_name in survey_name_list:
-    #         h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
-    #         h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
-    #         h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-    # except:
-    #     print('Making puricomp...')
-    # else:
-    #     print('Corrections loaded.')
-    #     return
+    try:
+        for survey_name in survey_name_list:
+            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+    except:
+        print('Making puricomp...')
+    else:
+        print('Corrections loaded.')
+        return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -595,7 +595,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
                 cat_list=['minijpas', 'jnep'], return_hist=False,
-                save_stuff=True, rho=None, N_iter=500):
+                save_stuff=True, rho=None, N_iter=1000):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -725,7 +725,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
             corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{i + 1}', tile_id[this_mask],
-            return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter
+            return_puri=True, dirname=dirname, N_iter=N_iter
         )
         L_LF_err_plus_mj += L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
         L_LF_err_minus_mj += L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
@@ -740,14 +740,14 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         L_e_Arr_pm, nice_lya[~is_minijpas_source],
         mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
         starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
-        return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter
+        return_puri=True, dirname=dirname, N_iter=N_iter
     )
 
     # Compute the LFs for the bootstrap regions
     full_sel_nice_lya = pd.read_csv('csv/selection.csv')['src']
     boots_region_ids = np.ones_like(nice_lya) * -1
     boots_region_ids[full_sel_nice_lya] = np.load('npy/selection_boots_region_ids.npy')
-    AEGIS_fields_order = [3, 2, 1, 4]
+    AEGIS_fields_order = [4, 1, 2, 3]
     for i in range(4):
         this_aegis = AEGIS_fields_order[i]
         this_mask = (boots_region_ids == i)
@@ -757,7 +757,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
             corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{this_aegis}', tile_id[this_mask],
-            return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter,
+            return_puri=True, dirname=dirname, N_iter=N_iter,
             boots='_boots'
         )
 
@@ -769,7 +769,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         L_e_Arr_pm, nice_lya[this_mask],
         mag[this_mask], z_Arr[this_mask],
         starprob[this_mask], bins, 'jnep', tile_id[this_mask],
-        return_puri=True, dirname=dirname, rho=rho, N_iter=N_iter,
+        return_puri=True, dirname=dirname, N_iter=N_iter,
         boots='_boots'
     )
 
@@ -923,7 +923,8 @@ if __name__ == '__main__':
     ]
     
     good_LAEs_frac = 1.
-    for qso_frac in [0.1, 0.5, 1.5, 2.]:
+    # for qso_frac in [0.1, 0.5, 1.5, 2.]:
+    for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
