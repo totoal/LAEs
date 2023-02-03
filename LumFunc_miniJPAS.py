@@ -37,7 +37,7 @@ def LumFunc_hist(f_lambda, w_pivot, w_fwhm, n_bins=15, L_min=0, L_max=0,
 def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
                    bins, survey_name, tile_id, which_w=[0, 2],
                    return_puri=False, dirname='', return_hist_i_mat=False,
-                   N_iter=500, save_hist_i_mat=True):
+                   N_iter=500, save_hist_i_mat=True, boots=''):
     N_bins = len(bins) - 1
 
     hist_i_mat = np.zeros((N_iter, N_bins))
@@ -64,7 +64,7 @@ def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
         w[:] = 1.
         w[~include_mask] = 0.
         w[include_mask] = 1. / comp[include_mask]
-        w[comp < 0.2] = 0. # Mask very low completeness
+        w[comp < 0.05] = 0. # Mask very low completeness
         w[np.isnan(w) | np.isinf(w)] = 0.
 
         hist_i_mat[k], _ = np.histogram(L_perturbed_corr[nice_lya], bins=bins, weights=w)
@@ -74,7 +74,7 @@ def LF_perturb_err(corr_L, L_Arr, L_e_Arr, nice_lya, mag, z_Arr, starprob,
     
     # Save hist_i_mat
     if save_hist_i_mat:
-        np.save(f'{dirname}/hist_i_mat_{survey_name}.npy', hist_i_mat)
+        np.save(f'{dirname}/hist_i_mat_{survey_name}{boots}.npy', hist_i_mat)
 
     L_LF_err_percentiles = np.percentile(hist_i_mat, [16, 50, 84], axis=0)
     if return_hist_i_mat:
