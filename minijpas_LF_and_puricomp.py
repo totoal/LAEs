@@ -595,7 +595,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
                 cat_list=['minijpas', 'jnep'], return_hist=False,
-                save_stuff=True, rho=None, N_iter=1000):
+                save_stuff=True, rho=None, N_iter=10_000):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -758,7 +758,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
             bins, f'minijpasAEGIS00{this_aegis}', tile_id[this_mask],
             return_puri=True, dirname=dirname, N_iter=N_iter,
-            boots='_boots'
+            boots='_boots_src'
         )
 
     this_mask = (boots_region_ids == 4)
@@ -770,7 +770,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         mag[this_mask], z_Arr[this_mask],
         starprob[this_mask], bins, 'jnep', tile_id[this_mask],
         return_puri=True, dirname=dirname, N_iter=N_iter,
-        boots='_boots'
+        boots='_boots_src'
     )
 
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
@@ -919,12 +919,12 @@ if __name__ == '__main__':
         (17, 24, 10, 14, 30, 100, 'nb'),
         (17, 24, 13, 17, 30, 100, 'nb'),
         (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 20, 54, 30, 100, 'nb'),
+        # (17, 24, 20, 54, 30, 100, 'nb'),
     ]
     
     good_LAEs_frac = 1.
-    for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:
-    # for qso_frac in [1.]:
+    # for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:
+    for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:

@@ -41,7 +41,7 @@ def bootstrapped_LFs(nb1, nb2, survey_list_indices):
 
     for survey_name in survey_list:
         pathname = f'Luminosity_functions/LF_r17-24_nb{nb1}-{nb2}_ew30_ewoth100_nb_1.0'
-        filename_hist = f'{pathname}/hist_i_mat_{survey_name}_boots.npy'
+        filename_hist = f'{pathname}/hist_i_mat_{survey_name}_boots_src.npy'
         hist_i_mat = np.load(filename_hist)
 
         this_field_LF = hist_i_mat / effective_volume(nb1, nb2, survey_name) / bin_width
@@ -80,7 +80,7 @@ def bootstrapped_combined_LF(survey_list_indices):
         this_comp = np.interp(LF_bins, bc, total_comp_list[i])
         this_hist = None
         for survey_name in survey_list:
-            filename_hist = f'{pathname}/hist_i_mat_{survey_name}.npy'
+            filename_hist = f'{pathname}/hist_i_mat_{survey_name}_boots_src.npy'
             hist_i_mat = np.load(filename_hist)
 
             this_field_LF = hist_i_mat / effective_volume(nb1, nb2, survey_name) / bin_width
