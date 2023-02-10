@@ -35,9 +35,9 @@ sf_frac = 0.1
 
 def load_mocks(add_errs=True, qso_LAE_frac=1., 
                mag_min=0, mag_max=99):
-    name_qso = 'QSO_contaminants'
-    name_qso_bad = 'QSO_LAES'
-    name_qso_hiL = 'QSO_LAES_hiL'
+    name_qso = 'QSO_contaminants_2'
+    name_qso_bad = 'QSO_LAES_2'
+    name_qso_hiL = 'QSO_LAES_hiL_2'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -261,7 +261,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     L_bins_c = bin_centers(L_bins)
 
     # Perturb L
-    N_iter = 250
+    N_iter = 500
     h2d_nice_qso_loL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_qso_hiL_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
     h2d_nice_sf_i = np.empty((len(L_bins) - 1, len(r_bins) - 1, N_iter))
@@ -595,7 +595,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
                 cat_list=['minijpas', 'jnep'], return_hist=False,
-                save_stuff=True, rho=None, N_iter=10_000):
+                save_stuff=True, rho=None, N_iter=1_000):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -913,13 +913,13 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        # (17, 24, 1, 5, 30, 100, 'nb'),
-        # (17, 24, 4, 8, 30, 100, 'nb'),
-        # (17, 24, 7, 11, 30, 100, 'nb'),
-        # (17, 24, 10, 14, 30, 100, 'nb'),
-        # (17, 24, 13, 17, 30, 100, 'nb'),
-        # (17, 24, 16, 20, 30, 100, 'nb'),
-        (17, 24, 21, 24, 30, 100, 'nb'),
+        (17, 24, 1, 5, 30, 100, 'nb'),
+        (17, 24, 4, 8, 30, 100, 'nb'),
+        (17, 24, 7, 11, 30, 100, 'nb'),
+        (17, 24, 10, 14, 30, 100, 'nb'),
+        (17, 24, 13, 17, 30, 100, 'nb'),
+        (17, 24, 16, 20, 30, 100, 'nb'),
+        # (17, 24, 21, 24, 30, 100, 'nb'),
     ]
     
     good_LAEs_frac = 1.
@@ -928,7 +928,7 @@ if __name__ == '__main__':
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
-            gal_area = 3
+            gal_area = 39999999999999999999
             bad_qso_area_0 = 200
             good_qso_area_0 = 400 / qso_frac
             hiL_qso_area_0 = 4000 / qso_frac
