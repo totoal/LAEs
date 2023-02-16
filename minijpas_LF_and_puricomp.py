@@ -33,7 +33,7 @@ z_nb_Arr = w_central[:-4] / w_lya - 1
 sf_frac = 0.1
 
 
-def load_mocks(add_errs=True, qso_LAE_frac=1., 
+def load_mocks(add_errs=True, qso_LAE_frac=1.,
                mag_min=0, mag_max=99):
     name_qso = 'QSO_contaminants_2'
     name_qso_bad = 'QSO_LAES_2'
@@ -42,10 +42,10 @@ def load_mocks(add_errs=True, qso_LAE_frac=1.,
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
     pm_flx, pm_err, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal,\
-        is_LAE, where_hiL, _, L_NV, EW_NV, hiL_qso_area, good_qso_area  =\
-             ensemble_mock(name_qso, name_gal, name_sf,
-                           name_qso_bad, name_qso_hiL, add_errs,
-                           qso_LAE_frac, sf_frac, mag_min, mag_max)
+        is_LAE, where_hiL, _, L_NV, EW_NV, hiL_qso_area, good_qso_area =\
+        ensemble_mock(name_qso, name_gal, name_sf,
+                      name_qso_bad, name_qso_hiL, add_errs,
+                      qso_LAE_frac, sf_frac, mag_min, mag_max)
 
     N_gal = count_true(is_gal)
     N_qso_cont = count_true(is_qso & ~is_LAE)
@@ -110,7 +110,8 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
     median = np.ones(len(L_binning) - 1) * np.inf
     last = [np.inf, np.inf]
     for i in range(len(L_binning) - 1):
-        in_bin = (10 ** L_Arr >= L_binning[i]) & (10 ** L_Arr < L_binning[i + 1])
+        in_bin = (10 ** L_Arr >= L_binning[i]
+                  ) & (10 ** L_Arr < L_binning[i + 1])
         if count_true(in_bin) == 0:
             L_Lbin_err_plus[i] = last[0]
             L_Lbin_err_minus[i] = last[1]
@@ -123,6 +124,7 @@ def compute_L_Lbin_err(L_Arr, L_lya, L_binning):
         median[i] = perc[1]
 
     return L_Lbin_err_plus, L_Lbin_err_minus, median
+
 
 def compute_EW_bin_err(EW_Arr, EW_lya, EW_binning):
     '''
@@ -184,7 +186,8 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
         is_qso & is_LAE & ~where_hiL) & nb_mask & this_mag_cut]
     badh_hiL = L_Arr[nice_lya & ~nice_z & (
         is_qso & is_LAE & where_hiL) & nb_mask & this_mag_cut]
-    badh_normal_qso = L_Arr[nice_lya & ~nice_z & (is_qso & ~is_LAE) & nb_mask & this_mag_cut]
+    badh_normal_qso = L_Arr[nice_lya & ~nice_z & (
+        is_qso & ~is_LAE) & nb_mask & this_mag_cut]
     badh_sf = L_Arr[nice_lya & ~nice_z & is_sf & nb_mask & this_mag_cut]
     badh_gal = L_Arr[nice_lya & ~nice_z & is_gal & nb_mask & this_mag_cut]
 
@@ -205,7 +208,7 @@ def purity_or_completeness_plot(mag, nbs_to_consider, lya_lines,
     hg_comp = hg_comp_sf * sf_factor + hg_comp_qso_loL * \
         good_qso_factor + hg_comp_qso_hiL * hiL_factor
     hb = hb_normal_qso + hb_sf * sf_factor + hb_to_corr * good_qso_factor +\
-         hb_gal * gal_factor + hb_hiL * hiL_factor
+        hb_gal * gal_factor + hb_hiL * hiL_factor
     totals_sf, _ = np.histogram(L_lya[totals_mask & is_sf], bins=bins2)
     totals_qso_loL, _ = np.histogram(
         L_lya[totals_mask & is_qso & ~where_hiL], bins=bins2)
@@ -285,13 +288,15 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
         )
 
         h2d_nice_qso_loL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & z_cut & is_qso & ~where_hiL & ew_cut],
+            L_perturbed[nice_lya & nice_z & z_cut &
+                        is_qso & ~where_hiL & ew_cut],
             mag[nice_lya & nice_z & z_cut & is_qso & ~where_hiL & ew_cut],
             bins=[L_bins, r_bins]
         )
 
         h2d_nice_qso_hiL_i[..., k], _, _ = np.histogram2d(
-            L_perturbed[nice_lya & nice_z & z_cut & is_qso & where_hiL & ew_cut],
+            L_perturbed[nice_lya & nice_z & z_cut &
+                        is_qso & where_hiL & ew_cut],
             mag[nice_lya & nice_z & z_cut & is_qso & where_hiL & ew_cut],
             bins=[L_bins, r_bins]
         )
@@ -374,7 +379,7 @@ def puricomp_corrections(mag_min, mag_max, L_Arr, L_e_Arr, nice_lya, nice_z,
     h2d_nice_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_nice, 0.15, 0.3)
     h2d_sel_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_sel, 0.15, 0.3)
     h2d_parent_smooth = smooth_Image(L_bins_c, r_bins_c, h2d_parent, 0.15, 0.3)
-    
+
     np.save(f'{dirname}/h2d_nice_smooth_{survey_name}', h2d_nice_smooth)
     np.save(f'{dirname}/h2d_sel_smooth_{survey_name}', h2d_sel_smooth)
     np.save(f'{dirname}/h2d_parent_smooth_{survey_name}', h2d_parent_smooth)
@@ -419,7 +424,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     for src in range(N_sources):
         l = lya_lines[src]
         snr[src] = pm_flx[l, src] / pm_err[l, src]
-    nice_lya_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max) & mag_cut & (snr > 6)
+    nice_lya_mask = (lya_lines >= nb_min) & (
+        lya_lines <= nb_max) & mag_cut & (snr > 6)
 
     # Nice lya selection
     nice_lya = nice_lya_select(lya_lines, other_lines, pm_flx, pm_err,
@@ -433,7 +439,8 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Compute EW bin err and bias correction
     EW_binning = np.linspace(0, 50, 50)
     Lmask = nice_z & nice_lya
-    EW_bin_err, median_EW = compute_EW_bin_err(EW_nb_Arr[Lmask], EW_lya[Lmask], EW_binning)
+    EW_bin_err, median_EW = compute_EW_bin_err(
+        EW_nb_Arr[Lmask], EW_lya[Lmask], EW_binning)
 
     # Compute and save L corrections and errors
     L_binning = np.logspace(40, 47, 25 + 1)
@@ -441,7 +448,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     Lmask = nice_z & nice_lya & (L_lya > 43)
     L_Lbin_err_plus, L_Lbin_err_minus, median_L =\
         compute_L_Lbin_err(L_Arr[Lmask], L_lya[Lmask], L_binning)
-    
+
     np.save('npy/L_nb_err_plus.npy', L_Lbin_err_plus)
     np.save('npy/L_nb_err_minus.npy', L_Lbin_err_minus)
     np.save('npy/L_bias.npy', median_L)
@@ -453,12 +460,13 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
     L_Arr_corr = L_Arr - np.interp(L_Arr, np.log10(L_bin_c)
-                              [mask_median_L], median_L[mask_median_L])
+                                   [mask_median_L], median_L[mask_median_L])
 
     # Apply bin err
     L_binning_position = binned_statistic(10 ** L_Arr, None,
                                           'count', bins=L_binning).binnumber
-    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
+    L_binning_position[L_binning_position > len(
+        L_binning) - 2] = len(L_binning) - 2
     L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position],
                   L_Lbin_err_plus[L_binning_position]]
 
@@ -494,7 +502,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 def make_corrections(params, qso_frac, good_LAEs_frac):
     survey_name_list = ['minijpasAEGIS001', 'minijpasAEGIS002', 'minijpasAEGIS003',
                         'minijpasAEGIS004', 'jnep']
-    
+
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you want to recompute corrections
@@ -635,10 +643,20 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         snr[src] = pm_flx[l, src] / pm_err[l, src]
 
     # Drop bad NB image rows
-    bad_NB_image = np.array([4380, 30395, 30513, 30977, 40306, 43721, 11771, 2583])
+    bad_NB_image = np.array(
+        [4380, 30395, 30513, 30977, 40306, 43721, 11771, 2583])
     mask_bad_NB = np.ones(N_sources).astype(bool)
     for bad_nb_src in bad_NB_image:
         mask_bad_NB[bad_nb_src] = False
+
+    bad_QSO_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
+                                    30432, 31899, 33067, 48117, 50545, 52341,
+                                    53460, 55102, 57416, 62005, 33873, 34347,
+                                    43714, 49249, 49491, 10282, 20919, 24728])
+    bad_GAL_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
+                                    30432, 31899, 33067, 48117, 50545, 52341,
+                                    53460, 55102, 57416, 62005, 33873, 34347,
+                                    43714, 49249, 49491, 10282, 20919, 24728])
 
     mask_snr = (snr > 6)
     lya_lines_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
@@ -650,6 +668,12 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     )
     nice_lya_raw = lya_lines_mask & nice_lya_raw & mask_bad_NB & mag_cut
     nice_lya = nice_lya_raw & mask & c_mask & ml_mask
+
+    # Mask CIV and Gal contaminants by visual inspection
+    bad_QSO_mask = np.ones_like(nice_lya).astype(bool)
+    bad_QSO_mask[bad_QSO_visual_insp] = False
+    bad_GAL_mask = np.ones_like(nice_lya).astype(bool)
+    bad_GAL_mask[bad_GAL_visual_insp] = False
 
     # Estimate Luminosity
     EW_Arr, EW_Arr_err, L_Arr, L_Arr_err_table, _, _ = EW_L_NB(
@@ -664,23 +688,27 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     median_EW = np.load('npy/EW_bias.npy')
     EW_binning = np.load('npy/EW_nb_err_binning.npy')
     L_bin_c = [L_binning[i: i + 2].sum() * 0.5 for i in range(len(L_binning) - 1)]
-    EW_bin_c = [EW_binning[i: i + 2].sum() * 0.5 for i in range(len(EW_binning) - 1)]
+    EW_bin_c = [EW_binning[i: i + 2].sum() *
+                0.5 for i in range(len(EW_binning) - 1)]
 
     EW_binning_position = binned_statistic(EW_Arr, None, 'count',
                                            bins=EW_binning).binnumber
-    EW_binning_position[EW_binning_position > len(EW_binning) - 2] = len(EW_binning) - 2
+    EW_binning_position[EW_binning_position > len(
+        EW_binning) - 2] = len(EW_binning) - 2
     # EW_Arr_err_corr = EW_bin_err[EW_binning_position]
     EW_Arr_corr = EW_Arr - np.interp(EW_Arr, np.log10(EW_bin_c), median_EW)
 
     # Apply bin err
     L_binning_position = binned_statistic(10 ** L_Arr, None,
                                           'count', bins=L_binning).binnumber
-    L_binning_position[L_binning_position > len(L_binning) - 2] = len(L_binning) - 2
-    L_e_Arr = (L_Lbin_err_plus + L_Lbin_err_minus)[L_binning_position] * 0.5
+    L_binning_position[L_binning_position > len(
+        L_binning) - 2] = len(L_binning) - 2
+    # L_e_Arr = (L_Lbin_err_plus + L_Lbin_err_minus)[L_binning_position] * 0.5
 
     # Correct L_Arr with the median
     mask_median_L = (median_L < 10)
-    corr_L = np.interp(L_Arr, np.log10(L_bin_c)[mask_median_L], median_L[mask_median_L])
+    corr_L = np.interp(L_Arr, np.log10(L_bin_c)[
+                       mask_median_L], median_L[mask_median_L])
     L_Arr_corr = L_Arr - corr_L
 
     bins = np.log10(L_binning)
@@ -718,9 +746,9 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
     # Compute the LFs for each field
     for i, this_id in enumerate(tile_id_list):
-        this_mask = (tile_id == this_id)
+        this_mask = (tile_id == this_id) & bad_GAL_mask & bad_QSO_mask
         L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][this_mask],
-                    L_Lbin_err_plus[L_binning_position][this_mask]]
+                      L_Lbin_err_plus[L_binning_position][this_mask]]
         L_LF_err_percentiles, this_puri = LF_perturb_err(
             corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
@@ -733,26 +761,28 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
         nice_puri_list[this_mask[nice_lya]] = this_puri
 
-    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][~is_minijpas_source],
-                L_Lbin_err_plus[L_binning_position][~is_minijpas_source]]
+    this_mask = ~is_minijpas_source & bad_GAL_mask & bad_QSO_mask
+    L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][this_mask],
+                  L_Lbin_err_plus[L_binning_position][this_mask]]
     L_LF_err_percentiles, this_puri = LF_perturb_err(
-        corr_L[~is_minijpas_source] * 0, L_Arr_corr[~is_minijpas_source],
-        L_e_Arr_pm, nice_lya[~is_minijpas_source],
-        mag[~is_minijpas_source], z_Arr[~is_minijpas_source],
-        starprob[~is_minijpas_source], bins, 'jnep', tile_id[~is_minijpas_source],
+        corr_L[this_mask] * 0, L_Arr_corr[this_mask],
+        L_e_Arr_pm, nice_lya[this_mask],
+        mag[this_mask], z_Arr[this_mask],
+        starprob[this_mask], bins, 'jnep', tile_id[this_mask],
         return_puri=True, dirname=dirname, N_iter=N_iter
     )
 
     # Compute the LFs for the bootstrap regions
     full_sel_nice_lya = pd.read_csv('csv/selection.csv')['src']
     boots_region_ids = np.ones_like(nice_lya) * -1
-    boots_region_ids[full_sel_nice_lya] = np.load('npy/selection_boots_region_ids.npy')
+    boots_region_ids[full_sel_nice_lya] = np.load(
+        'npy/selection_boots_region_ids.npy')
     AEGIS_fields_order = [4, 1, 2, 3]
     for i in range(4):
         this_aegis = AEGIS_fields_order[i]
-        this_mask = (boots_region_ids == i)
+        this_mask = (boots_region_ids == i) & bad_GAL_mask & bad_QSO_mask
         L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][this_mask],
-                    L_Lbin_err_plus[L_binning_position][this_mask]]
+                      L_Lbin_err_plus[L_binning_position][this_mask]]
         LF_perturb_err(
             corr_L[this_mask] * 0, L_Arr_corr[this_mask], L_e_Arr_pm,
             nice_lya[this_mask], mag[this_mask], z_Arr[this_mask], starprob[this_mask],
@@ -761,9 +791,9 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
             boots='_boots_src'
         )
 
-    this_mask = (boots_region_ids == 4)
+    this_mask = (boots_region_ids == 4) & bad_GAL_mask & bad_QSO_mask
     L_e_Arr_pm = [L_Lbin_err_minus[L_binning_position][this_mask],
-                L_Lbin_err_plus[L_binning_position][this_mask]]
+                  L_Lbin_err_plus[L_binning_position][this_mask]]
     LF_perturb_err(
         corr_L[this_mask] * 0, L_Arr_corr[this_mask],
         L_e_Arr_pm, nice_lya[this_mask],
@@ -777,14 +807,15 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
     hist_median_jn = L_LF_err_percentiles[1]
 
-    nice_puri_list[~is_minijpas_source[nice_lya]] = this_puri
+    nice_puri_list[this_mask[nice_lya]] = this_puri
 
     hist_median = hist_median_jn + hist_median_mj
     L_LF_err_plus = L_LF_err_plus_jn + L_LF_err_plus_mj
     L_LF_err_minus = L_LF_err_minus_jn + L_LF_err_minus_mj
 
     ###### RAW LF ######
-    LF_raw = np.histogram(L_Arr_corr[nice_lya], bins=bins)[0] / bin_width / volume
+    LF_raw = np.histogram(L_Arr_corr[nice_lya], bins=bins)[
+        0] / bin_width / volume
     ####################
 
     # Save the selection
@@ -921,15 +952,19 @@ if __name__ == '__main__':
         (17, 24, 16, 20, 30, 100, 'nb'),
         # (17, 24, 21, 24, 30, 100, 'nb'),
     ]
-    
+
+    # The fractions of contaminants removed by visual inpsection
+    bad_gal_vs_fraction = 1 - 45 / 70
+    bad_qso_vs_fraction = 1 - 0.99
+
     good_LAEs_frac = 1.
     # for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:
     for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
-            gal_area = 39999999999999999999
-            bad_qso_area_0 = 200
+            gal_area = 3 / bad_gal_vs_fraction
+            bad_qso_area_0 = 200 / bad_qso_vs_fraction
             good_qso_area_0 = 400 / qso_frac
             hiL_qso_area_0 = 4000 / qso_frac
             sf_area = 400 * sf_frac
