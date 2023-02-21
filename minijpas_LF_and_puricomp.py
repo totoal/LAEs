@@ -506,22 +506,22 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you want to recompute corrections
-    # folder_name_search = (
-    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-    #     f'_{cont_est_m}_1.0'
-    # )
-    # dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    folder_name_search = (
+        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}_1.0'
+    )
+    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
 
-    # try:
-    #     for survey_name in survey_name_list:
-    #         h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
-    #         h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
-    #         h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-    # except:
-    #     print('Making puricomp...')
-    # else:
-    #     print('Corrections loaded.')
-    #     return
+    try:
+        for survey_name in survey_name_list:
+            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+    except:
+        print('Making puricomp...')
+    else:
+        print('Corrections loaded.')
+        return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -652,7 +652,8 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     bad_QSO_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
                                     30432, 31899, 33067, 48117, 50545, 52341,
                                     53460, 55102, 57416, 62005, 33873, 34347,
-                                    43714, 49249, 49491, 10282, 20919, 24728])
+                                    43714, 49249, 49491, 10282, 20919, 24728,
+                                    33699])
     bad_GAL_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
                                     30432, 31899, 33067, 48117, 50545, 52341,
                                     53460, 55102, 57416, 62005, 33873, 34347,
@@ -956,6 +957,8 @@ if __name__ == '__main__':
     # The fractions of contaminants removed by visual inpsection
     bad_gal_vs_fraction = 1 - 45 / 70
     bad_qso_vs_fraction = 1 - 0.99
+    # bad_gal_vs_fraction = 1
+    # bad_qso_vs_fraction = 1
 
     good_LAEs_frac = 1.
     # for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:

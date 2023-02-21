@@ -2,7 +2,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from my_functions import *
+from LAEs.my_functions import *
 from LAEs.load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
 import os
 import os.path as op
@@ -15,7 +15,8 @@ tile_dict = {
     2243: 'AEGIS002',
     2406: 'AEGIS003',
     2470: 'AEGIS004',
-    2520: 'J-NEP'
+    2520: 'J-NEP',
+    0: '000'
 }
 filter_labels = load_filter_tags()
 w_central = central_wavelength()
@@ -50,19 +51,20 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     filenamer = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{59}.fits'
     filenamenb = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{nb_sel + 1}.fits'
 
-    box_side = 16
-    y_range = slice(x_im - box_side, x_im + box_side + 1)
-    x_range = slice(y_im - box_side, y_im + box_side + 1)
-    im_r = fits.open(filenamer)[1].data[x_range, y_range]
-    im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
+    if x_im is not None and y_im is not None:
+        box_side = 16
+        y_range = slice(x_im - box_side, x_im + box_side + 1)
+        x_range = slice(y_im - box_side, y_im + box_side + 1)
+        im_r = fits.open(filenamer)[1].data[x_range, y_range]
+        im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
 
-    # Normalize by the bandwidth
-    im_r = im_r / fwhm_Arr[-2] * bb_exp_time
-    im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
+        # Normalize by the bandwidth
+        im_r = im_r / fwhm_Arr[-2] * bb_exp_time
+        im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
 
-    # Get max and min of the images to establish common scale
-    # im_max = np.max([im_r.max(), im_nb.max()])
-    # im_min = np.min([im_r.min(), im_nb.min()])
+        # Get max and min of the images to establish common scale
+        # im_max = np.max([im_r.max(), im_nb.max()])
+        # im_min = np.min([im_r.min(), im_nb.min()])
 
     fig = plt.figure(figsize=(8, 3))
     ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True)
@@ -122,10 +124,9 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
                     right=False, left=False,
                     labelright=False, labelleft=False)
 
-    # ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
-    # ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
-    ax1.imshow(im_r, cmap='binary')
-    ax2.imshow(im_nb, cmap='binary')
+    if x_im is not None and y_im is not None:
+        ax1.imshow(im_r, cmap='binary')
+        ax2.imshow(im_nb, cmap='binary')
 
     # Add circumference showing aperture 3arcsec diameter
     aper_r_px = 1.5 / 0.23
@@ -154,8 +155,9 @@ def plot_jspectra_images(pm_flx, pm_err, cont_est, cont_err,
     plt.close()
 
 def plot_paper(pm_flx, pm_err, cont_est, cont_err,
-               tile_id, number, x_im, y_im, nb_sel, other_lines,
-               plot_text, n_src, dirname, redshift, spec=None, g_band=None):
+               tile_id, x_im, y_im, nb_sel, other_lines,
+               n_src, dirname, redshift, spec=None, g_band=None,
+               text_str=None):
     if tile_id == 2520:
         survey_name = 'jnep'
     else:
@@ -176,23 +178,24 @@ def plot_paper(pm_flx, pm_err, cont_est, cont_err,
     filenamer = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{59}.fits'
     filenamenb = f'/home/alberto/almacen/images_fits/{survey_name}/{tile_id}-{nb_sel + 1}.fits'
 
-    box_side = 16
-    y_range = slice(x_im - box_side, x_im + box_side + 1)
-    x_range = slice(y_im - box_side, y_im + box_side + 1)
-    im_r = fits.open(filenamer)[1].data[x_range, y_range]
-    im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
+    if x_im is not None and y_im is not None:
+        box_side = 16
+        y_range = slice(x_im - box_side, x_im + box_side + 1)
+        x_range = slice(y_im - box_side, y_im + box_side + 1)
+        im_r = fits.open(filenamer)[1].data[x_range, y_range]
+        im_nb = fits.open(filenamenb)[1].data[x_range, y_range]
 
-    # Normalize by the bandwidth
-    im_r = im_r / fwhm_Arr[-2] * bb_exp_time
-    im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
+        # Normalize by the bandwidth
+        im_r = im_r / fwhm_Arr[-2] * bb_exp_time
+        im_nb = im_nb / fwhm_Arr[nb_sel] * nb_exp_time
 
-    # Get max and min of the images to establish common scale
-    # im_max = np.max([im_r.max(), im_nb.max()])
-    # im_min = np.min([im_r.min(), im_nb.min()])
+        # Get max and min of the images to establish common scale
+        # im_max = np.max([im_r.max(), im_nb.max()])
+        # im_min = np.min([im_r.min(), im_nb.min()])
 
     fig = plt.figure(figsize=(6, 2.4))
 
-    ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True, fs=11)
+    ax = plot_JPAS_source(pm_flx, pm_err, e17scale=True, fs=11, mock_mode=True)
 
     # Zero line
     ax.axhline(0, linewidth=1, ls='-', c='k', zorder=-99)
@@ -211,6 +214,8 @@ def plot_paper(pm_flx, pm_err, cont_est, cont_err,
         spec_w = 10 ** spec['LOGLAM']
 
         ax.plot(spec_w, spec_flx, c='dimgray', zorder=-99, alpha=0.7)
+    else:
+        spec_flx = np.array([0.])
     
     ylim = list(ax.get_ylim())
     ylim[1] = np.max([ylim[1], spec_flx.max() * 1.1])
@@ -237,50 +242,55 @@ def plot_paper(pm_flx, pm_err, cont_est, cont_err,
                 color='dimgray', fontsize=8, in_layout=True)
     # Draw line on other lines selected
     for nb in other_lines:
-        print(nb)
+        # print(nb)
         ax.axvline(w_central[nb], ls='--', c='orange', zorder=-90)
 
     #########################################
 
-    wh = 0.25
-    ax1 = fig.add_axes([1 - 1.5 * wh - 0.1, 0.61, wh, wh])
-    ax2 = fig.add_axes([1 - wh - 0.1, 0.61, wh, wh])
+    if x_im is not None and y_im is not None:
+        wh = 0.25
+        ax1 = fig.add_axes([1 - 1.5 * wh - 0.1, 0.61, wh, wh])
+        ax2 = fig.add_axes([1 - wh - 0.1, 0.61, wh, wh])
 
-    ax1.tick_params(axis='both', bottom=False, top=False,
-                    labelbottom=False, labeltop=False,
-                    right=False, left=False,
-                    labelright=False, labelleft=False)
-    ax2.tick_params(axis='both', bottom=False, top=False,
-                    labelbottom=False, labeltop=False,
-                    right=False, left=False,
-                    labelright=False, labelleft=False)
+        ax1.tick_params(axis='both', bottom=False, top=False,
+                        labelbottom=False, labeltop=False,
+                        right=False, left=False,
+                        labelright=False, labelleft=False)
+        ax2.tick_params(axis='both', bottom=False, top=False,
+                        labelbottom=False, labeltop=False,
+                        right=False, left=False,
+                        labelright=False, labelleft=False)
 
-    # ax1.imshow(im_r, cmap='binary', vmin=im_min, vmax=im_max)
-    # ax2.imshow(im_nb, cmap='binary', vmin=im_min, vmax=im_max)
-    ax1.imshow(im_r, cmap='binary')
-    ax2.imshow(im_nb, cmap='binary')
+        ax1.imshow(im_r, cmap='binary')
+        ax2.imshow(im_nb, cmap='binary')
 
-    # Add circumference showing aperture 3arcsec diameter
-    aper_r_px = 1.5 / 0.23
-    circ1 = plt.Circle((box_side, box_side),
-                       radius=aper_r_px, ec='yellow', fc='none')
-    circ2 = plt.Circle((box_side, box_side),
-                       radius=aper_r_px, ec='yellow', fc='none')
-    ax1.add_patch(circ1)
-    ax2.add_patch(circ2)
+        # Add circumference showing aperture 3arcsec diameter
+        aper_r_px = 1.5 / 0.23
+        circ1 = plt.Circle((box_side, box_side),
+                        radius=aper_r_px, ec='yellow', fc='none')
+        circ2 = plt.Circle((box_side, box_side),
+                        radius=aper_r_px, ec='yellow', fc='none')
+        ax1.add_patch(circ1)
+        ax2.add_patch(circ2)
 
-    tile_name = tile_dict[tile_id]
-    ax1.set_xlabel('rSDSS', fontsize=9)
-    ax2.set_xlabel(filter_labels[nb_sel], fontsize=9)
+        # tile_name = tile_dict[tile_id]
+        ax1.set_xlabel('rSDSS', fontsize=9)
+        ax2.set_xlabel(filter_labels[nb_sel], fontsize=9)
+
+    # Plot text
+    if text_str is not None:
+        ytextpos = ylim[1] * 1.2
+        xtextpos = 3100
+        ax.text(xtextpos, ytextpos, text_str)
 
     ax.tick_params(labelsize=9, direction='in', which='both')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
     
     os.makedirs(dirname, exist_ok=True)
-    plt.savefig(f'{dirname}/{n_src}-{tile_name}-{src}.png',
+    plt.savefig(f'{dirname}/{n_src}-vi_spec.png',
                 bbox_inches='tight', facecolor='w',
-                edgecolor='w', dpi=500, pad_inches=0)
+                edgecolor='w', dpi=500, pad_inches=0.1)
     plt.close()
 
 def nanomaggie_to_flux(nmagg, wavelength):
