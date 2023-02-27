@@ -838,3 +838,14 @@ def trim_r_distribution(m_Arr, z_Arr, area_obs):
     trim_mask[to_delete.astype(int)] = False
 
     return trim_mask
+
+
+def rebin_1d_arr(arr, factor):
+    assert type(factor) == int
+
+    new_len = len(arr) // factor
+    new_arr = np.empty(new_len)
+    for i in range(new_len):
+        new_arr[i] = sum(arr[i * factor : (i + 1) * factor]) / factor
+
+    return new_arr

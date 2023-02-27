@@ -57,8 +57,8 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     ax.set_xlim(1400, 6000)
     ax.set_ylim(1e-1, 300)
     ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=16)
-    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=16)
+    ax.set_xlabel('$\lambda_0$ [\AA]', fontsize=16)
+    ax.set_ylabel('Sources density [deg$^{-2}]$', fontsize=16)
     ax.tick_params(labelsize=14, direction='in', which='both')
     ax.yaxis.set_ticks_position('both')
     ax.xaxis.set_ticks_position('both')
@@ -93,8 +93,8 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
             ax.text(w - 70, 340, name, fontsize=13)
 
     ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ ($\AA$)', fontsize=16)
-    ax.set_ylabel('Sources density (deg$^{-2})$', fontsize=16)
+    ax.set_xlabel('$\lambda_0$ [\AA]', fontsize=16)
+    ax.set_ylabel('Sources density [deg$^{-2}]$', fontsize=16)
     ax.set_ylim(1e-2, 300)
     ax.set_xlim(890, 3500)
     ax.tick_params(labelsize=14, direction='in', which='both')
@@ -107,8 +107,8 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
 
 if __name__ == '__main__':
-    name_qso = 'QSO_contaminants'
-    name_qso_bad = 'QSO_LAES'
+    name_qso = 'QSO_contaminants_2'
+    name_qso_bad = 'QSO_LAES_2'
     name_gal = f'GAL_LC_lines_0'
     name_sf = f'LAE_12.5deg_z2-4.25_train_minijpas_VUDS_0'
 
@@ -118,7 +118,7 @@ if __name__ == '__main__':
                            name_qso_bad, add_errs=False, mag_min=17, mag_max=24)
 
     pm_flx, pm_err = add_errors(pm_flx, apply_err=True,
-                                survey_name='minijpasAEGIS003')
+                                survey_name='minijpasAEGIS001')
 
     where_bad_flx = ~np.isfinite(pm_flx)
     pm_flx[where_bad_flx] = 0.
@@ -131,8 +131,8 @@ if __name__ == '__main__':
 
     params = [
         (30, 100, 1, 24),
-        (30, 100, 1, 5),
-        (30, 100, 5, 10),
+        # (30, 100, 1, 5),
+        # (30, 100, 5, 10),
     ]
     
     for params_set in params:

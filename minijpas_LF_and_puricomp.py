@@ -842,7 +842,8 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         'pm_mask': mask_pm[nice_lya_raw],
         'snr_mask': mask_snr[nice_lya_raw],
         'ml_mask': ml_mask[nice_lya_raw],
-        'nice_nice': nice_lya[nice_lya_raw]
+        'nice_nice': nice_lya[nice_lya_raw],
+        'starprob': starprob[nice_lya_raw]
     }
 
     if save_stuff:
