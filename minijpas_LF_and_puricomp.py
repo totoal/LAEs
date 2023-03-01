@@ -603,7 +603,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
                 cat_list=['minijpas', 'jnep'], return_hist=False,
-                save_stuff=True, rho=None, N_iter=1_000):
+                save_stuff=True, rho=None, N_iter=1):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -833,7 +833,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         'L_lya': L_Arr_corr[nice_lya_raw],
         'L_lya_NV': L_Arr[nice_lya_raw],
         'L_lya_err': L_Arr_err_table[nice_lya_raw],
-        'EW_lya': EW_Arr_corr[nice_lya_raw],
+        'EW_lya': EW_Arr[nice_lya_raw],
         'EW_lya_err': EW_Arr_err[nice_lya_raw],
         'puri': nice_puri_list,
         'r': mag[nice_lya_raw],
