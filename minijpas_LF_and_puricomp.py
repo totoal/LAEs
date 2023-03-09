@@ -603,7 +603,7 @@ def effective_volume(nb_min, nb_max, survey_name='both'):
 
 def make_the_LF(params, qso_frac, good_LAEs_frac,
                 cat_list=['minijpas', 'jnep'], return_hist=False,
-                save_stuff=True, rho=None, N_iter=1):
+                save_stuff=True, rho=None, N_iter=1_000):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     pm_flx, pm_err, tile_id, pmra_sn, pmdec_sn, parallax_sn, starprob, _,\
@@ -649,15 +649,13 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     for bad_nb_src in bad_NB_image:
         mask_bad_NB[bad_nb_src] = False
 
-    bad_QSO_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
-                                    30432, 31899, 33067, 48117, 50545, 52341,
-                                    53460, 55102, 57416, 62005, 33873, 34347,
-                                    43714, 49249, 49491, 10282, 20919, 24728,
-                                    33699])
-    bad_GAL_visual_insp = np.array([1390, 7653, 21880, 24488, 26588, 26984,
-                                    30432, 31899, 33067, 48117, 50545, 52341,
-                                    53460, 55102, 57416, 62005, 33873, 34347,
-                                    43714, 49249, 49491, 10282, 20919, 24728])
+    bad_QSO_visual_insp = np.array([1390, 55102, 31899, 24488, 34347, 26588, 4242,
+                                    2626, 48698, 33873, 22337, 21880, 31038, 7653,
+                                    24054,  7234, 33067, 62005, 50134, 45787, 30432,
+                                    50545, 26984, 52341])
+    bad_GAL_visual_insp = np.array([11191, 50734, 38069, 44285, 2476, 27466, 9051,
+                                    34796, 15307, 4253, 11271, 38979, 26147, 7019,
+                                    29526])
 
     mask_snr = (snr > 6)
     lya_lines_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
@@ -956,7 +954,7 @@ if __name__ == '__main__':
     ]
 
     # The fractions of contaminants removed by visual inpsection
-    bad_gal_vs_fraction = 1 - 45 / 70
+    bad_gal_vs_fraction = 1 - 45 / 59
     bad_qso_vs_fraction = 1 - 0.99
     # bad_gal_vs_fraction = 1
     # bad_qso_vs_fraction = 1
