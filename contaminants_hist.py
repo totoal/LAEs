@@ -30,83 +30,8 @@ filter_tags = load_filter_tags()
 
 
 def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
-    fig, ax = plt.subplots(figsize=(8, 4))
-
-    mask = nice_lya & is_gal & z_cut
-    w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
-
-    bin_min = 890
-    bin_max = 6000
-
-    bins = np.linspace(bin_min, bin_max, 100)
-    bins_c = [bins[i: i + 2].sum() * 0.5 for i in range(len(bins) - 1)]
-
-    hist, _ = np.histogram(w0, bins)
-    ax.fill_between(bins_c, hist / gal_area,
-                    step='pre', color='dimgray')
-
-    gal_line_w = [2799, 4861, 3727, 5008, 2326]
-    gal_line_name = ['MgII', r'H$\beta$', 'OII', 'OIII', 'CII']
-    for w, name in zip(gal_line_w, gal_line_name):
-        ax.axvline(w, color='orange', linestyle='--', zorder=-99)
-        if name != 'OIII':
-            ax.text(w - 70, 340, name, fontsize=13)
-        else:
-            ax.text(w - 20, 340, name, fontsize=13)
-
-    ax.set_xlim(1400, 6000)
-    ax.set_ylim(1e-1, 300)
-    ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ [\AA]', fontsize=16)
-    ax.set_ylabel('Sources density [deg$^{-2}]$', fontsize=16)
-    ax.tick_params(labelsize=14, direction='in', which='both')
-    ax.yaxis.set_ticks_position('both')
-    ax.xaxis.set_ticks_position('both')
-
-    fig.tight_layout()
-    fig.savefig(f'figures/GAL_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
-                bbox_inches='tight', facecolor='w', edgecolor='w')
-
-    fig, ax = plt.subplots(figsize=(8, 4))
-
-    mask = nice_lya & is_qso & (zspec < 2)
-    w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
-    hbad, _ = np.histogram(w0, bins)
-    mask = nice_lya & is_qso & (zspec > 2)
-    w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
-    hgood, _ = np.histogram(w0, bins)
-
-    ax.fill_between(bins_c, (hbad + hgood * 0.5) /
-                    bad_qso_area, step='pre', color='dimgray')
-
-    qso_line_w = [1549.48, 1908.73, 2799.12, 2326.00, 1215.67, 1025, 1399.8]
-    qso_line_name = ['CIV', 'CIII', 'MgII', 'CII',
-                     r'Ly$\alpha$+NV', 'OVI', 'SiIV\n+OIV']
-
-    for w, name in zip(qso_line_w, qso_line_name):
-        ax.axvline(w, color='orange', linestyle='--', zorder=-99)
-        if name == 'SiIV\n+OIV':
-            ax.text(w - 120, 70, name, fontsize=13)
-        elif name == r'Ly$\alpha$+NV':
-            ax.text(w - 100, 340, name, fontsize=13)
-        else:
-            ax.text(w - 70, 340, name, fontsize=13)
-
-    ax.set_yscale('log')
-    ax.set_xlabel('$\lambda_0$ [\AA]', fontsize=16)
-    ax.set_ylabel('Sources density [deg$^{-2}]$', fontsize=16)
-    ax.set_ylim(1e-2, 300)
-    ax.set_xlim(890, 3500)
-    ax.tick_params(labelsize=14, direction='in', which='both')
-    ax.yaxis.set_ticks_position('both')
-    ax.xaxis.set_ticks_position('both')
-
-    # fig.tight_layout()
-    fig.savefig(f'figures/QSO_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
-                bbox_inches='tight', facecolor='w', edgecolor='w')
-
     # COMBINED PLOT
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(6, 3))
 
     mask = nice_lya & is_gal & z_cut
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
@@ -120,38 +45,45 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
     mask = nice_lya & is_gal & z_cut
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
     hist, _ = np.histogram(w0, bins)
+    hist[hist == 0] = -99
     ax.plot(bins_c, hist / gal_area,
             drawstyle='steps-mid', color='C1',
-            lw=2)
+            lw=2, label='Galaxies ($z<2$)')
     mask = nice_lya & is_qso & (zspec < 2)
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
     hbad, _ = np.histogram(w0, bins)
     mask = nice_lya & is_qso & (zspec > 2)
     w0 = w_central[lya_lines[mask]] / (1 + zspec[mask])
     hgood, _ = np.histogram(w0, bins)
+    hbad[hbad == 0] = -99
+    hgood[hgood == 0] = -99
     ax.plot(bins_c, (hbad + hgood * 0.5) / bad_qso_area,
             drawstyle='steps-mid', color='C2',
-            lw=2)
+            lw=2, label='QSOs')
 
-    gal_line_w = [2799, 4861, 3727, 5008, 2326]
-    gal_line_name = ['MgII', r'H$\beta$', 'OII', 'OIII', 'CII']
-    qso_line_w = [1549.48, 1908.73, 2326.00, 1215.67, 1025]
+    gal_line_w = [2799, 4861, 3727, 5008]
+    gal_line_name = ['MgII', r'H$\beta$', 'OII', 'OIII']
+    qso_line_w = [1549.48, 1908.73, 2326.00, 1215.67]
     qso_line_name = ['CIV', 'CIII', 'CII',
-                     r'Ly$\alpha$+NV', 'OVI']
+                     r'Ly$\alpha$']
     line_w = gal_line_w + qso_line_w
     line_name = gal_line_name + qso_line_name
     for w, name in zip(line_w, line_name):
-        if name == r'Ly$\alpha$+NV':
-            ax.axvline(w, color='red', linestyle='--', zorder=-99)
+        if name == r'Ly$\alpha$':
+            ax.axvline(w, color='red', linestyle=':', zorder=-99, lw=2)
         else:
-            ax.axvline(w, color='dimgray', linestyle=':', zorder=-99)
+            ax.axvline(w, color='dimgray', linestyle=':', zorder=-99, lw=2)
 
-        if name == r'Ly$\alpha$+NV':
-            ax.text(w - 90, 54, name, fontsize=13)
+        if name == r'Ly$\alpha$':
+            ax.text(w - 75, 51, name, fontsize=11)
         elif name == 'OIII':
-            ax.text(w - 20, 51, name, fontsize=13)
+            ax.text(w - 20, 51, name, fontsize=11)
+        elif name == r'H$\beta$':
+            ax.text(w - 95, 51, name, fontsize=11)
         else:
-            ax.text(w - 70, 51, name, fontsize=13)
+            ax.text(w - 70, 51, name, fontsize=11)
+
+    ax.legend(fontsize=11, loc='upper right', framealpha=1)
 
     ax.set_xlim(890, 6000)
     ax.set_ylim(0, 50)

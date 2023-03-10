@@ -14,14 +14,15 @@ tile_dict = {
     'jnep': 2520
 }
 
-def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
-                    L_Arr=None, L_Arr_e=None, mag=None):
-
+def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select):
     # L and r from the selected sources in this {survey_name}
-    mask_this_tile = (select['tile_id'] == tile_dict[survey_name])
+    mask_this_tile = (select['tile_id'] == tile_dict[survey_name]) & select['nice_nice']
     selec_r = select['r'][mask_this_tile]
     selec_L = select['L_lya'][mask_this_tile]
     selec_L_err = select['L_lya_err'][mask_this_tile]
+
+    # Conver L_err to log scale
+    selec_L_err = np.log10(10**selec_L + selec_L_err) - selec_L
 
     fig = plt.figure(figsize=(3.75, 3.75))
 
@@ -121,54 +122,55 @@ def puricomp2d_plot(puri, comp, L_bins, r_bins, dirname, survey_name, select,
     ax1.set_xlim(90, 160)
     ax1.set_ylim(199, 20)
 
-    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}.pdf',
+    savedir = f'{dirname}/PuriComp2D_{survey_name}.pdf'
+    plt.savefig(savedir,
                 bbox_inches='tight', facecolor='white', pad_inches=0)
     plt.close()
 
     ####################
     # Alternative Plot #
     ####################
-    fig, ax = plt.subplots(figsize=(5, 5))
+    # fig, ax = plt.subplots(figsize=(5, 5))
 
-    ax_cbar = fig.add_axes([0.92, 0.1, 0.05, 0.79])
+    # ax_cbar = fig.add_axes([0.92, 0.1, 0.05, 0.79])
     
-    correction = puri.T / comp.T
-    # correction[~np.isfinite(correction)] = 0.
-    sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
-                rasterized=True)
+    # correction = puri.T / comp.T
+    # # correction[~np.isfinite(correction)] = 0.
+    # sns.heatmap(correction, ax=ax, vmin=0, vmax=2, cbar_ax=ax_cbar, cmap=cmap,
+    #             rasterized=True)
 
-    # Change units to plot:
-    def L_to_bins(L_Arr):
-        return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
-    def r_to_bins(mag):
-        return np.interp(mag, r_bins, np.arange(len(r_bins)))
+    # # Change units to plot:
+    # def L_to_bins(L_Arr):
+    #     return np.interp(L_Arr, L_bins, np.arange(len(L_bins)))
+    # def r_to_bins(mag):
+    #     return np.interp(mag, r_bins, np.arange(len(r_bins)))
 
-    L_Arr_b = L_to_bins(selec_L)
-    mag_b = r_to_bins(selec_r)
-    L_err_Arr_b = (L_to_bins(selec_L + selec_L_err)
-                   - L_to_bins(selec_L - selec_L_err)) * 0.5
+    # L_Arr_b = L_to_bins(selec_L)
+    # mag_b = r_to_bins(selec_r)
+    # L_err_Arr_b = (L_to_bins(selec_L + selec_L_err)
+    #                - L_to_bins(selec_L - selec_L_err)) * 0.5
 
-    ax.errorbar(L_Arr_b, mag_b, fmt='s', xerr=L_err_Arr_b,
-                color='k', capsize=3, linestyle='')
+    # ax.errorbar(L_Arr_b, mag_b, fmt='s', xerr=L_err_Arr_b,
+    #             color='k', capsize=3, linestyle='')
 
-    ax.set_yticks(yticks)
-    ax.set_yticklabels(ytick_labels, rotation='horizontal')
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xtick_labels, rotation='vertical')
-    ax.yaxis.set_ticks_position('both')
-    ax.xaxis.set_ticks_position('both')
-    ax.tick_params(axis='y', direction='in', labelsize=16)
-    ax.tick_params(axis='x', direction='in', labelsize=16)
-    ax_cbar.tick_params(labelsize=12)
-    ax.spines[:].set_visible(True)
-    ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
-    ax.set_ylabel('$r$ (magAB)', fontsize=22)
-    ax.set_xlim(90, 160)
-    ax.set_ylim(199, 20)
+    # ax.set_yticks(yticks)
+    # ax.set_yticklabels(ytick_labels, rotation='horizontal')
+    # ax.set_xticks(xticks)
+    # ax.set_xticklabels(xtick_labels, rotation='vertical')
+    # ax.yaxis.set_ticks_position('both')
+    # ax.xaxis.set_ticks_position('both')
+    # ax.tick_params(axis='y', direction='in', labelsize=16)
+    # ax.tick_params(axis='x', direction='in', labelsize=16)
+    # ax_cbar.tick_params(labelsize=12)
+    # ax.spines[:].set_visible(True)
+    # ax.set_xlabel(r'$\log L_{\mathrm{Ly}\alpha}$ (erg s$^{-1}$)', fontsize=22)
+    # ax.set_ylabel('$r$ (magAB)', fontsize=22)
+    # ax.set_xlim(90, 160)
+    # ax.set_ylim(199, 20)
 
-    plt.savefig(f'{dirname}/PuriComp2D_{survey_name}_alt.pdf',
-                bbox_inches='tight', facecolor='white',)
-    plt.close()
+    # plt.savefig(f'{dirname}/PuriComp2D_{survey_name}_alt.pdf',
+    #             bbox_inches='tight', facecolor='white',)
+    # plt.close()
 
 
 def load_puricomp1d(dirname):
@@ -241,18 +243,21 @@ survey_list = [f'minijpasAEGIS00{i}' for i in np.arange(1, 5)] + ['jnep']
 
 if __name__ == '__main__':
     # PURICOMP 2D
-    LF_name = 'LF_r17-24_nb4-8_ew30_ewoth100_nb_1.0'
-    LF_dirname = f'Luminosity_functions/{LF_name}'
-    dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{LF_name}'
+    nbs_list = [[1, 5], [4, 8], [7, 11], [10, 14], [13, 17], [16, 20]]
+    for nb1, nb2 in nbs_list:
+        print(nb1, nb2)
+        LF_name = f'LF_r17-24_nb{nb1}-{nb2}_ew30_ewoth100_nb_1.0'
+        LF_dirname = f'Luminosity_functions/{LF_name}'
+        dirname = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{LF_name}'
 
-    L_bins = np.load(f'{dirname}/puricomp2d_L_bins.npy')
-    r_bins = np.load(f'{dirname}/puricomp2d_r_bins.npy')
+        L_bins = np.load(f'{dirname}/puricomp2d_L_bins.npy')
+        r_bins = np.load(f'{dirname}/puricomp2d_r_bins.npy')
 
-    dirname = './figures'
+        for survey_name in survey_list:
+            print(survey_name)
+            puri2d = np.load(f'{LF_dirname}/puri2d_{survey_name}.npy')
+            comp2d = np.load(f'{LF_dirname}/comp2d_{survey_name}.npy')
+            select = np.load(f'{LF_dirname}/selection.npy', allow_pickle=True)
 
-    for survey_name in survey_list:
-        puri2d = np.load(f'{LF_dirname}/puri2d_{survey_name}.npy')
-        comp2d = np.load(f'{LF_dirname}/comp2d_{survey_name}.npy')
-        select = np.load(f'{LF_dirname}/selection.npy', allow_pickle=True)
-
-        puricomp2d_plot(puri2d, comp2d, L_bins, r_bins, dirname, survey_name, select)
+            puricomp2d_plot(puri2d, comp2d, L_bins, r_bins,
+                            dirname, survey_name, select)

@@ -413,7 +413,7 @@ def all_corrections(params, pm_flx, pm_err, zspec, EW_lya, L_lya, is_gal,
 
     # Estimate continuum, search lines
     cont_est_lya, cont_err_lya, lya_lines, other_lines, z_Arr, nice_z =\
-        search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, cont_est_m)
+        search_lines(pm_flx, pm_err, ew0_cut, ew_oth, zspec, 'nb')
 
     z_cut = (lya_lines >= nb_min) & (lya_lines <= nb_max)
     zspec_cut = (z_min < zspec) & (zspec < z_max)
@@ -506,22 +506,22 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you want to recompute corrections
-    folder_name_search = (
-        f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_1.0'
-    )
-    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    # folder_name_search = (
+    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+    #     f'_{cont_est_m}_1.0'
+    # )
+    # dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
 
-    try:
-        for survey_name in survey_name_list:
-            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
-            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
-            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-    except:
-        print('Making puricomp...')
-    else:
-        print('Corrections loaded.')
-        return
+    # try:
+    #     for survey_name in survey_name_list:
+    #         h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+    #         h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+    #         h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+    # except:
+    #     print('Making puricomp...')
+    # else:
+    #     print('Corrections loaded.')
+    #     return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -614,7 +614,7 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     mask_pm = mask_proper_motion(parallax_sn, pmra_sn, pmdec_sn)
 
     cont_est_lya, cont_err_lya, cont_est_other, cont_err_other =\
-        nb_or_3fm_cont(pm_flx, pm_err, cont_est_m)
+        nb_or_3fm_cont(pm_flx, pm_err, 'nb')
 
     # Lya search
     line = is_there_line(pm_flx, pm_err, cont_est_lya,
@@ -649,13 +649,15 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     for bad_nb_src in bad_NB_image:
         mask_bad_NB[bad_nb_src] = False
 
-    bad_QSO_visual_insp = np.array([1390, 55102, 31899, 24488, 34347, 26588, 4242,
-                                    2626, 48698, 33873, 22337, 21880, 31038, 7653,
-                                    24054,  7234, 33067, 62005, 50134, 45787, 30432,
-                                    50545, 26984, 52341])
-    bad_GAL_visual_insp = np.array([11191, 50734, 38069, 44285, 2476, 27466, 9051,
-                                    34796, 15307, 4253, 11271, 38979, 26147, 7019,
-                                    29526])
+    # bad_QSO_visual_insp = np.array([1390, 55102, 31899, 24488, 34347, 26588, 4242,
+    #                                 2626, 48698, 33873, 22337, 21880, 31038, 7653,
+    #                                 24054,  7234, 33067, 62005, 50134, 45787, 30432,
+    #                                 50545, 26984, 52341])
+    # bad_GAL_visual_insp = np.array([11191, 50734, 38069, 44285, 2476, 27466, 9051,
+    #                                 34796, 15307, 4253, 11271, 38979, 26147, 7019,
+    #                                 29526])
+    bad_QSO_visual_insp = np.array([])
+    bad_GAL_visual_insp = np.array([])
 
     mask_snr = (snr > 6)
     lya_lines_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
@@ -944,24 +946,24 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 5, 30, 100, 'nb'),
-        (17, 24, 4, 8, 30, 100, 'nb'),
-        (17, 24, 7, 11, 30, 100, 'nb'),
-        (17, 24, 10, 14, 30, 100, 'nb'),
-        (17, 24, 13, 17, 30, 100, 'nb'),
-        (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 1, 5, 30, 100, 'uncorr'),
+        (17, 24, 4, 8, 30, 100, 'uncorr'),
+        (17, 24, 7, 11, 30, 100, 'uncorr'),
+        (17, 24, 10, 14, 30, 100, 'uncorr'),
+        (17, 24, 13, 17, 30, 100, 'uncorr'),
+        (17, 24, 16, 20, 30, 100, 'uncorr'),
         # (17, 24, 21, 24, 30, 100, 'nb'),
     ]
 
     # The fractions of contaminants removed by visual inpsection
-    bad_gal_vs_fraction = 1 - 45 / 59
-    bad_qso_vs_fraction = 1 - 0.99
-    # bad_gal_vs_fraction = 1
-    # bad_qso_vs_fraction = 1
+    # bad_gal_vs_fraction = 1 - 45 / 59
+    # bad_qso_vs_fraction = 1 - 0.99
+    bad_gal_vs_fraction = 1
+    bad_qso_vs_fraction = 1
 
     good_LAEs_frac = 1.
-    # for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:
-    for qso_frac in [1.]:
+    for qso_frac in [0.1, 0.5, 1.5, 2.]:
+    # for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:
