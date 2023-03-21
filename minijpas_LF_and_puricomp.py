@@ -506,22 +506,21 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you want to recompute corrections
-    # folder_name_search = (
-    #     f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-    #     f'_{cont_est_m}_1.0'
-    # )
-    # dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    folder_name_search = ( f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+        f'_{cont_est_m}_1.0'
+    )
+    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
 
-    # try:
-    #     for survey_name in survey_name_list:
-    #         h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
-    #         h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
-    #         h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-    # except:
-    #     print('Making puricomp...')
-    # else:
-    #     print('Corrections loaded.')
-    #     return
+    try:
+        for survey_name in survey_name_list:
+            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+    except:
+        print('Making puricomp...')
+    else:
+        print('Corrections loaded.')
+        return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -649,15 +648,15 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     for bad_nb_src in bad_NB_image:
         mask_bad_NB[bad_nb_src] = False
 
-    # bad_QSO_visual_insp = np.array([1390, 55102, 31899, 24488, 34347, 26588, 4242,
-    #                                 2626, 48698, 33873, 22337, 21880, 31038, 7653,
-    #                                 24054,  7234, 33067, 62005, 50134, 45787, 30432,
-    #                                 50545, 26984, 52341])
-    # bad_GAL_visual_insp = np.array([11191, 50734, 38069, 44285, 2476, 27466, 9051,
-    #                                 34796, 15307, 4253, 11271, 38979, 26147, 7019,
-    #                                 29526])
-    bad_QSO_visual_insp = np.array([])
-    bad_GAL_visual_insp = np.array([])
+    bad_QSO_visual_insp = np.array([1390, 55102, 31899, 24488, 34347, 26588, 4242,
+                                    2626, 48698, 33873, 22337, 21880, 31038, 7653,
+                                    24054,  7234, 33067, 62005, 50134, 45787, 30432,
+                                    50545, 26984, 52341])
+    bad_GAL_visual_insp = np.array([11191, 50734, 38069, 44285, 2476, 27466, 9051,
+                                    34796, 15307, 4253, 11271, 38979, 26147, 7019,
+                                    29526])
+    # bad_QSO_visual_insp = np.array([])
+    # bad_GAL_visual_insp = np.array([])
 
     mask_snr = (snr > 6)
     lya_lines_mask = (lya_lines >= nb_min) & (lya_lines <= nb_max)
@@ -672,9 +671,11 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
 
     # Mask CIV and Gal contaminants by visual inspection
     bad_QSO_mask = np.ones_like(nice_lya).astype(bool)
-    bad_QSO_mask[bad_QSO_visual_insp] = False
     bad_GAL_mask = np.ones_like(nice_lya).astype(bool)
-    bad_GAL_mask[bad_GAL_visual_insp] = False
+    if len(bad_QSO_visual_insp) > 0:
+        bad_QSO_mask[bad_QSO_visual_insp] = False
+    if len(bad_GAL_visual_insp) > 0:
+        bad_GAL_mask[bad_GAL_visual_insp] = False
 
     # Estimate Luminosity
     EW_Arr, EW_Arr_err, L_Arr, L_Arr_err_table, _, _ = EW_L_NB(
@@ -773,6 +774,8 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
         return_puri=True, dirname=dirname, N_iter=N_iter
     )
 
+    nice_puri_list[this_mask[nice_lya]] = this_puri
+
     # Compute the LFs for the bootstrap regions
     full_sel_nice_lya = pd.read_csv('csv/selection.csv')['src']
     boots_region_ids = np.ones_like(nice_lya) * -1
@@ -807,8 +810,6 @@ def make_the_LF(params, qso_frac, good_LAEs_frac,
     L_LF_err_plus_jn = L_LF_err_percentiles[2] - L_LF_err_percentiles[1]
     L_LF_err_minus_jn = L_LF_err_percentiles[1] - L_LF_err_percentiles[0]
     hist_median_jn = L_LF_err_percentiles[1]
-
-    nice_puri_list[this_mask[nice_lya]] = this_puri
 
     hist_median = hist_median_jn + hist_median_mj
     L_LF_err_plus = L_LF_err_plus_jn + L_LF_err_plus_mj
@@ -946,13 +947,13 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        (17, 24, 1, 5, 30, 100, 'uncorr'),
-        (17, 24, 4, 8, 30, 100, 'uncorr'),
-        (17, 24, 7, 11, 30, 100, 'uncorr'),
-        (17, 24, 10, 14, 30, 100, 'uncorr'),
-        (17, 24, 13, 17, 30, 100, 'uncorr'),
-        (17, 24, 16, 20, 30, 100, 'uncorr'),
-        # (17, 24, 21, 24, 30, 100, 'nb'),
+        # (17, 24, 1, 5, 30, 100, 'nb'),
+        # (17, 24, 4, 8, 30, 100, 'nb'),
+        # (17, 24, 7, 11, 30, 100, 'nb'),
+        # (17, 24, 10, 14, 30, 100, 'nb'),
+        # (17, 24, 13, 17, 30, 100, 'nb'),
+        # (17, 24, 16, 20, 30, 100, 'nb'),
+        (17, 24, 21, 24, 30, 100, 'uncorr'),
     ]
 
     # The fractions of contaminants removed by visual inpsection
@@ -962,8 +963,8 @@ if __name__ == '__main__':
     bad_qso_vs_fraction = 1
 
     good_LAEs_frac = 1.
-    for qso_frac in [0.1, 0.5, 1.5, 2.]:
-    # for qso_frac in [1.]:
+    # for qso_frac in [0.1, 0.5, 1., 1.5, 2.]:
+    for qso_frac in [1.]:
         print(f'QSO_frac = {qso_frac}')
         print(f'good_LAEs_frac = {good_LAEs_frac}')
         for params in LF_parameters:

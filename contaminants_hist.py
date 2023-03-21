@@ -96,8 +96,8 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
     fig.tight_layout()
     fig.savefig(f'figures/BOTH_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
-                bbox_inches='tight', facecolor='w', edgecolor='w',
-                pad_inches=0.1)
+                bbox_inches='tight', facecolor='w', edgecolor='w',)
+                # pad_inches=0.1)
 
 
 if __name__ == '__main__':
