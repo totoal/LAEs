@@ -572,13 +572,6 @@ def nice_lya_select(lya_lines, other_lines, pm_flx, pm_err, cont_est, z_Arr, mas
         return nice_lya & mask
 
 
-def count_true(arr):
-    '''
-    Counts how many True values in bool array
-    '''
-    return sum(arr)
-
-
 def schechter(L, phistar, Lstar, alpha):
     '''
     Just the regular Schechter function
@@ -768,7 +761,7 @@ def smooth_Image(X_Arr, Y_Arr, Mat, Dx, Dy):
 
 def smooth_hist(values_Arr, value_min, value_max, step, d_value, weights=None):
     if value_max <= value_min:
-        raise ValueError('value_max has to be grater than value_min')
+        raise ValueError('value_max has to be greater than value_min')
 
     centers = np.arange(value_min + step * 0.5, value_max, step)
     N_steps = len(centers)
