@@ -24,7 +24,8 @@ for tile in tile_ids:
         print(f'Downloading: {tile}-{filter}')
         url = f'http://archive.cefca.es/catalogues/vo/siap/minijpas-pdr201912/get_fits?id={tile}&filter={filter}'
         response = session.get(url)
-        open(f'{foldername}/{tile}-{filter}.fits', 'wb').write(response.content)
+        with open(f'{foldername}/{tile}-{filter}.fits', 'wb') as f:
+            f.write(response.content)
 
 # J-NEP
 print('\nJ-NEP\n')
@@ -39,4 +40,5 @@ for tile in tile_ids:
         print(f'Downloading: {tile}-{filter}')
         url = f'https://archive.cefca.es/catalogues/vo/siap/jnep-pdr202107/get_fits?id={tile}&filter={filter}'
         response = session.get(url)
-        open(f'{foldername}/{tile}-{filter}.fits', 'wb').write(response.content)
+        with open(f'{foldername}/{tile}-{filter}.fits', 'wb') as f:
+            f.write(response.content)
