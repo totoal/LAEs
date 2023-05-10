@@ -83,7 +83,7 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
         else:
             ax.text(w - 70, 51, name, fontsize=11)
 
-    ax.legend(fontsize=11, loc='upper right', framealpha=1)
+    ax.legend(fontsize=13, loc='upper right', framealpha=1)
 
     ax.set_xlim(890, 6000)
     ax.set_ylim(0, 50)
@@ -96,7 +96,7 @@ def make_hist_plot(nice_lya, z_cut, lya_lines, ew0_cut, nb_min, nb_max):
 
     fig.tight_layout()
     fig.savefig(f'figures/BOTH_contaminants_w0_hist_ew0min{ew0_cut}_nb{nb_min}-{nb_max}.pdf',
-                bbox_inches='tight', facecolor='w', edgecolor='w',)
+                bbox_inches='tight', facecolor='w', edgecolor='w', pad_inches=0.1)
                 # pad_inches=0.1)
 
 
