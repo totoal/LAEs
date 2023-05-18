@@ -30,6 +30,9 @@ def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
 
+def mag_to_flux_nu(m, w):
+    return 10**((m + 48.60) / (-2.5))
+
 def flux_to_mag(f, w):
     log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(np.float)
     return -2.5 * np.log10(log_arg) - 48.60
@@ -694,7 +697,7 @@ def EW_L_NB(pm_flx, pm_err, cont_flx, cont_err, z_Arr, lya_lines, F_bias=None,
     return EW_nb_Arr, EW_nb_e, L_Arr, L_e_Arr, flambda, flambda_e
 
 
-def Zero_point_error(ref_tile_id_Arr, catname):
+def Zero_point_error(ref_tile_id_Arr, catname, which='flambda'):
     # Load Zero Point magnitudes
     w_central = central_wavelength()
     zpt_cat = pd.read_csv(
@@ -718,10 +721,20 @@ def Zero_point_error(ref_tile_id_Arr, catname):
             
             zpt_mag = zpt_cat['ZPT'][where]
             zpt_err = zpt_cat['ERRZPT'][where]
-            this_zpt_err = (
-                mag_to_flux(zpt_mag, w_central[fil])
-                - mag_to_flux(zpt_mag + zpt_err, w_central[fil])
-            )
+
+            if which == 'flambda':
+                this_zpt_err = (
+                    mag_to_flux(zpt_mag, w_central[fil])
+                    - mag_to_flux(zpt_mag + zpt_err, w_central[fil])
+                )
+            elif which == 'magAB':
+                this_zpt_err = zpt_err
+            elif which == 'fnu':
+                    this_zpt_err = mag_to_flux_nu(zpt_mag, w_central[fil])
+                    - mag_to_flux_nu(zpt_mag + zpt_err, w_central[fil])
+            else:
+                raise ValueError(f'{which} is not recognized.')
+
             zpt_err_Arr[kkk, fil] = this_zpt_err
 
         # The array of shape (60, N_src) with the zpt errors of the photometry
