@@ -30,7 +30,7 @@ def mag_to_flux(m, w):
     return 10**((m + 48.60) / (-2.5)) * c/w**2 * 1e8
 
 
-def mag_to_flux_nu(m, w):
+def mag_to_flux_nu(m):
     return 10**((m + 48.60) / (-2.5))
 
 def flux_to_mag(f, w):
@@ -730,8 +730,8 @@ def Zero_point_error(ref_tile_id_Arr, catname, which='flambda'):
             elif which == 'magAB':
                 this_zpt_err = zpt_err
             elif which == 'fnu':
-                    this_zpt_err = mag_to_flux_nu(zpt_mag, w_central[fil])
-                    - mag_to_flux_nu(zpt_mag + zpt_err, w_central[fil])
+                    this_zpt_err = (mag_to_flux_nu(zpt_mag)
+                    - mag_to_flux_nu(zpt_mag + zpt_err))
             else:
                 raise ValueError(f'{which} is not recognized.')
 

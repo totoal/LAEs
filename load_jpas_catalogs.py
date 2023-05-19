@@ -59,7 +59,10 @@ def load_minijpas_jnep(cat_list=['minijpas', 'jnep'], selection=False,
         RA_i = cat['ALPHA_J2000']
         DEC_i = cat['DELTA_J2000']
 
-        pm_err_i = (pm_err_i ** 2 + Zero_point_error(cat['TILE_ID'], name) ** 2) ** 0.5
+        zpt_err = Zero_point_error(cat['TILE_ID'], name, which='flambda')
+        print(zpt_err[-2] / pm_flx_i[-2])
+
+        pm_err_i = (pm_err_i ** 2 + zpt_err ** 2) ** 0.5
 
         spCl_i = cat['spCl']
         zsp_i = cat['zsp']
@@ -165,7 +168,10 @@ def load_minijpas_jnep_fnu(cat_list=['minijpas', 'jnep'], selection=False,
         RA_i = cat['ALPHA_J2000']
         DEC_i = cat['DELTA_J2000']
 
-        pm_err_i = (pm_err_i ** 2 + Zero_point_error(cat['TILE_ID'], name, which='fnu') ** 2) ** 0.5
+        zpt_err = Zero_point_error(cat['TILE_ID'], name, which='fnu')
+        print(zpt_err[-2] / pm_flx_i[-2])
+
+        pm_err_i = (pm_err_i ** 2 + zpt_err ** 2) ** 0.5
 
         spCl_i = cat['spCl']
         zsp_i = cat['zsp']
