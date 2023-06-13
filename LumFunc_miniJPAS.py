@@ -3,8 +3,8 @@ import numpy as np
 from astropy.cosmology import Planck18 as cosmo
 from astropy import units as u
 
-from LAEs.my_functions import z_volume, central_wavelength, nb_fwhm
-from LAEs.LF_puricomp_corrections import weights_LF
+from my_functions import z_volume, central_wavelength, nb_fwhm
+from LF_puricomp_corrections import weights_LF
 
 w_lya = 1215.67
 w_central = central_wavelength()

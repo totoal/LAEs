@@ -3,7 +3,7 @@ import numpy as np
 from scipy.stats import binned_statistic_2d
 from scipy.integrate import simpson
 
-from LAEs.my_functions import mag_to_flux
+from my_functions import mag_to_flux
 
 import pandas as pd
 

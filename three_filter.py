@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.integrate import simpson
 
-from LAEs.my_functions import central_wavelength, load_tcurves, load_filter_tags
+from my_functions import central_wavelength, load_tcurves, load_filter_tags
 
 '''
 alpha & beta: two auxiliary functions for the three-filter continuum estimate method
