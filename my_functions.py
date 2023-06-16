@@ -34,7 +34,7 @@ def mag_to_flux_nu(m):
     return 10**((m + 48.60) / (-2.5))
 
 def flux_to_mag(f, w):
-    log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(np.float)
+    log_arg = np.atleast_1d(f * w**2/c * 1e-8).astype(float)
     return -2.5 * np.log10(log_arg) - 48.60
 
 

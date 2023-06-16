@@ -2,8 +2,8 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from LAEs.my_functions import *
-from LAEs.load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
+from my_functions import *
+from load_jpas_catalogs import load_minijpas_jnep, load_sdss_xmatch
 import os
 import os.path as op
 from astropy.table import Table
