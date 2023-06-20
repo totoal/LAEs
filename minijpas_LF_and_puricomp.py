@@ -506,21 +506,21 @@ def make_corrections(params, qso_frac, good_LAEs_frac):
     mag_min, mag_max, nb_min, nb_max, ew0_cut, ew_oth, cont_est_m = params
 
     # # Comment this section if you want to recompute corrections
-    folder_name_search = ( f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
-        f'_{cont_est_m}_1.0'
-    )
-    dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
+    # folder_name_search = ( f'LF_r{mag_min}-{mag_max}_nb{nb_min}-{nb_max}_ew{ew0_cut}_ewoth{ew_oth}'
+    #     f'_{cont_est_m}_1.0'
+    # )
+    # dirname_search = f'/home/alberto/cosmos/LAEs/Luminosity_functions/{folder_name_search}'
 
-    try:
-        for survey_name in survey_name_list:
-            h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
-            h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
-            h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
-    except:
-        print('Making puricomp...')
-    else:
-        print('Corrections loaded.')
-        return
+    # try:
+    #     for survey_name in survey_name_list:
+    #         h2d_nice_smooth = np.load(f'{dirname_search}/h2d_nice_smooth_{survey_name}.npy')
+    #         h2d_sel_smooth = np.load(f'{dirname_search}/h2d_sel_smooth_{survey_name}.npy')
+    #         h2d_parent_smooth = np.load(f'{dirname_search}/h2d_parent_smooth_{survey_name}.npy')
+    # except:
+    #     print('Making puricomp...')
+    # else:
+    #     print('Corrections loaded.')
+    #     return
     # ######
 
     pm_flx_0, _, zspec, EW_lya, L_lya, is_qso, is_sf, is_gal, is_LAE, where_hiL, L_NV, EW_NV,\
@@ -947,7 +947,7 @@ if __name__ == '__main__':
     # (min_mag, max_mag, nb_min, nb_max, ew0_cut, cont_est_method)
     # cont_est_method must be 'nb' or '3fm'
     LF_parameters = [
-        # (17, 24, 1, 5, 30, 100, 'nb'),
+        (17, 24, 1, 5, 30, 100, 'nb'),
         # (17, 24, 4, 8, 30, 100, 'nb'),
         # (17, 24, 7, 11, 30, 100, 'nb'),
         # (17, 24, 10, 14, 30, 100, 'nb'),
