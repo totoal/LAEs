@@ -1,0 +1,15 @@
+#Sub-regions limits, as defined by notebok Def_SubRegs_miniJPAS_2x8.
+#Limits defined in DEC_rot,RA_rot by a 1x4 'quilt'
+#Parameters of the rotation of coordinates:
+# alpha_c = 214.52, delta_c = 52.65, theta_deg = -45.0. 
+#Completeness based on random catalogue rand_minijpas_1e5.radec
+#
+#Format: each line corresponds to one region, with columns:
+# 1 DEC_min
+# 2 DEC_max
+# 3 RA_min
+# 4 RA_max
+52  53  212  213.775
+52  53  213.775  214.612
+52  53  214.612  215.397
+52  53  215.397  217
